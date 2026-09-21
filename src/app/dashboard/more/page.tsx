@@ -74,6 +74,19 @@ export default function MoreMenuPage() {
           bg: '#f0fdf4',
           border: '#bbf7d0',
         },
+        {
+          href: '/dashboard/syllabus',
+          label: 'সিলেবাস, কিতাব তালিকা ও লেসন প্ল্যানার',
+          desc: 'কওমি, আলিয়া ও সাধারণ স্কুলের বইয়ের তালিকা, মানবণ্টন ও পাঠ ট্র্যাকার',
+          icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+            </svg>
+          ),
+          bg: '#ecfdf5',
+          border: '#a7f3d0',
+        },
       ],
     },
     {
