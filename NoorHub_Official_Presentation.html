@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="bn" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>নূরহাব (NoorHub) — এক্সিকিউটিভ প্রেজেন্টেশন ডেক</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hind Siliguri', sans-serif;
+      background: #f8fafc;
+      color: #0f172a;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1.5px solid #e2e8f0;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #16a34a;
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      font-size: 15px;
+      box-shadow: 0 4px 14px rgba(22, 163, 74, 0.3);
+    }
+    .btn:hover { background: #15803d; }
+    .slide-card {
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1.5px solid #e2e8f0;
+      padding: 36px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      page-break-after: always;
+    }
+    .slide-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .badge-green { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .badge-blue  { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
+    .badge-gold  { background: #fefce8; color: #ca8a04; border: 1px solid #fef08a; }
+    .badge-red   { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+
+    h1 { font-size: 32px; font-weight: 800; color: #0f172a; margin-bottom: 8px; }
+    h2 { font-size: 22px; font-weight: 800; color: #0f172a; margin-bottom: 6px; }
+    p  { color: #475569; font-size: 15px; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 20px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 20px; }
+
+    .box {
+      background: #f8fafc;
+      border: 1.5px solid #f1f5f9;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .box h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .box p { font-size: 13.5px; color: #64748b; line-height: 1.5; }
+
+    .metric-value { font-size: 28px; font-weight: 800; color: #16a34a; }
+    .metric-label { font-size: 12px; color: #64748b; }
+
+    @media print {
+      body { background: #ffffff !important; }
+      .container { max-width: 100% !important; padding: 0 !important; }
+      .header-bar { display: none !important; }
+      .slide-card {
+        border: none !important;
+        box-shadow: none !important;
+        padding: 40px !important;
+        page-break-after: always !important;
+        height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justifyContent: space-between !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header-bar">
+      <div>
+        <h2 style="color: #16a34a;">নূরহাব (NoorHub) প্রেজেন্টেশন ডেক</h2>
+        <p style="font-size: 13px;">মাদরাসা পরিচালনা কমিটি ও বৈঠকের জন্য রেডিমেড শিট</p>
+      </div>
+      <button class="btn" onclick="window.print()">
+        📄 PDF ডাউনলোড / প্রিন্ট করুন
+      </button>
+    </div>
+
+    <!-- Slide 1: Cover -->
+    <div class="slide-card" style="text-align: center; justify-content: center;">
+      <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #16a34a, #15803d); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+        <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2C8 2 5 5 5 9v1H3v2h2v8h14v-8h2V10h-2V9c0-4-3-7-7-7z"/>
+          <path d="M9 20v-5a3 3 0 0 1 6 0v5"/>
+          <path d="M12 2v3"/>
+          <circle cx="12" cy="7" r="1"/>
+        </svg>
+      </div>
+      <span class="slide-badge badge-green">এক্সিকিউটিভ ডেক ২০২৬</span>
+      <h1 style="font-size: 40px; margin-bottom: 10px;">নূরহাব (NoorHub)</h1>
+      <p style="font-size: 20px; color: #16a34a; font-weight: 700; margin-bottom: 24px;">
+        কওমি, হিফজ, আলিয়া ও সাধারণ শিক্ষা প্রতিষ্ঠানের যুগান্তকারী ডিজিটাল প্ল্যাটফর্ম
+      </p>
+      <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+        <span class="slide-badge badge-green">জিরো ওটিপি ও জিরো জটিলতা</span>
+        <span class="slide-badge badge-blue">১০০% ভেক্টর আইকন (নো ইমোজি)</span>
+        <span class="slide-badge badge-gold">স্বচ্ছ ডোনার ও অর্থ ব্যবস্থা</span>
+      </div>
+    </div>
+
+    <!-- Slide 2: Problem Statement -->
+    <div class="slide-card">
+      <span class="slide-badge badge-red">বর্তমান সংকট ও সমস্যা</span>
+      <h2>শিক্ষা প্রযুক্তির বর্তমান প্রতিবন্ধকতাসমূহ</h2>
+      <p>কেন প্রচলিত সফটওয়্যারগুলো মাদরাসার প্রবীণ উস্তাদ ও সাধারণ অভিভাবকদের কাছে ব্যর্থ হয়?</p>
+
+      <div class="grid-2">
+        <div class="box" style="border-left: 4px solid #dc2626;">
+          <h3 style="color: #dc2626;">১. অতিরিক্ত জটিল ইউজার ইন্টারফেস</h3>
+          <p>বাজারে থাকা সফটওয়্যারগুলো অতিরিক্ত হিজিবিজি হওয়ায় সাধারণ মানুষ সহজে পরিচালনা করতে পারে না।</p>
+        </div>
+        <div class="box" style="border-left: 4px solid #ea580c;">
+          <h3 style="color: #ea580c;">২. ওটিপি ও ফিঙ্গারপ্রিন্ট মেশিনের ঝামেলা</h3>
+          <p>মোবাইল নেটওয়ার্ক জটিলতা, ওটিপি না আসা এবং দামি বায়োমেট্রিক মেশিন রক্ষণাবেক্ষণের চড়া ব্যয়।</p>
+        </div>
+        <div class="box" style="border-left: 4px solid #7c3aed;">
+          <h3 style="color: #7c3aed;">৩. কওমি ও হিফজ সিলেবাসের অনুপস্থিতি</h3>
+          <p>বেশিরভাগ অ্যাপে কওমি কিতাব বা হিফজের সবক, সবকি ও আমুখতা ট্র্যাকিংয়ের কোনো ব্যবস্থা থাকে না।</p>
+        </div>
+        <div class="box" style="border-left: 4px solid #0891b2;">
+          <h3 style="color: #0891b2;">৪. অনুদানের আস্থার ঘাটতি</h3>
+          <p>দাতারা দান করার পর টাকার বাস্তব ব্যবহার না জানার কারণে স্থায়ী আস্থার সংকট তৈরি হয়।</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3: The NoorHub Solution -->
+    <div class="slide-card">
+      <span class="slide-badge badge-green">নূরহাবের বিপ্লব</span>
+      <h2>নূরহাবের আধুনিক ও সহজ সমাধান</h2>
+      <p>প্রযুক্তিকে জটিল না করে পানির মতো সহজ ও ব্যবহারবান্ধব করা হয়েছে।</p>
+
+      <div class="grid-3">
+        <div class="box" style="text-align: center;">
+          <h3 style="color: #16a34a;">জিরো ওটিপি ও ১-ক্লিক প্রবেশ</h3>
+          <p>পাসওয়ার্ড বা ওটিপির ঝামেলা নেই। মোবাইল নম্বর বা রোল দিয়ে যেকোনো সাধারণ অভিভাবক সহজেই ব্যবহার করতে পারেন।</p>
+        </div>
+        <div class="box" style="text-align: center;">
+          <h3 style="color: #2563eb;">সার্বজনীন সিলেবাস সুইচ</h3>
+          <p>কওমি কিতাব, হিফজুল কুরআন, আলিয়া মাদরাসা ও সাধারণ স্কুল—সবগুলোর জন্য প্রস্তুত একক প্ল্যাটফর্ম।</p>
+        </div>
+        <div class="box" style="text-align: center;">
+          <h3 style="color: #7c3aed;">২৪/৭ নূর এআই গাইড</h3>
+          <p>অ্যাপের প্রতিটি বাটন ও ফিচার সম্পর্কে অভিজ্ঞ ডিজিটাল এআই সহকারী সার্বক্ষণিক সহজ বাংলায় সাহায্য করে।</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 4: Financial & Salary Hub -->
+    <div class="slide-card">
+      <span class="slide-badge badge-blue">আর্থিক স্বচ্ছতা</span>
+      <h2>অর্থ, বেতন ও শিক্ষক ভাতা ব্যবস্থাপনা</h2>
+      <p>মাদরাসার প্রতিটি টাকার পুঙ্খানুপুঙ্খ হিসাব এবং ১ ক্লিকে সমন্বিত বেতন শিট।</p>
+
+      <div class="grid-2">
+        <div class="box">
+          <h3 style="color: #16a34a;">ছাত্র বেতন ও ডিজিটাল রসিদ</h3>
+          <ul style="padding-left: 18px; font-size: 13.5px; color: #475569; line-height: 1.8;">
+            <li>১ ক্লিকে "বেতন নিন" বাটন চেপে নগদ, বিকাশ বা রকেটে ফি গ্রহণ।</li>
+            <li>বকেয়া থাকা শিক্ষার্থীদের আলাদা সুনির্দিষ্ট তালিকা।</li>
+            <li>তাৎক্ষণিক ডিজিটাল মানি রিসিট প্রিন্ট ও ডাউনলোড।</li>
+          </ul>
+        </div>
+        <div class="box">
+          <h3 style="color: #2563eb;">উস্তাদ ও শিক্ষক মাসিক ভাতা শিট</h3>
+          <ul style="padding-left: 18px; font-size: 13.5px; color: #475569; line-height: 1.8;">
+            <li>প্রতিটি শিক্ষকের পদবী অনুযায়ী নির্ধারিত বেতন ও ভাতার তালিকা।</li>
+            <li>"বাকি সবার ভাতা একসাথে পরিশোধ করুন" বাটনে ১ ক্লিকে সবার বেতন শিট সম্পন্ন।</li>
+            <li>বিদ্যুৎ, গ্যাস, রান্নাঘরের বাজার ও শিক্ষা সামগ্রীর সার্বিক আয়-ব্যয় ব্যালেন্স।</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 5: Public Donor Transparency -->
+    <div class="slide-card">
+      <span class="slide-badge badge-gold">স্বচ্ছ অনুদান</span>
+      <h2>পাবলিক ডোনার ইমপ্যাক্ট পোর্টাল</h2>
+      <p>দাতার আস্থার নতুন দিগন্ত — টাকার বাস্তব ব্যবহার দেখে বাড়বে অনুদানের পরিমাণ।</p>
+
+      <div class="box" style="background: #fefce8; border: 1.5px solid #fef08a; margin-top: 16px;">
+        <h3 style="color: #854d0e; font-size: 18px;">"আমার দানের টাকা দিয়ে কী করা হয়েছে?" — বাস্তব ফল দেখার সুযোগ</h3>
+        <p style="color: #713f12; font-size: 14px;">
+          দাতা শুধু তার রসিদ নম্বর বা ট্র্যাকিং কোড (যেমন: DNR-87654321) দিয়েই নিজের মোবাইলে দেখতে পাবেন তার অনুদানের টাকায় কয়জন এতিম ছাত্র খাবার পেল বা কতগুলো কিতাব কেনা হলো।
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <div class="box" style="text-align: center;">
+          <h3 style="color: #0f172a;">বাস্তব ব্যবহার বিবরণ</h3>
+          <p>খোরাকি, পোশাক ও কিতাবের টাকার স্পষ্ট বিভাজন ও প্রগ্রেস বার।</p>
+        </div>
+        <div class="box" style="text-align: center;">
+          <h3 style="color: #0f172a;">ডিজিটাল রসিদ প্রিন্ট</h3>
+          <p>দাতা নিজেই নিজের ফোনে অফিশিয়াল রসিদ ডাউনলোড করতে পারেন।</p>
+        </div>
+        <div class="box" style="text-align: center;">
+          <h3 style="color: #0f172a;">১-ট্যাপ হোয়াটসঅ্যাপ সংযোগ</h3>
+          <p>রসিদের নিচ থেকেই সরাসরি মুহতামিম সাহেবের সাথে দোয়া বিনিময়।</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 6: High Scale Engineering -->
+    <div class="slide-card">
+      <span class="slide-badge badge-green">কারিগরি শক্তিমত্তা</span>
+      <h2>১০ থেকে ৩০ লাখ ব্যবহারকারীর উচ্চ স্কেলিং</h2>
+      <p>যে কোনো দুর্বল বা পুরোনো স্মার্টফোনেও বিদ্যুৎ গতিতে কাজ করবে নূরহাব।</p>
+
+      <div class="grid-4">
+        <div class="box" style="text-align: center;">
+          <div class="metric-value">১০৩ kB</div>
+          <div class="metric-label">ফার্স্ট লোড সাইজ</div>
+        </div>
+        <div class="box" style="text-align: center;">
+          <div class="metric-value" style="color: #2563eb;">১.১ সে.</div>
+          <div class="metric-label">সার্ভার লোডিং স্পিড</div>
+        </div>
+        <div class="box" style="text-align: center;">
+          <div class="metric-value" style="color: #ea580c;">১-ক্লিক</div>
+          <div class="metric-label">অফলাইন ডেটা ব্যাকআপ</div>
+        </div>
+        <div class="box" style="text-align: center;">
+          <div class="metric-value" style="color: #7c3aed;">PWA</div>
+          <div class="metric-label">প্লে স্টোর ছাড়াই ইনস্টল</div>
+        </div>
+      </div>
+
+      <div class="box" style="margin-top: 16px; background: #f0fdf4; border: 1.5px solid #bbf7d0;">
+        <p style="color: #166534; font-size: 14px; text-align: center;">
+          <strong>সম্পূর্ণ ডেটা নিরাপত্তা:</strong> মাদরাসার যাবতীয় ডেটা প্রতিষ্ঠানের পূর্ণ নিয়ন্ত্রণে থাকবে এবং সেটিংস থেকে যেকোনো সময় এক ক্লিকে সম্পূর্ণ ডেটাবেজ ব্যাকআপ কম্পিউটারে সংরক্ষণ করা যায়।
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
