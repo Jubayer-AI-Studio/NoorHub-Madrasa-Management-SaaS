@@ -179,29 +179,53 @@ export default function StudentsPage() {
     return `https://wa.me/${cleanPhone}?text=${msg}`;
   };
 
+  const handleExportStudentsCSV = () => {
+    let csv = "data:text/csv;charset=utf-8,রোল,আইডি,শিক্ষার্থীর নাম,শ্রেণি,সিলেবাস,আবাসিক/অনাবাসিক,রক্তের গ্রুপ,অভিভাবকের নাম,মোবাইল নম্বর,হাজিরা হার,বেতন স্ট্যাটাস\n";
+    students.forEach((s) => {
+      csv += `${s.roll},${s.admissionNo},${s.name},${s.className},${s.curriculum},${s.isBoarding ? 'আবাসিক' : 'অনাবাসিক'},${s.bloodGroup},${s.parentName},${s.parentPhone},${s.attendanceRate}%,${s.feeStatus === 'paid' ? 'পরিশোধিত' : 'বকেয়া'}\n`;
+    });
+    const encoded = encodeURI(csv);
+    const link = document.createElement("a");
+    link.setAttribute("href", encoded);
+    link.setAttribute("download", `noorhub_students_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div style={{ padding: '1rem', maxWidth: '48rem', margin: '0 auto' }}>
       {/* Top Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
           <h1 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.375rem', fontWeight: '700', color: '#0f172a' }}>
             ছাত্র ও শিক্ষার্থী প্রোফাইল
           </h1>
           <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.85rem', color: '#64748b' }}>
-            মোট শিক্ষার্থী: {students.length} জন
+            মোট শিক্ষার্থী: {students.length} জন · কওমি, হিফজ, আলিয়া ও জেনারেল
           </p>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
-          className="btn btn-primary btn-sm"
-          style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)' }}
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-          নতুন ভর্তি
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={handleExportStudentsCSV}
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', fontWeight: '700' }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            এক্সেল / CSV
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="btn btn-primary btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            নতুন ভর্তি
+          </button>
+        </div>
       </div>
 
       {/* Search Bar */}

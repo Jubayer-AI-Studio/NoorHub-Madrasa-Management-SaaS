@@ -239,6 +239,103 @@ export default function PresentationDeckPage() {
     },
     {
       id: 6,
+      tag: 'সোশ্যাল অটোমেশন',
+      title: 'ফেসবুক, মেসেঞ্জার ও হোয়াটসঅ্যাপ অটোমেশন',
+      subtitle: 'সোশ্যাল মিডিয়া পেজে স্বয়ংক্রিয় প্রচার এবং ২৪ ঘণ্টা এআই চ্যাটবট রেসপন্স',
+      badge: 'Social Media & Messaging Automation',
+      content: (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginTop: '1rem' }}>
+          <div className="card" style={{ padding: '1.25rem', borderTop: '4px solid #1877f2' }}>
+            <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1rem', fontWeight: '700', color: '#1877f2', marginBottom: '0.35rem' }}>
+              ফেসবুক পেজ অটো-পোস্টিং
+            </h3>
+            <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.8rem', color: '#475569', lineHeight: '1.6' }}>
+              মাদরাসার কোনো জরুরি নোটিশ, ছুটির বিজ্ঞপ্তি, মাহফিলের পোস্টার বা পরীক্ষার রেজাল্ট পাবলিশ করলে তা স্বয়ংক্রিয়ভাবে মাদরাসার অফিশিয়াল ফেসবুক পেজে পোস্ট হয়ে যায়।
+            </p>
+          </div>
+
+          <div className="card" style={{ padding: '1.25rem', borderTop: '4px solid #16a34a' }}>
+            <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1rem', fontWeight: '700', color: '#16a34a', marginBottom: '0.35rem' }}>
+              মেসেঞ্জার ও হোয়াটসঅ্যাপ এআই বট
+            </h3>
+            <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.8rem', color: '#475569', lineHeight: '1.6' }}>
+              ভর্তি ফি কত, মাদরাসার ঠিকানা বা ডোনেশনের ব্যাংক নম্বর জানতে চেয়ে ফেসবুক বা হোয়াটসঅ্যাপে যে কেউ মেসেজ দিলে নূর এআই তাৎক্ষণিক ২৪/৭ স্বয়ংক্রিয় নির্ভুল উত্তর দেয়।
+            </p>
+          </div>
+
+          <div className="card" style={{ padding: '1.25rem', borderTop: '4px solid #ea580c' }}>
+            <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1rem', fontWeight: '700', color: '#ea580c', marginBottom: '0.35rem' }}>
+              স্বয়ংক্রিয় অনুপস্থিতি অ্যালার্ট
+            </h3>
+            <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.8rem', color: '#475569', lineHeight: '1.6' }}>
+              কোনো শিক্ষার্থী ক্লাসে অনুপস্থিত থাকলে সকাল ১০টায় কোনো ম্যানুয়াল ক্লিক ছাড়াই স্বয়ংক্রিয়ভাবে অভিভাবকের হোয়াটসঅ্যাপ ও ফোনে জরুরি অ্যালার্ট চলে যায়।
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 7,
+      tag: 'হিফজুল কুরআন',
+      title: 'হিফজুল কুরআনের বিশেষ দৈনিক ট্র্যাকার',
+      subtitle: 'সবক (নতুন পড়া), সবকি ও আমুখতা/মনজিল এবং ১-৩০ পারা অগ্রগতি',
+      badge: 'Dedicated Hifz Quran Engine',
+      content: (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+          <div className="card" style={{ padding: '1.25rem' }}>
+            <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1rem', fontWeight: '700', color: '#16a34a', marginBottom: '0.5rem' }}>
+              ১ থেকে ৩০ পারার লাইভ অগ্রগতি ট্র্যাকিং
+            </h3>
+            <ul style={{ paddingLeft: '1.25rem', fontSize: '0.825rem', color: '#475569', lineHeight: '1.8', fontFamily: 'Hind Siliguri, sans-serif' }}>
+              <li><strong>১-৩০ পারা চেকলিস্ট:</strong> কোন ছাত্রের কততম পারা শেষ হয়েছে তার স্পষ্ট প্রগ্রেস বার ও গ্রাফ।</li>
+              <li><strong>দৈনিক সবক:</strong> আজকের নতুন মুখস্থ কত পৃষ্ঠা ও কোন আয়াত।</li>
+              <li><strong>সবকি ও আমুখতা:</strong> পেছনের কয় পারা এবং পুরনো কত পারা রিভিশন দেওয়া হলো তার নিখুঁত দৈনিক লগ।</li>
+            </ul>
+          </div>
+
+          <div className="card" style={{ padding: '1.25rem' }}>
+            <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1rem', fontWeight: '700', color: '#2563eb', marginBottom: '0.5rem' }}>
+              উস্তাদের মূল্যায়ন ও অভিভাবক আপডেট
+            </h3>
+            <ul style={{ paddingLeft: '1.25rem', fontSize: '0.825rem', color: '#475569', lineHeight: '1.8', fontFamily: 'Hind Siliguri, sans-serif' }}>
+              <li><strong>উস্তাদ রেটিং:</strong> মুমতাজ, ভালো ও মেহনত দরকার রেটিং প্রদান।</li>
+              <li><strong>১-ট্যাপ হোয়াটসঅ্যাপ ডায়েরি:</strong> এক ক্লিকে ছাত্রের আজকের সবক ও অগ্রগতি কার্ড অভিভাবকের ফোনে চলে যায়।</li>
+              <li><strong>আন্তর্জাতিক হিফজ প্রস্তুতি:</strong> হিফজ প্রতিযোগিতার জন্য ছাত্রদের বিশেষ প্রস্তুতি ট্র্যাকিং।</li>
+            </ul>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 8,
+      tag: 'সুস্থ প্রতিযোগিতা',
+      title: 'সুস্থ প্রতিযোগিতা, স্টার রেটিং ও ব্লু ভেরিফাইড টিক',
+      subtitle: 'জাতীয় ও জেলা র‍্যাংকিং এবং প্রাতিষ্ঠানিক স্বীকৃতির আধুনিক মানদণ্ড',
+      badge: 'Gamification & Verified Badges',
+      content: (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
+          <div className="card" style={{ padding: '1.25rem' }}>
+            <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1rem', fontWeight: '700', color: '#2563eb', marginBottom: '0.5rem' }}>
+              অফিশিয়াল ব্লু ভেরিফাইড টিক (Blue Tick)
+            </h3>
+            <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.825rem', color: '#475569', lineHeight: '1.7' }}>
+              বোর্ড ও প্রশাসন অনুমোদিত শতভাগ স্বচ্ছ প্রতিষ্ঠানের জন্য ফেসবুকের মতো ব্লু ভেরিফাইড টিক ব্যাজ থাকবে, যা অভিভাবক ও সাধারণ মানুষের আস্থা বহুগুণ বাড়িয়ে দেয়।
+            </p>
+          </div>
+
+          <div className="card" style={{ padding: '1.25rem' }}>
+            <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1rem', fontWeight: '700', color: '#ca8a04', marginBottom: '0.5rem' }}>
+              জাতীয় ও জেলা পর্যায়ের মেধা লিডারবোর্ড
+            </h3>
+            <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.825rem', color: '#475569', lineHeight: '1.7' }}>
+              পাসের হার (৪০%), নিয়মিত হাজিরা (২৫%), অভিভাবক ফিডব্যাক (২০%) এবং আর্থিক স্বচ্ছতার (১৫%) ওপর ভিত্তি করে স্বয়ংক্রিয় স্টার রেটিং এবং স্বাস্থ্যকর মেধাভিত্তিক প্রতিযোগিতা।
+            </p>
+          </div>
+        </div>
+      ),
+    },
+    {
+      id: 9,
       tag: 'যোগাযোগ ও গতি',
       title: '১-ট্যাপ যোগাযোগ, হাজিরা ও সহজ ছুটি',
       subtitle: 'অভিভাবক ও শিক্ষকদের সাথে যোগাযোগের দ্রুততম মাধ্যম',

@@ -57,7 +57,16 @@ const IconDollarSign = () => (
 );
 
 // ============ TYPES ============
-type Tab = 'overview' | 'student-fees' | 'teacher-salary' | 'donations' | 'expenses';
+type Tab = 'overview' | 'student-fees' | 'teacher-salary' | 'donations' | 'expenses' | 'bank-transfers';
+
+const IconBuilding = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+    <line x1="9" y1="22" x2="9" y2="2" />
+    <line x1="15" y1="22" x2="15" y2="2" />
+    <line x1="4" y1="12" x2="20" y2="12" />
+  </svg>
+);
 
 // ============ MOCK DATA ============
 const studentFees = [
@@ -79,33 +88,71 @@ const teacherSalaries = [
 export default function FinancePage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
+  const [exportSuccess, setExportSuccess] = useState(false);
+
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview',       label: 'সার-সংক্ষেপ',  icon: <IconDollarSign /> },
     { id: 'student-fees',   label: 'ছাত্র বেতন',   icon: <IconUsers /> },
     { id: 'teacher-salary', label: 'শিক্ষক ভাতা',  icon: <IconBriefcase /> },
     { id: 'donations',      label: 'অনুদান',       icon: <IconHeart /> },
     { id: 'expenses',       label: 'ব্যয়',         icon: <IconTrendingDown /> },
+    { id: 'bank-transfers', label: 'ব্যাংক ও গেটওয়ে', icon: <IconBuilding /> },
   ];
+
+  const handleExportExcel = () => {
+    setExportSuccess(true);
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "তারিখ,খাত,বিবরণ,মাধ্যম,পরিমাণ (টাকা),স্ট্যাটাস\n"
+      + "২০ সেপ্টেম্বর ২০২৬,ছাত্র বেতন,মোঃ আব্দুর রহমান,বিকাশ,৮৫০,পরিশোধিত\n"
+      + "২০ সেপ্টেম্বর ২০২৬,শিক্ষক ভাতা,মাওলানা আব্দুল্লাহ,ব্যাংক ট্রান্সফার,১৮০০০,পরিশোধিত\n"
+      + "১৮ সেপ্টেম্বর ২০২৬,দান/যাকাত,হাজী মোঃ আলী,বিকাশ,১৫০০০,স্বচ্ছ\n"
+      + "১৭ সেপ্টেম্বর ২০২৬,রান্নার বাজার,বাবুর্চি খরচ,নগদ,১৫২০০,ব্যয়িত\n";
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `noorhub_financial_ledger_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(() => setExportSuccess(false), 4000);
+  };
 
   return (
     <div style={{ padding: '1rem' }}>
       {/* Page Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <div>
           <h1 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.25rem', fontWeight: '700', color: '#0f172a' }}>
-            অর্থ ব্যবস্থাপনা
+            অর্থ ও ব্যাংক ব্যবস্থাপনা
           </h1>
           <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.8125rem', color: '#64748b' }}>
-            সেপ্টেম্বর ২০২৬
+            সেপ্টেম্বর ২০২৬ · ছাত্র বেতন, শিক্ষক ভাতা, অনুদান ও ব্যাংক লেজার
           </p>
         </div>
-        <button
-          className="btn btn-primary btn-sm"
-          style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}
-        >
-          <IconPlus /> নতুন এন্ট্রি
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            onClick={handleExportExcel}
+            className="btn btn-secondary btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', fontWeight: '700' }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            এক্সেল / CSV ডাউনলোড
+          </button>
+          <button
+            className="btn btn-primary btn-sm"
+            style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}
+          >
+            <IconPlus /> নতুন এন্ট্রি
+          </button>
+        </div>
       </div>
+
+      {exportSuccess && (
+        <div className="card fade-in" style={{ padding: '0.75rem 1rem', background: '#f0fdf4', border: '1.5px solid #bbf7d0', color: '#16a34a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', fontWeight: '700' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+          মাদরাসার সম্পূর্ণ অর্থ লেজার এক্সেলে (CSV) সফলভাবে ডাউনলোড হয়েছে!
+        </div>
+      )}
 
       {/* Tab Bar */}
       <div
@@ -426,6 +473,100 @@ export default function FinancePage() {
                   <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.75rem', color: '#64748b' }}>{exp.category}</div>
                 </div>
                 <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.9375rem', fontWeight: '700', color: '#dc2626' }}>৳{exp.amount}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ==================== BANK TRANSFERS TAB ==================== */}
+      {activeTab === 'bank-transfers' && (
+        <div className="fade-in">
+          {/* Bank Accounts Display */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1.25rem' }}>
+            <div className="card" style={{ padding: '1rem', border: '1.5px solid #bfdbfe', background: '#eff6ff' }}>
+              <div style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: '700', textTransform: 'uppercase' }}>
+                ইসলামী ব্যাংক বাংলাদেশ পিএলসি
+              </div>
+              <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', margin: '0.25rem 0' }}>
+                ২০৫০-১২২০-০১০০-৭৮৬
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                হিসাবের নাম: আল-জামিয়া আল-ইসলামিয়া নূরহাব<br />
+                শাখা: ধানমন্ডি শাখা, ঢাকা
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: '1rem', border: '1.5px solid #bbf7d0', background: '#f0fdf4' }}>
+              <div style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: '700', textTransform: 'uppercase' }}>
+                সোনালী ব্যাংক পিএলসি
+              </div>
+              <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', margin: '0.25rem 0' }}>
+                ০১০২-৪৫৫২-০৯৮৭-০০১
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                হিসাবের নাম: নূরহাব মাদরাসা জেনারেল ফান্ড<br />
+                শাখা: নিউ মার্কেট শাখা, ঢাকা
+              </div>
+            </div>
+          </div>
+
+          {/* Deposit Slips Verification List */}
+          <div className="card" style={{ overflow: 'hidden' }}>
+            <div style={{ padding: '0.875rem 1rem', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontFamily: 'Hind Siliguri, sans-serif', fontWeight: '700', fontSize: '0.9rem', color: '#0f172a' }}>
+                ব্যাংক ডিপোজিট ও চালান ট্র্যাকিং (সাম্প্রতিক জমা)
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: '700' }}>
+                ৩টি যাচাইকৃত
+              </span>
+            </div>
+
+            {[
+              { bank: 'ইসলামী ব্যাংক', depositor: 'মোঃ কামরুল হাসান (পিতা - রোল ০৩)', amount: '৮,৫০০', slipNo: 'IBBL-SLIP-9841', date: '২১ সেপ্টেম্বর', status: 'যাচাইকৃত' },
+              { bank: 'সোনালী ব্যাংক', depositor: 'হাজী মোঃ শাহ আলম (লিল্লাহ অনুদান)', amount: '২৫,০০০', slipNo: 'SONALI-CHALAN-4421', date: '২০ সেপ্টেম্বর', status: 'যাচাইকৃত' },
+              { bank: 'আল-আরাফাহ ইসলামী ব্যাংক', depositor: 'মোসাঃ শাহানাজ বেগম (পিতা - রোল ১১)', amount: '৪,২০০', slipNo: 'AIBL-99812', date: '১৯ সেপ্টেম্বর', status: 'অপেক্ষমাণ' },
+            ].map((slip, i) => (
+              <div
+                key={i}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.875rem',
+                  padding: '0.875rem 1rem',
+                  borderBottom: i < 2 ? '1px solid #f1f5f9' : 'none',
+                }}
+              >
+                <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '0.625rem', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <IconBuilding />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.875rem', fontWeight: '700', color: '#0f172a' }}>
+                    {slip.depositor}
+                  </div>
+                  <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.75rem', color: '#64748b' }}>
+                    {slip.bank} · চালান নম্বর: {slip.slipNo} · {slip.date}
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.2rem' }}>
+                    ৳{slip.amount}
+                  </div>
+                  <span
+                    style={{
+                      padding: '0.15rem 0.5rem',
+                      borderRadius: '999px',
+                      fontSize: '0.65rem',
+                      fontWeight: '700',
+                      background: slip.status === 'যাচাইকৃত' ? '#f0fdf4' : '#fff7ed',
+                      color: slip.status === 'যাচাইকৃত' ? '#16a34a' : '#ea580c',
+                      border: `1px solid ${slip.status === 'যাচাইকৃত' ? '#bbf7d0' : '#fed7aa'}`,
+                    }}
+                  >
+                    {slip.status}
+                  </span>
+                </div>
               </div>
             ))}
           </div>

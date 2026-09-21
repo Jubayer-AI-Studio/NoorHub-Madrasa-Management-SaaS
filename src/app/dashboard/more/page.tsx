@@ -47,6 +47,33 @@ export default function MoreMenuPage() {
           bg: '#fff7ed',
           border: '#fed7aa',
         },
+        {
+          href: '/dashboard/automation',
+          label: 'ফেসবুক ও মেসেজিং অটোমেশন হাব',
+          desc: 'ফেসবুক পেজ অটো-পোস্টিং, মেসেঞ্জার বট ও হোয়াটসঅ্যাপ এলার্ট',
+          icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1877f2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <polyline points="12 2 12 6" />
+              <path d="M12 18v4" />
+            </svg>
+          ),
+          bg: '#eff6ff',
+          border: '#bfdbfe',
+        },
+        {
+          href: '/dashboard/hifz',
+          label: 'হিফজুল কুরআন দৈনিক ট্র্যাকার',
+          desc: 'সবক, সবকি ও আমুখতা/মনজিল ট্র্যাকিং ও ৩০ পারা অগ্রগতি',
+          icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+            </svg>
+          ),
+          bg: '#f0fdf4',
+          border: '#bbf7d0',
+        },
       ],
     },
     {
@@ -65,6 +92,19 @@ export default function MoreMenuPage() {
           ),
           bg: '#f0fdf4',
           border: '#bbf7d0',
+        },
+        {
+          href: '/dashboard/competition',
+          label: 'সুস্থ প্রতিযোগিতা, রেটিং ও ব্লু-টিক',
+          desc: 'জাতীয় ও জেলা র‍্যাংকিং, স্টার রেটিং ও অর্জিত ব্যাজ গ্যালারি',
+          icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="#2563eb">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#ffffff" />
+              <circle cx="12" cy="12" r="10" stroke="#2563eb" strokeWidth="2" fill="none" />
+            </svg>
+          ),
+          bg: '#eff6ff',
+          border: '#bfdbfe',
         },
         {
           href: '/donor',
