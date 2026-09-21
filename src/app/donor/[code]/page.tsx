@@ -1,0 +1,261 @@
+'use client';
+
+import { use } from 'react';
+import Link from 'next/link';
+
+interface DonorPageProps {
+  params: Promise<{ code: string }>;
+}
+
+export default function DonorImpactDetailsPage({ params }: DonorPageProps) {
+  const resolvedParams = use(params);
+  const code = resolvedParams.code || 'DNR-87654321';
+
+  const donationData = {
+    trackingCode: code,
+    donorName: 'হাজী মোঃ আব্দুল আলী',
+    phone: '01711***789',
+    amount: 15000,
+    donationType: 'যাকাত ও লিল্লাহ ফান্ড',
+    madrasaName: 'আল-জামিয়া আল-ইসলামিয়া পটিয়া',
+    date: '১৮ সেপ্টেম্বর ২০২৬',
+    receiptNo: 'NH-REC-2026-8941',
+    paymentMethod: 'বিকাশ মার্চেন্ট পে',
+    isVerified: true,
+    impactSummary: 'আপনার প্রদত্ত ১৫,০০০ টাকার সম্পূর্ণ হিসাব ও বাস্তব ব্যবহারের বিবরণ:',
+    impactItems: [
+      {
+        title: 'এতিম শিক্ষার্থীদের খোরাকি ও পোশাক',
+        amount: '১০,০০০ ৳',
+        description: 'হিফজ বিভাগের ৫ জন এতিম শিক্ষার্থীর ১ মাসের খাবার ও নতুন পোশাক ক্রয়ে ব্যয়িত হয়েছে।',
+        percent: 66,
+      },
+      {
+        title: 'দরসি কিতাব ও শিক্ষা সামগ্রী',
+        amount: '৩,৫০০ ৳',
+        description: 'নতুন ভর্তি হওয়া শিক্ষার্থীদের পবিত্র কুরআনুল কারীম ও কিতাব প্রদান করা হয়েছে।',
+        percent: 24,
+      },
+      {
+        title: 'জরুরি চিকিৎসা তহবিল',
+        amount: '১,৫০০ ৳',
+        description: 'আবাসিক ছাত্রদের জরুরি প্রাথমিক চিকিৎসা ফান্ডে জমা রয়েছে।',
+        percent: 10,
+      },
+    ],
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  return (
+    <main
+      style={{
+        minHeight: '100dvh',
+        background: '#f8fafc',
+        padding: '1.5rem 1rem',
+      }}
+    >
+      <div style={{ maxWidth: '38rem', margin: '0 auto' }}>
+        {/* Back Link */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+          <Link
+            href="/donor"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              color: '#64748b',
+              textDecoration: 'none',
+              fontFamily: 'Hind Siliguri, sans-serif',
+              fontSize: '0.85rem',
+              fontWeight: '600',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="15 18 9 12 15 6" />
+            </svg>
+            অন্য রসিদ যাচাই করুন
+          </Link>
+
+          <button
+            onClick={handlePrint}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.45rem 0.85rem',
+              borderRadius: '0.625rem',
+              background: '#ffffff',
+              border: '1.5px solid #cbd5e1',
+              color: '#334155',
+              fontFamily: 'Hind Siliguri, sans-serif',
+              fontWeight: '600',
+              fontSize: '0.8rem',
+              cursor: 'pointer',
+            }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9" />
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+              <rect x="6" y="14" width="12" height="8" />
+            </svg>
+            রসিদ প্রিন্ট / PDF
+          </button>
+        </div>
+
+        {/* Verified Banner */}
+        <div
+          className="card"
+          style={{
+            padding: '1rem 1.25rem',
+            background: 'linear-gradient(135deg, #16a34a, #15803d)',
+            color: '#ffffff',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            border: 'none',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: '2.5rem', height: '2.5rem', borderRadius: '0.625rem', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
+            <div>
+              <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1rem', fontWeight: '700' }}>
+                অনুদানের স্বচ্ছতা নিশ্চিতকৃত
+              </div>
+              <div style={{ fontSize: '0.75rem', opacity: 0.9 }}>
+                অফিসিয়াল ট্র্যাকিং কোড: {donationData.trackingCode}
+              </div>
+            </div>
+          </div>
+          <span style={{ background: '#ffffff', color: '#16a34a', padding: '0.2rem 0.625rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: '700' }}>
+            ১০০% স্বচ্ছ
+          </span>
+        </div>
+
+        {/* Receipt Overview Card */}
+        <div className="card" style={{ padding: '1.5rem', marginBottom: '1.25rem' }}>
+          <div style={{ textAlign: 'center', paddingBottom: '1rem', borderBottom: '1px dashed #e2e8f0', marginBottom: '1.25rem' }}>
+            <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.85rem', color: '#64748b' }}>
+              {donationData.madrasaName}
+            </div>
+            <h1 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.75rem', fontWeight: '800', color: '#16a34a', margin: '0.25rem 0' }}>
+              ৳{donationData.amount.toLocaleString('bn-BD')}
+            </h1>
+            <div style={{ fontSize: '0.8rem', color: '#475569', fontWeight: '600' }}>
+              খাত: {donationData.donationType}
+            </div>
+          </div>
+
+          {/* Key-Value Pairs */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', fontSize: '0.825rem' }}>
+            <div>
+              <div style={{ color: '#94a3b8', fontSize: '0.725rem' }}>দাতার নাম</div>
+              <div style={{ fontWeight: '700', color: '#0f172a' }}>{donationData.donorName}</div>
+            </div>
+            <div>
+              <div style={{ color: '#94a3b8', fontSize: '0.725rem' }}>প্রদানের তারিখ</div>
+              <div style={{ fontWeight: '700', color: '#0f172a' }}>{donationData.date}</div>
+            </div>
+            <div>
+              <div style={{ color: '#94a3b8', fontSize: '0.725rem' }}>রসিদ নম্বর</div>
+              <div style={{ fontWeight: '700', color: '#0f172a' }}>{donationData.receiptNo}</div>
+            </div>
+            <div>
+              <div style={{ color: '#94a3b8', fontSize: '0.725rem' }}>পরিশোধ মাধ্যম</div>
+              <div style={{ fontWeight: '700', color: '#0f172a' }}>{donationData.paymentMethod}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Live Impact Breakdown (ফলব্যাক ও বাস্তব ফলাফল) */}
+        <div className="card" style={{ padding: '1.5rem', marginBottom: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <div style={{ width: '2rem', height: '2rem', borderRadius: '0.5rem', background: '#eff6ff', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="20" x2="18" y2="10" />
+                <line x1="12" y1="20" x2="12" y2="4" />
+                <line x1="6" y1="20" x2="6" y2="14" />
+              </svg>
+            </div>
+            <div>
+              <h2 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1rem', fontWeight: '700', color: '#0f172a' }}>
+                আপনার দানের অর্থ কোথায় ব্যবহার হয়েছে?
+              </h2>
+              <p style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                মাদরাসার দৈনন্দিন স্বচ্ছ রেজিস্টার থেকে স্বয়ংক্রিয় হালনাগাদ
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {donationData.impactItems.map((item, index) => (
+              <div key={index} style={{ background: '#f8fafc', padding: '0.875rem 1rem', borderRadius: '0.75rem', border: '1px solid #f1f5f9' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <span style={{ fontFamily: 'Hind Siliguri, sans-serif', fontWeight: '700', fontSize: '0.875rem', color: '#0f172a' }}>
+                    {item.title}
+                  </span>
+                  <span style={{ fontFamily: 'Hind Siliguri, sans-serif', fontWeight: '800', fontSize: '0.875rem', color: '#16a34a' }}>
+                    {item.amount}
+                  </span>
+                </div>
+                <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.78rem', color: '#64748b', lineHeight: '1.5', marginBottom: '0.5rem' }}>
+                  {item.description}
+                </p>
+                {/* Progress Bar */}
+                <div style={{ height: '0.35rem', background: '#e2e8f0', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${item.percent}%`, background: '#16a34a', borderRadius: '999px' }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Dua & Contact Box */}
+        <div
+          className="card"
+          style={{
+            padding: '1.25rem',
+            textAlign: 'center',
+            background: '#fefce8',
+            border: '1.5px solid #fef08a',
+          }}
+        >
+          <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.9rem', color: '#854d0e', fontWeight: '600', marginBottom: '0.75rem', lineHeight: '1.6' }}>
+            "জাযাকাল্লাহু খাইরান! আল্লাহ তা’আলা আপনার এই দানকে কবুল করুন এবং দুনিয়া ও আখিরাতে উত্তম প্রতিদান দান করুন।"
+          </p>
+          <a
+            href="https://wa.me/8801711000000?text=%E0%A6%86%E0%A6%B8-%E0%A6%B8%E0%A6%BE%E0%A6%B2%E0%A6%BE%E0%A6%AE%E0%A7%81%20%E0%A6%86%E0%A6%B2%E0%A6%BE%E0%A6%87%E0%A6%95%E0%A7%81%E0%A6%AE%E0%A7%A4%20%E0%A6%86%E0%A6%AE%E0%A6%BE%E0%A6%B0%20%E0%A6%A6%E0%A6%BE%E0%A6%A8%E0%A7%87%E0%A6%B0%20%E0%A6%B0%E0%A6%B8%E0%A6%BF%E0%A6%A6%20%E0%A6%AF%E0%A6%BE%E0%A6%9A%E0%A6%BE%E0%A6%87%20%E0%A6%B8%E0%A6%AE%E0%A7%8D%E0%A6%AA%E0%A6%B0%E0%A7%8D%E0%A6%95%E0%A7%87%20%E0%A6%9C%E0%A6%BE%E0%A6%A8%E0%A6%A4%E0%A7%87%20%E0%A6%9A%E0%A6%BE%E0%A6%87%E0%A7%A4"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.625rem',
+              background: '#16a34a',
+              color: '#ffffff',
+              fontFamily: 'Hind Siliguri, sans-serif',
+              fontWeight: '700',
+              fontSize: '0.825rem',
+              textDecoration: 'none',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+            </svg>
+            মাদরাসার সাথে হোয়াটসঅ্যাপে যোগাযোগ করুন
+          </a>
+        </div>
+      </div>
+    </main>
+  );
+}

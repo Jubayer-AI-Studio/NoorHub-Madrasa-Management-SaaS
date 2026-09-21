@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="bn" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>অফলাইন — নূরহাব</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Hind Siliguri', 'Segoe UI', sans-serif;
+      background: #f0fdf4;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      text-align: center;
+    }
+    .icon { font-size: 4rem; margin-bottom: 1rem; }
+    h1 { font-size: 1.5rem; color: #0f172a; margin-bottom: 0.5rem; }
+    p  { color: #64748b; font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.6; }
+    button {
+      background: #16a34a;
+      color: white;
+      border: none;
+      padding: 0.875rem 2rem;
+      border-radius: 0.875rem;
+      font-size: 1rem;
+      font-family: inherit;
+      cursor: pointer;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon">📡</div>
+  <h1>ইন্টারনেট সংযোগ নেই</h1>
+  <p>আপনি এখন অফলাইনে আছেন।<br />ইন্টারনেট চালু হলে পুনরায় প্রবেশ করুন।</p>
+  <button onclick="window.location.reload()">পুনরায় চেষ্টা করুন</button>
+</body>
+</html>
