@@ -63,17 +63,15 @@ export default function MoreMenuPage() {
         },
         {
           href: '/dashboard/automation',
-          label: 'ফেসবুক ও মেসেজিং অটোমেশন হাব',
-          desc: 'ফেসবুক পেজ অটো-পোস্টিং, মেসেঞ্জার বট ও হোয়াটসঅ্যাপ এলার্ট',
+          label: 'হোয়াটসঅ্যাপ ও মেসেঞ্জার অভিভাবক হাব',
+          desc: 'অনুপস্থিতি অ্যালার্ট, পরীক্ষার ফলাফল ও ফি রিমাইন্ডার স্বয়ংক্রিয় নোটিফিকেশন',
           icon: (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1877f2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <polyline points="12 2 12 6" />
-              <path d="M12 18v4" />
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
             </svg>
           ),
-          bg: '#eff6ff',
-          border: '#bfdbfe',
+          bg: '#f0fdf4',
+          border: '#bbf7d0',
         },
         {
           href: '/dashboard/hifz',
