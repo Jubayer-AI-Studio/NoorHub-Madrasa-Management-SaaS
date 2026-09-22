@@ -1,39 +1,24 @@
-const CACHE_NAME = 'noorhub-v1';
-const STATIC_CACHE = 'noorhub-static-v1';
-const DYNAMIC_CACHE = 'noorhub-dynamic-v1';
+const CACHE_NAME = 'noorhub-v3';
+const STATIC_CACHE = 'noorhub-static-v3';
+const DYNAMIC_CACHE = 'noorhub-dynamic-v3';
 
-// Static assets to cache immediately
-const STATIC_ASSETS = [
-  '/',
-  '/manifest.json',
-  '/offline.html',
-];
-
-// Install — cache static assets
+// Install — skip waiting immediately
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
   self.skipWaiting();
 });
 
-// Activate — clean old caches
+// Activate — immediately delete ALL previous caches
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames
-          .filter((name) => name !== STATIC_CACHE && name !== DYNAMIC_CACHE)
-          .map((name) => caches.delete(name))
+        cacheNames.map((name) => caches.delete(name))
       );
-    })
+    }).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch — network first, fallback to cache
+// Fetch — 100% Network First for everything, fallback to cache ONLY when offline
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -41,7 +26,7 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests & chrome extensions
   if (request.method !== 'GET' || url.protocol === 'chrome-extension:') return;
 
-  // API calls — network only (never cache)
+  // API calls — strictly network only
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(request).catch(() => {
@@ -54,20 +39,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Pages — stale-while-revalidate
+  // Network First: Always fetch the latest code from network
   event.respondWith(
-    caches.match(request).then((cachedResponse) => {
-      const fetchPromise = fetch(request).then((networkResponse) => {
-        if (networkResponse.ok) {
+    fetch(request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.ok && request.method === 'GET') {
           const responseClone = networkResponse.clone();
           caches.open(DYNAMIC_CACHE).then((cache) => {
             cache.put(request, responseClone);
           });
         }
         return networkResponse;
-      });
-      return cachedResponse || fetchPromise;
-    })
+      })
+      .catch(() => {
+        return caches.match(request).then((cached) => {
+          if (cached) return cached;
+          if (request.mode === 'navigate') return caches.match('/offline.html');
+          return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
+        });
+      })
   );
 });
 

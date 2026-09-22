@@ -52,6 +52,17 @@ export default function NoorAIPage() {
       setGeminiApiKey(savedKey);
       setTempApiKey(savedKey);
       setAutoSpeak(savedAutoSpeak);
+
+      // Auto-clear legacy caches so user never gets stuck on stale files
+      if ('caches' in window) {
+        caches.keys().then((names) => {
+          names.forEach((name) => {
+            if (name.includes('v1') || name.includes('v2')) {
+              caches.delete(name);
+            }
+          });
+        });
+      }
     }
   }, []);
 
