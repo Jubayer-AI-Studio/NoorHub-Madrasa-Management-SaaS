@@ -305,6 +305,9 @@ export default function PublicExplorerPage() {
     summary: string;
   } | null>(null);
 
+  // Mobile View Tab: 'list' | 'detail'
+  const [mobileExploreTab, setMobileExploreTab] = useState<'list' | 'detail'>('list');
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem('noorhub_explore_institutions');
@@ -594,10 +597,36 @@ export default function PublicExplorerPage() {
           </div>
         </div>
 
-        {/* Two Columns Layout: Left = Institution List, Right = Detailed Profile with Strengths & Curriculum */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 340px) 1fr', gap: '1.25rem', alignItems: 'start' }}>
+        {/* Mobile Tab Switcher for Clean Responsive View */}
+        <div className="flex lg:hidden bg-slate-200/90 p-1 rounded-xl mb-3 text-xs font-bold shadow-xs">
+          <button
+            type="button"
+            onClick={() => setMobileExploreTab('list')}
+            className={`flex-1 py-2 rounded-lg text-center transition-all ${
+              mobileExploreTab === 'list'
+                ? 'bg-white text-emerald-800 shadow-sm font-black'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            📋 প্রতিষ্ঠানের তালিকা ({filteredInstitutions.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileExploreTab('detail')}
+            className={`flex-1 py-2 rounded-lg text-center transition-all ${
+              mobileExploreTab === 'detail'
+                ? 'bg-white text-emerald-800 shadow-sm font-black'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            🔍 বিস্তারিত প্রোফাইল
+          </button>
+        </div>
+
+        {/* Responsive Grid Layout: On Mobile Stacks/Switches, On Desktop Side-by-Side */}
+        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-5 items-start">
           {/* Left Column: Institutions List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <div className={`${mobileExploreTab === 'list' ? 'flex' : 'hidden'} lg:flex flex-col gap-3`}>
             <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b', marginBottom: '0.2rem' }}>
               প্রতিষ্ঠান নির্বাচন করুন ({filteredInstitutions.length}টি পাওয়া গেছে):
             </div>
@@ -607,7 +636,10 @@ export default function PublicExplorerPage() {
               return (
                 <div
                   key={inst.id}
-                  onClick={() => setActiveInstitution(inst)}
+                  onClick={() => {
+                    setActiveInstitution(inst);
+                    setMobileExploreTab('detail');
+                  }}
                   className="card"
                   style={{
                     padding: '1rem',
@@ -674,7 +706,16 @@ export default function PublicExplorerPage() {
 
           {/* Right Column: Active Institution Details (Strengths & Curriculum) */}
           {activeInstitution && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div className={`${mobileExploreTab === 'detail' ? 'flex' : 'hidden'} lg:flex flex-col gap-5`}>
+              <div className="lg:hidden">
+                <button
+                  type="button"
+                  onClick={() => setMobileExploreTab('list')}
+                  className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1 hover:bg-emerald-100 mb-1"
+                >
+                  ← অন্য প্রতিষ্ঠান বেছে নিন (তালিকায় ফিরুন)
+                </button>
+              </div>
               {/* Institution Profile Header Card */}
               <div
                 className="card"

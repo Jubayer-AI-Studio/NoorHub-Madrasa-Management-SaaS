@@ -35,6 +35,8 @@ import {
   ListFilter,
 } from 'lucide-react';
 
+import BangladeshVectorMap from '@/components/map/BangladeshVectorMap';
+
 // Dynamically load the Leaflet GIS Map with SSR disabled
 const OfficialGISMap = dynamic(() => import('@/components/map/OfficialGISMap'), {
   ssr: false,
@@ -351,25 +353,41 @@ export default function BangladeshMapPage() {
               </div>
             </div>
 
-            {/* Real GIS Leaflet Map Component */}
-            <div className="relative rounded-2xl overflow-hidden shadow-md border border-slate-300 bg-slate-900">
-              <OfficialGISMap
+            {/* Standalone Pure Bangladesh Map (No World Tiles, 100% Bangladesh Geography) */}
+            {!isSatellite ? (
+              <BangladeshVectorMap
                 currentLevel={currentLevel}
                 divisions={BANGLADESH_DIVISIONS}
                 selectedDivision={selectedDivision}
                 selectedDistrict={selectedDistrict}
                 selectedUpazila={selectedUpazila}
-                madrasas={activeMadrasas}
                 selectedMadrasa={selectedMadrasa}
                 onSelectDivision={handleSelectDivision}
                 onSelectDistrict={handleSelectDistrict}
                 onSelectUpazila={handleSelectUpazila}
                 onSelectMadrasa={(m) => setSelectedMadrasa(m)}
-                isSatellite={isSatellite}
-                onToggleSatellite={() => setIsSatellite(!isSatellite)}
                 onResetView={handleResetToBangladesh}
               />
-            </div>
+            ) : (
+              <div className="relative rounded-2xl overflow-hidden shadow-md border border-slate-300 bg-slate-900">
+                <OfficialGISMap
+                  currentLevel={currentLevel}
+                  divisions={BANGLADESH_DIVISIONS}
+                  selectedDivision={selectedDivision}
+                  selectedDistrict={selectedDistrict}
+                  selectedUpazila={selectedUpazila}
+                  madrasas={activeMadrasas}
+                  selectedMadrasa={selectedMadrasa}
+                  onSelectDivision={handleSelectDivision}
+                  onSelectDistrict={handleSelectDistrict}
+                  onSelectUpazila={handleSelectUpazila}
+                  onSelectMadrasa={(m) => setSelectedMadrasa(m)}
+                  isSatellite={true}
+                  onToggleSatellite={() => setIsSatellite(false)}
+                  onResetView={handleResetToBangladesh}
+                />
+              </div>
+            )}
 
             {/* Floating Slide-Up Institution or Upazila Card on Selection */}
             {selectedMadrasa && (
