@@ -107,6 +107,19 @@ export default function MoreMenuPage() {
       title: 'জাতীয় মানচিত্র ও স্বচ্ছ অনুদান',
       items: [
         {
+          href: '/explore',
+          label: 'উন্মুক্ত প্রতিষ্ঠান ও কারিকুলাম পরিদর্শন',
+          desc: 'কোথায় কী পড়ানো হয় ও প্রতিষ্ঠানের ভালো দিকগুলোর ডিরেক্টরি',
+          icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          ),
+          bg: '#eff6ff',
+          border: '#bfdbfe',
+        },
+        {
           href: '/dashboard/map',
           label: 'জাতীয় ও আন্তর্জাতিক মানচিত্র',
           desc: 'বাংলাদেশ, ৮ বিভাগ, ৬৪ জেলা ও উপজেলার মাদরাসা ডিরেক্টরি',

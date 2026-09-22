@@ -171,8 +171,54 @@ export default function HomePage() {
           ))}
         </div>
 
-        {/* Divider */}
-        <div className="divider" />
+        {/* Public Visitor Explorer Link */}
+        <Link
+          href="/explore"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.85rem',
+            padding: '1rem',
+            borderRadius: '0.875rem',
+            background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+            color: '#1e40af',
+            fontFamily: 'Hind Siliguri, sans-serif',
+            textDecoration: 'none',
+            border: '1.5px solid #bfdbfe',
+            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.1)',
+            marginBottom: '0.75rem',
+          }}
+        >
+          <div
+            style={{
+              width: '2.5rem',
+              height: '2.5rem',
+              borderRadius: '0.625rem',
+              background: '#2563eb',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: '800', fontSize: '0.95rem', color: '#1e3a8a' }}>
+              উন্মুক্ত পরিদর্শন (লগইন ছাড়া)
+            </div>
+            <div style={{ fontSize: '0.775rem', color: '#3b82f6', lineHeight: '1.3' }}>
+              কোথায় কী পড়ানো হচ্ছে, তাদের সিলেবাস ও ভালো দিকগুলো দেখুন
+            </div>
+          </div>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5">
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </Link>
 
         {/* Map Link */}
         <Link
