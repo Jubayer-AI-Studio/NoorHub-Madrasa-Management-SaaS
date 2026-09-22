@@ -506,3 +506,45 @@ h1, h2, h3, h4, h5, h6 {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
+
+/* ============================================
+   LEAFLET GIS MAP — MOBILE & DESKTOP STYLES
+   ============================================ */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  font-family: 'Hind Siliguri', 'Inter', -apple-system, sans-serif !important;
+  background-color: #0f172a !important;
+  z-index: 1 !important;
+}
+
+.noorhub-gis-map {
+  height: 60vh;
+  min-height: 380px;
+  max-height: 620px;
+  width: 100%;
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+@media (min-width: 1024px) {
+  .noorhub-gis-map {
+    height: 580px;
+  }
+}
+
+/* Custom interactive map badges */
+.map-division-badge, .map-district-badge, .map-upazila-badge {
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.map-division-badge:hover, .map-district-badge:hover, .map-upazila-badge:hover {
+  transform: scale(1.08);
+}
+.map-division-badge:active, .map-district-badge:active, .map-upazila-badge:active {
+  transform: scale(0.96);
+}
+

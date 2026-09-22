@@ -1,31 +1,49 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import type { Map as LeafletMap, LayerGroup } from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { OfficialMadrasa, BANGLADESH_CENTER, BANGLADESH_DEFAULT_ZOOM } from '@/lib/geo-data';
-import { Layers, Maximize2, Minimize2, Navigation, RotateCcw, ExternalLink, MessageCircle, Phone, Award } from 'lucide-react';
+import {
+  Division,
+  District,
+  Upazila,
+  OfficialMadrasa,
+  BANGLADESH_CENTER,
+  BANGLADESH_DEFAULT_ZOOM,
+} from '@/lib/geo-data';
+import { Layers, Maximize2, Minimize2, Navigation, RotateCcw } from 'lucide-react';
 
 interface OfficialGISMapProps {
+  currentLevel: 'bangladesh' | 'division' | 'district' | 'upazila';
+  divisions: Division[];
+  selectedDivision: Division | null;
+  selectedDistrict: District | null;
+  selectedUpazila: Upazila | null;
   madrasas: OfficialMadrasa[];
   selectedMadrasa: OfficialMadrasa | null;
+  onSelectDivision: (divId: string) => void;
+  onSelectDistrict: (distId: string) => void;
+  onSelectUpazila: (upId: string) => void;
   onSelectMadrasa: (m: OfficialMadrasa) => void;
-  centerLat?: number;
-  centerLng?: number;
-  zoomLevel?: number;
   isSatellite?: boolean;
   onToggleSatellite?: () => void;
+  onResetView?: () => void;
 }
 
 export default function OfficialGISMap({
+  currentLevel,
+  divisions,
+  selectedDivision,
+  selectedDistrict,
+  selectedUpazila,
   madrasas,
   selectedMadrasa,
+  onSelectDivision,
+  onSelectDistrict,
+  onSelectUpazila,
   onSelectMadrasa,
-  centerLat,
-  centerLng,
-  zoomLevel,
   isSatellite = false,
   onToggleSatellite,
+  onResetView,
 }: OfficialGISMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
@@ -53,12 +71,12 @@ export default function OfficialGISMap({
         maxZoom: 18,
       });
 
-      // Add Attribution cleanly in corner
-      L.control.attribution({ position: 'bottomright', prefix: false })
-        .addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> contributors | নূরহাব GIS')
+      L.control
+        .attribution({ position: 'bottomright', prefix: false })
+        .addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a> | নূরহাব GIS')
         .addTo(map);
 
-      // Tile Layer (Standard CartoDB / OSM)
+      // Primary High-Contrast Street Tile Layer
       const streetTiles = L.tileLayer(
         'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
         {
@@ -66,7 +84,6 @@ export default function OfficialGISMap({
           maxZoom: 19,
         }
       );
-
       streetTiles.addTo(map);
       tileLayerRef.current = streetTiles;
 
@@ -75,12 +92,26 @@ export default function OfficialGISMap({
 
       mapInstanceRef.current = map;
       setMapLoaded(true);
+
+      // Invalidate size on mobile load
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 200);
+      setTimeout(() => {
+        map.invalidateSize();
+      }, 800);
     }
 
     init();
 
+    const handleResize = () => {
+      mapInstanceRef.current?.invalidateSize();
+    };
+    window.addEventListener('resize', handleResize);
+
     return () => {
       isCancelled = true;
+      window.removeEventListener('resize', handleResize);
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
@@ -107,7 +138,6 @@ export default function OfficialGISMap({
           { maxZoom: 18 }
         ).addTo(map);
       } else {
-        // High-contrast clean GIS map with full Bangladesh division/district/upazila labels
         tileLayerRef.current = L.tileLayer(
           'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
           { subdomains: 'abcd', maxZoom: 19 }
@@ -116,22 +146,29 @@ export default function OfficialGISMap({
     });
   }, [isSatellite, mapLoaded]);
 
-  // Handle Camera flyTo when center or zoom changes
+  // Handle camera flyTo based on current hierarchical level
   useEffect(() => {
     if (!mapLoaded || !mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
 
-    const targetLat = centerLat ?? BANGLADESH_CENTER[0];
-    const targetLng = centerLng ?? BANGLADESH_CENTER[1];
-    const targetZoom = zoomLevel ?? BANGLADESH_DEFAULT_ZOOM;
+    if (selectedMadrasa) {
+      map.flyTo([selectedMadrasa.lat, selectedMadrasa.lng], 15, { duration: 1.2 });
+    } else if (selectedUpazila) {
+      map.flyTo([selectedUpazila.lat, selectedUpazila.lng], selectedUpazila.zoom || 13, { duration: 1.2 });
+    } else if (selectedDistrict) {
+      map.flyTo([selectedDistrict.lat, selectedDistrict.lng], selectedDistrict.zoom || 12, { duration: 1.2 });
+    } else if (selectedDivision) {
+      map.flyTo([selectedDivision.lat, selectedDivision.lng], selectedDivision.zoom || 9.5, { duration: 1.2 });
+    } else {
+      map.flyTo(BANGLADESH_CENTER, BANGLADESH_DEFAULT_ZOOM, { duration: 1.0 });
+    }
 
-    map.flyTo([targetLat, targetLng], targetZoom, {
-      duration: 1.2,
-      easeLinearity: 0.25,
-    });
-  }, [centerLat, centerLng, zoomLevel, mapLoaded]);
+    setTimeout(() => {
+      map.invalidateSize();
+    }, 400);
+  }, [currentLevel, selectedDivision, selectedDistrict, selectedUpazila, selectedMadrasa, mapLoaded]);
 
-  // Render Markers
+  // Render clickable markers and badges depending on current level
   useEffect(() => {
     if (!mapLoaded || !mapInstanceRef.current || !markersGroupRef.current) return;
 
@@ -141,122 +178,284 @@ export default function OfficialGISMap({
 
       markersGroup.clearLayers();
 
-      madrasas.forEach((m) => {
-        const isSelected = selectedMadrasa?.id === m.id;
-
-        // Custom HTML radar divIcon
-        const iconColor = m.type === 'qawmi' ? '#059669' : m.type === 'hifz' ? '#d97706' : '#2563eb';
-        const pulseColor = m.type === 'qawmi' ? 'rgba(16, 185, 129, 0.4)' : m.type === 'hifz' ? 'rgba(245, 158, 11, 0.4)' : 'rgba(59, 130, 246, 0.4)';
-        
-        const html = `
-          <div style="position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-            <!-- Radar Pulse -->
-            <div style="
-              position: absolute;
-              width: ${isSelected ? '46px' : '34px'};
-              height: ${isSelected ? '46px' : '34px'};
-              border-radius: 50%;
-              background: ${pulseColor};
-              animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
-            "></div>
-            <!-- Center Pin Core -->
-            <div style="
-              position: relative;
-              width: ${isSelected ? '28px' : '20px'};
-              height: ${isSelected ? '28px' : '20px'};
-              background: ${iconColor};
-              border: 3px solid #ffffff;
-              border-radius: 50%;
-              box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+      // LEVEL 1: ALL BANGLADESH VIEW -> Render Division Clickable Badges on the Map
+      if (currentLevel === 'bangladesh') {
+        divisions.forEach((div) => {
+          const html = `
+            <div class="map-division-badge" style="
               display: flex;
+              flex-direction: column;
               align-items: center;
-              justify-content: center;
-              color: white;
-              font-size: 10px;
-              font-weight: bold;
-              transition: all 0.2s ease;
+              cursor: pointer;
+              transform: translate(-50%, -50%);
             ">
-              ${isSelected ? '★' : '•'}
+              <div style="
+                background: linear-gradient(135deg, #059669 0%, #047857 100%);
+                color: #ffffff;
+                padding: 6px 12px;
+                border-radius: 9999px;
+                box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+                border: 2px solid #ffffff;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-weight: 800;
+                font-size: 12px;
+                white-space: nowrap;
+              ">
+                <span>🏛️ ${div.nameBn} বিভাগ</span>
+                <span style="background: rgba(255,255,255,0.25); padding: 1px 6px; border-radius: 8px; font-size: 11px;">
+                  ${div.districts.length} জেলা
+                </span>
+              </div>
+              <div style="
+                margin-top: 3px;
+                background: rgba(15, 23, 42, 0.9);
+                color: #facc15;
+                font-size: 10px;
+                font-weight: 700;
+                padding: 1px 8px;
+                border-radius: 6px;
+                border: 1px solid rgba(255,255,255,0.15);
+              ">
+                ★ ${div.rating} • ${div.passRate}% পাস
+              </div>
             </div>
-            <!-- Floating Label -->
-            <div style="
-              position: absolute;
-              top: 24px;
-              background: rgba(15, 23, 42, 0.92);
-              color: #f8fafc;
-              padding: 2px 8px;
-              border-radius: 6px;
-              font-size: 11px;
-              font-weight: 600;
-              white-space: nowrap;
-              border: 1px solid rgba(255,255,255,0.15);
-              box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-              pointer-events: none;
-              text-align: center;
-            ">
-              ${m.upazila} • ${m.name.length > 18 ? m.name.slice(0, 16) + '...' : m.name}
-            </div>
-          </div>
-        `;
+          `;
 
-        const customIcon = L.divIcon({
-          html,
-          className: 'custom-leaflet-pin',
-          iconSize: [30, 30],
-          iconAnchor: [15, 15],
+          const icon = L.divIcon({
+            html,
+            className: 'noorhub-div-icon',
+            iconSize: [0, 0],
+          });
+
+          const marker = L.marker([div.lat, div.lng], { icon });
+          marker.on('click', () => {
+            onSelectDivision(div.id);
+          });
+          markersGroup.addLayer(marker);
+        });
+      }
+
+      // LEVEL 2: DIVISION VIEW -> Render District Clickable Badges on the Map
+      else if (currentLevel === 'division' && selectedDivision) {
+        selectedDivision.districts.forEach((dist) => {
+          const html = `
+            <div class="map-district-badge" style="
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              cursor: pointer;
+              transform: translate(-50%, -50%);
+            ">
+              <div style="
+                background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+                color: #ffffff;
+                padding: 5px 11px;
+                border-radius: 9999px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                border: 2px solid #ffffff;
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                font-weight: 800;
+                font-size: 12px;
+                white-space: nowrap;
+              ">
+                <span>📍 ${dist.nameBn}</span>
+                <span style="background: rgba(255,255,255,0.25); padding: 1px 5px; border-radius: 6px; font-size: 10px;">
+                  ${dist.upazilas.length} উপজেলা
+                </span>
+              </div>
+              <div style="
+                margin-top: 2px;
+                background: rgba(15, 23, 42, 0.9);
+                color: #38bdf8;
+                font-size: 10px;
+                font-weight: 700;
+                padding: 1px 6px;
+                border-radius: 6px;
+                border: 1px solid rgba(255,255,255,0.15);
+              ">
+                ★ ${dist.rating} • ${dist.totalMadrasas}টি মাদরাসা
+              </div>
+            </div>
+          `;
+
+          const icon = L.divIcon({
+            html,
+            className: 'noorhub-dist-icon',
+            iconSize: [0, 0],
+          });
+
+          const marker = L.marker([dist.lat, dist.lng], { icon });
+          marker.on('click', () => {
+            onSelectDistrict(dist.id);
+          });
+          markersGroup.addLayer(marker);
+        });
+      }
+
+      // LEVEL 3 & 4: DISTRICT OR UPAZILA VIEW -> Render Upazilas & Madrasas
+      else if (selectedDistrict) {
+        // Render Upazila Badges on Map
+        selectedDistrict.upazilas.forEach((up) => {
+          const isSelectedUp = selectedUpazila?.id === up.id;
+          const html = `
+            <div class="map-upazila-badge" style="
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              cursor: pointer;
+              transform: translate(-50%, -50%);
+            ">
+              <div style="
+                background: ${isSelectedUp ? '#d97706' : '#10b981'};
+                color: #ffffff;
+                padding: 4px 10px;
+                border-radius: 9999px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+                border: 2px solid #ffffff;
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                font-weight: 800;
+                font-size: 11px;
+                white-space: nowrap;
+              ">
+                <span>🕌 ${up.nameBn}</span>
+                <span style="background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 6px; font-size: 10px;">
+                  ★ ${up.rating}
+                </span>
+              </div>
+              <div style="
+                margin-top: 2px;
+                background: rgba(15, 23, 42, 0.9);
+                color: #ffffff;
+                font-size: 9px;
+                font-weight: 600;
+                padding: 1px 6px;
+                border-radius: 6px;
+              ">
+                পাস: ${up.passRate}% • ${up.madrasasCount}টি মাদরাসা
+              </div>
+            </div>
+          `;
+
+          const icon = L.divIcon({
+            html,
+            className: 'noorhub-up-icon',
+            iconSize: [0, 0],
+          });
+
+          const marker = L.marker([up.lat, up.lng], { icon });
+          marker.on('click', () => {
+            onSelectUpazila(up.id);
+          });
+          markersGroup.addLayer(marker);
         });
 
-        const marker = L.marker([m.lat, m.lng], { icon: customIcon });
+        // Also render specific Madrasa Radar Pins
+        madrasas.forEach((m) => {
+          const isSelected = selectedMadrasa?.id === m.id;
+          const iconColor = m.type === 'qawmi' ? '#059669' : m.type === 'hifz' ? '#d97706' : '#2563eb';
+          const pulseColor = m.type === 'qawmi' ? 'rgba(16, 185, 129, 0.45)' : m.type === 'hifz' ? 'rgba(245, 158, 11, 0.45)' : 'rgba(59, 130, 246, 0.45)';
 
-        // Rich Popup Content
-        const popupContent = `
-          <div style="font-family: inherit; font-size: 13px; line-height: 1.5; color: #1e293b; min-width: 220px; padding: 4px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
-              <span style="font-size: 11px; font-weight: 700; background: ${m.type === 'qawmi' ? '#ecfdf5' : m.type === 'hifz' ? '#fffbeb' : '#eff6ff'}; color: ${iconColor}; padding: 2px 8px; border-radius: 9999px;">
-                ${m.typeLabel}
-              </span>
-              <span style="font-size: 11px; font-weight: 700; color: #f59e0b;">★ ${m.rating}</span>
+          const html = `
+            <div style="position: relative; display: flex; align-items: center; justify-content: center; cursor: pointer; transform: translate(-50%, -50%);">
+              <div style="
+                position: absolute;
+                width: ${isSelected ? '44px' : '32px'};
+                height: ${isSelected ? '44px' : '32px'};
+                border-radius: 50%;
+                background: ${pulseColor};
+                animation: ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+              "></div>
+              <div style="
+                position: relative;
+                width: ${isSelected ? '26px' : '18px'};
+                height: ${isSelected ? '26px' : '18px'};
+                background: ${iconColor};
+                border: 3px solid #ffffff;
+                border-radius: 50%;
+                box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+                font-size: 10px;
+                font-weight: bold;
+              ">
+                ${isSelected ? '★' : '•'}
+              </div>
             </div>
-            <h4 style="font-size: 14px; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">${m.name}</h4>
-            <p style="font-size: 12px; color: #64748b; margin: 0 0 8px 0;">📍 ${m.upazila}, ${m.district} (স্থাপিত: ${m.established})</p>
-            
-            <div style="display: flex; justify-content: space-between; background: #f8fafc; padding: 6px 10px; border-radius: 6px; margin-bottom: 10px; font-size: 12px;">
-              <div>শিক্ষার্থী: <strong>${m.students} জন</strong></div>
-              <div>পাসের হার: <strong style="color: #059669;">${m.passRate}%</strong></div>
+          `;
+
+          const customIcon = L.divIcon({
+            html,
+            className: 'custom-leaflet-pin',
+            iconSize: [0, 0],
+          });
+
+          const marker = L.marker([m.lat, m.lng], { icon: customIcon });
+
+          const popupContent = `
+            <div style="font-family: inherit; font-size: 13px; line-height: 1.5; color: #1e293b; min-width: 220px; padding: 4px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
+                <span style="font-size: 11px; font-weight: 700; background: #ecfdf5; color: ${iconColor}; padding: 2px 8px; border-radius: 9999px;">
+                  ${m.typeLabel}
+                </span>
+                <span style="font-size: 11px; font-weight: 700; color: #f59e0b;">★ ${m.rating}</span>
+              </div>
+              <h4 style="font-size: 14px; font-weight: 800; margin: 0 0 4px 0; color: #0f172a;">${m.name}</h4>
+              <p style="font-size: 12px; color: #64748b; margin: 0 0 8px 0;">📍 ${m.upazila}, ${m.district}</p>
+              
+              <div style="display: flex; justify-content: space-between; background: #f8fafc; padding: 6px 10px; border-radius: 6px; margin-bottom: 10px; font-size: 12px;">
+                <div>শিক্ষার্থী: <strong>${m.students} জন</strong></div>
+                <div>পাসের হার: <strong style="color: #059669;">${m.passRate}%</strong></div>
+              </div>
+
+              <div style="display: flex; gap: 6px;">
+                <a href="https://wa.me/${m.whatsapp}?text=${encodeURIComponent('আসসালামু আলাইকুম, আমি নূরহাব প্ল্যাটফর্ম থেকে ' + m.name + ' সম্পর্কে বিস্তারিত তথ্য ও ভর্তির বিষয়ে জানতে যোগাযোগ করছি।')}" target="_blank" style="flex: 1; text-align: center; background: #16a34a; color: white; padding: 6px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none;">
+                  হোয়াটসঅ্যাপ
+                </a>
+                <a href="tel:${m.phone}" style="flex: 1; text-align: center; background: #0f172a; color: white; padding: 6px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none;">
+                  কল করুন
+                </a>
+              </div>
             </div>
+          `;
 
-            <div style="display: flex; gap: 6px;">
-              <a href="https://wa.me/${m.whatsapp}?text=${encodeURIComponent('আসসালামু আলাইকুম, আমি নূরহাব (NoorHub) থেকে ' + m.name + ' সম্পর্কে বিস্তারিত তথ্য ও ভর্তির বিষয়ে জানতে যোগাযোগ করছি।')}" target="_blank" style="flex: 1; text-align: center; background: #16a34a; color: white; padding: 6px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                হোয়াটসঅ্যাপ
-              </a>
-              <a href="tel:${m.phone}" style="flex: 1; text-align: center; background: #0f172a; color: white; padding: 6px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 4px;">
-                কল করুন
-              </a>
-            </div>
-          </div>
-        `;
+          marker.bindPopup(popupContent, { maxWidth: 280, closeButton: false });
+          marker.on('click', () => {
+            onSelectMadrasa(m);
+          });
+          markersGroup.addLayer(marker);
 
-        marker.bindPopup(popupContent, { maxWidth: 280, closeButton: false });
-
-        marker.on('click', () => {
-          onSelectMadrasa(m);
+          if (isSelected) {
+            marker.openPopup();
+          }
         });
-
-        markersGroup.addLayer(marker);
-
-        if (isSelected) {
-          marker.openPopup();
-        }
-      });
+      }
     });
-  }, [madrasas, selectedMadrasa, mapLoaded, onSelectMadrasa]);
+  }, [
+    currentLevel,
+    divisions,
+    selectedDivision,
+    selectedDistrict,
+    selectedUpazila,
+    madrasas,
+    selectedMadrasa,
+    mapLoaded,
+    onSelectDivision,
+    onSelectDistrict,
+    onSelectUpazila,
+    onSelectMadrasa,
+  ]);
 
-  // Map Controls
+  // Controls
   const handleZoomIn = () => mapInstanceRef.current?.zoomIn();
   const handleZoomOut = () => mapInstanceRef.current?.zoomOut();
-  const handleReset = () => {
-    mapInstanceRef.current?.flyTo(BANGLADESH_CENTER, BANGLADESH_DEFAULT_ZOOM, { duration: 1 });
-  };
 
   const toggleFullscreen = () => {
     setIsFullscreen((prev) => !prev);
@@ -266,23 +465,41 @@ export default function OfficialGISMap({
   };
 
   return (
-    <div className={`relative w-full overflow-hidden transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 h-screen w-screen bg-slate-950' : 'h-[520px] rounded-2xl border border-slate-700/60 shadow-xl'}`}>
+    <div
+      className={`relative w-full overflow-hidden transition-all duration-300 ${
+        isFullscreen
+          ? 'fixed inset-0 z-50 h-screen w-screen bg-slate-950'
+          : 'noorhub-gis-map border border-slate-700/80 shadow-2xl'
+      }`}
+    >
       {/* Map Canvas */}
       <div ref={mapContainerRef} className="h-full w-full bg-slate-900" />
 
-      {/* Floating Header Badges */}
-      <div className="pointer-events-none absolute top-3 left-3 z-[1000] flex flex-wrap items-center gap-2">
+      {/* Top Left Level Indicator Badge */}
+      <div className="pointer-events-none absolute top-3 left-3 z-[1000] flex flex-col gap-1.5">
         <div className="pointer-events-auto flex items-center gap-2 rounded-xl bg-slate-900/90 px-3.5 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-md border border-slate-700/60">
           <span className="relative flex h-2.5 w-2.5">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
           </span>
-          <span>{isSatellite ? '🛰️ অফিশিয়াল স্যাটেলাইট ভিউ (Esri)' : '🗺️ অফিশিয়াল জিআইএস ম্যাপ (OpenStreetMap)'}</span>
+          <span>
+            {currentLevel === 'bangladesh' && '🇧🇩 সমগ্র বাংলাদেশ (বিভাগে ট্যাপ করে ঢুকুন)'}
+            {currentLevel === 'division' && `🏛️ ${selectedDivision?.nameBn} বিভাগ (জেলায় ট্যাপ করুন)`}
+            {currentLevel === 'district' && `📍 ${selectedDistrict?.nameBn} জেলা (উপজেলায় ট্যাপ করুন)`}
+            {currentLevel === 'upazila' && `🕌 ${selectedUpazila?.nameBn} উপজেলা`}
+          </span>
         </div>
 
-        <div className="pointer-events-auto rounded-xl bg-slate-900/85 px-3 py-1.5 text-xs font-bold text-emerald-400 shadow-lg backdrop-blur-md border border-slate-700/60">
-          সক্রিয় হাব: {madrasas.length}টি
-        </div>
+        {currentLevel !== 'bangladesh' && onResetView && (
+          <button
+            type="button"
+            onClick={onResetView}
+            className="pointer-events-auto w-fit rounded-lg bg-emerald-600/90 px-2.5 py-1 text-[11px] font-bold text-white shadow-md hover:bg-emerald-700 border border-emerald-400/50 flex items-center gap-1 transition-all"
+          >
+            <RotateCcw className="h-3 w-3" />
+            সমগ্র বাংলাদেশে ফিরুন
+          </button>
+        )}
       </div>
 
       {/* Right Map Action Controls */}
@@ -311,16 +528,6 @@ export default function OfficialGISMap({
           className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/90 text-slate-200 shadow-lg backdrop-blur-md border border-slate-700/80 hover:bg-slate-800"
         >
           {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-        </button>
-
-        {/* Reset View */}
-        <button
-          type="button"
-          onClick={handleReset}
-          title="সমগ্র বাংলাদেশ ভিউতে রিসেট করুন"
-          className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900/90 text-slate-200 shadow-lg backdrop-blur-md border border-slate-700/80 hover:bg-slate-800"
-        >
-          <RotateCcw className="h-4 w-4" />
         </button>
 
         {/* Zoom In & Out */}
