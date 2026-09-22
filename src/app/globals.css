@@ -519,19 +519,29 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .noorhub-gis-map {
-  height: 60vh;
-  min-height: 380px;
-  max-height: 620px;
+  height: 46vh;
+  min-height: 320px;
+  max-height: 520px;
   width: 100%;
   position: relative;
   border-radius: 1rem;
   overflow: hidden;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .noorhub-gis-map {
-    height: 580px;
+    height: 560px;
+    max-height: 620px;
   }
+}
+
+/* Hide scrollbar for clean horizontal mobile swipe */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 /* Custom interactive map badges */
