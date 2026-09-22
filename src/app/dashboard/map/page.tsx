@@ -1,915 +1,784 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { BANGLADESH_DIVISIONS } from '@/lib/geo-data';
+import {
+  BANGLADESH_DIVISIONS,
+  OFFICIAL_MADRASAS,
+  OfficialMadrasa,
+  BANGLADESH_CENTER,
+  BANGLADESH_DEFAULT_ZOOM,
+} from '@/lib/geo-data';
+import {
+  MapPin,
+  Compass,
+  Search,
+  CheckCircle,
+  Phone,
+  MessageCircle,
+  Award,
+  Layers,
+  Sparkles,
+  ArrowRight,
+  ExternalLink,
+  ChevronRight,
+  Navigation,
+  BookOpen,
+  Filter,
+  Eye,
+  RotateCcw,
+} from 'lucide-react';
 
-interface MapMadrasa {
-  id: string;
-  name: string;
-  type: 'qawmi' | 'alia' | 'hifz';
-  typeLabel: string;
-  students: number;
-  passRate: number;
-  rating: number;
-  isVerified: boolean;
-  divisionId: string;
-  district: string;
-  upazila: string;
-  principal: string;
-  phone: string;
-  whatsapp: string;
-  mapX: number;
-  mapY: number;
-}
+// Dynamically load the Leaflet GIS Map with SSR disabled
+const OfficialGISMap = dynamic(() => import('@/components/map/OfficialGISMap'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[520px] w-full flex-col items-center justify-center rounded-2xl border border-slate-700/80 bg-slate-900 text-slate-400 shadow-xl">
+      <div className="h-10 w-10 animate-spin rounded-full border-3 border-emerald-500 border-t-transparent mb-3" />
+      <span className="text-sm font-semibold text-slate-300">অফিশিয়াল জিআইএস মানচিত্র লোড হচ্ছে...</span>
+      <span className="text-xs text-slate-500 mt-1">ওপেনস্ট্রিটম্যাপ ও স্যাটেলাইট টাইলস সংযোগ হচ্ছে</span>
+    </div>
+  ),
+});
 
-const MAP_MADRASAS: MapMadrasa[] = [
-  {
-    id: 'm-1',
-    name: 'আল-জামিয়া আল-ইসলামিয়া পটিয়া',
-    type: 'qawmi',
-    typeLabel: 'কওমি কিতাব ও ইফতা',
-    students: 2450,
-    passRate: 98.5,
-    rating: 4.9,
-    isVerified: true,
-    divisionId: 'chittagong',
-    district: 'চট্টগ্রাম',
-    upazila: 'পটিয়া',
-    principal: 'আল্লামা ওবায়দুল্লাহ হামযাহ হাফিজাহুল্লাহ',
-    phone: '01819334455',
-    whatsapp: '8801819334455',
-    mapX: 435,
-    mapY: 490,
-  },
-  {
-    id: 'm-2',
-    name: 'দারুল উলুম মুঈনুল ইসলাম হাটহাজারী',
-    type: 'qawmi',
-    typeLabel: 'সর্বোচ্চ দাওরায়ে হাদিস ও ইফতা',
-    students: 6500,
-    passRate: 99.1,
-    rating: 5.0,
-    isVerified: true,
-    divisionId: 'chittagong',
-    district: 'চট্টগ্রাম',
-    upazila: 'হাটহাজারী',
-    principal: 'আল্লামা খলিল আহমদ কাসেমী',
-    phone: '01819112233',
-    whatsapp: '8801819112233',
-    mapX: 425,
-    mapY: 460,
-  },
-  {
-    id: 'm-3',
-    name: 'জামিয়া শরইয়্যাহ মালিবাগ ঢাকা',
-    type: 'qawmi',
-    typeLabel: 'কওমি কিতাব ও উচ্চতর ফিকহ',
-    students: 1850,
-    passRate: 97.8,
-    rating: 4.8,
-    isVerified: true,
-    divisionId: 'dhaka',
-    district: 'ঢাকা',
-    upazila: 'মালিবাগ',
-    principal: 'মাওলানা আশরাফ আলী',
-    phone: '01711223344',
-    whatsapp: '8801711223344',
-    mapX: 295,
-    mapY: 340,
-  },
-  {
-    id: 'm-4',
-    name: 'দারুল উলুম দেওবন্দ মডেল হিফজ একাডেমি',
-    type: 'hifz',
-    typeLabel: 'আন্তর্জাতিক হিফজুল কুরআন',
-    students: 380,
-    passRate: 99.5,
-    rating: 4.9,
-    isVerified: true,
-    divisionId: 'dhaka',
-    district: 'ঢাকা',
-    upazila: 'উত্তরা',
-    principal: 'হাফেজ ক্বারী আবু ইউসুফ',
-    phone: '01911998877',
-    whatsapp: '8801911998877',
-    mapX: 285,
-    mapY: 315,
-  },
-  {
-    id: 'm-5',
-    name: 'তা’মীরুল মিল্লাত কামিল মাদরাসা',
-    type: 'alia',
-    typeLabel: 'কামিল অনার্স ও মাস্টার্স',
-    students: 3200,
-    passRate: 97.2,
-    rating: 4.8,
-    isVerified: true,
-    divisionId: 'dhaka',
-    district: 'ঢাকা',
-    upazila: 'মিরপুর',
-    principal: 'ড. মাওলানা আবু সাঈদ নোমান',
-    phone: '01833445566',
-    whatsapp: '8801833445566',
-    mapX: 275,
-    mapY: 330,
-  },
-  {
-    id: 'm-6',
-    name: 'সিলেট জামিয়া মাদানিয়া আঙ্গুরা মুহাম্মদপুর',
-    type: 'qawmi',
-    typeLabel: 'কওমি কিতাব ও দাওরায়ে হাদিস',
-    students: 1420,
-    passRate: 98.0,
-    rating: 4.8,
-    isVerified: true,
-    divisionId: 'sylhet',
-    district: 'সিলেট',
-    upazila: 'বিয়ানীবাজার',
-    principal: 'মাওলানা জিয়াউদ্দিন',
-    phone: '01712556677',
-    whatsapp: '8801712556677',
-    mapX: 450,
-    mapY: 220,
-  },
-  {
-    id: 'm-7',
-    name: 'রাজশাহী দারুল উলুম কওমি জামিয়া',
-    type: 'qawmi',
-    typeLabel: 'কওমি কিতাব বিভাগ',
-    students: 950,
-    passRate: 96.5,
-    rating: 4.7,
-    isVerified: true,
-    divisionId: 'rajshahi',
-    district: 'রাজশাহী',
-    upazila: 'বোয়ালিয়া',
-    principal: 'মুফতী উমর ফারুক',
-    phone: '01713445566',
-    whatsapp: '8801713445566',
-    mapX: 115,
-    mapY: 260,
-  },
-  {
-    id: 'm-8',
-    name: 'খুলনা দারুল কুরআন সিদ্দিকিয়া কামিল মাদরাসা',
-    type: 'alia',
-    typeLabel: 'আলিয়া শিক্ষা বোর্ড ও ফাজিল',
-    students: 1650,
-    passRate: 96.8,
-    rating: 4.7,
-    isVerified: true,
-    divisionId: 'khulna',
-    district: 'খুলনা',
-    upazila: 'খুলনা সদর',
-    principal: 'মাওলানা মোস্তাক আহমেদ',
-    phone: '01815667788',
-    whatsapp: '8801815667788',
-    mapX: 180,
-    mapY: 440,
-  },
-  {
-    id: 'm-9',
-    name: 'জামিয়া ইসলামিয়া মাহমুদীয়া বরিশাল',
-    type: 'qawmi',
-    typeLabel: 'কওমি ও হিফজ বিভাগ',
-    students: 880,
-    passRate: 97.0,
-    rating: 4.8,
-    isVerified: true,
-    divisionId: 'barisal',
-    district: 'বরিশাল',
-    upazila: 'কোতোয়ালি',
-    principal: 'মাওলানা মাহবুবুর রহমান',
-    phone: '01714889900',
-    whatsapp: '8801714889900',
-    mapX: 295,
-    mapY: 485,
-  },
-  {
-    id: 'm-10',
-    name: 'রংপুর কারামতিয়া কামিল মাদরাসা',
-    type: 'alia',
-    typeLabel: 'ঐতিহাসিক আলিয়া ক্যাম্পাস',
-    students: 1720,
-    passRate: 96.2,
-    rating: 4.7,
-    isVerified: true,
-    divisionId: 'rangpur',
-    district: 'রংপুর',
-    upazila: 'রংপুর সদর',
-    principal: 'মাওলানা শফিকুল বারী',
-    phone: '01716112233',
-    whatsapp: '8801716112233',
-    mapX: 165,
-    mapY: 115,
-  },
-  {
-    id: 'm-11',
-    name: 'ময়মনসিংহ জামিয়া ইসলামিয়া সেহড়া',
-    type: 'qawmi',
-    typeLabel: 'কওমি কিতাব ও ফতোয়া',
-    students: 1150,
-    passRate: 97.4,
-    rating: 4.8,
-    isVerified: true,
-    divisionId: 'mymensingh',
-    district: 'ময়মনসিংহ',
-    upazila: 'সদর',
-    principal: 'মাওলানা তাজুল ইসলাম',
-    phone: '01715778899',
-    whatsapp: '8801715778899',
-    mapX: 290,
-    mapY: 195,
-  },
-];
-
-// Division SVG Territory Paths
-const DIVISION_SHAPES: Array<{
-  id: string;
-  nameBn: string;
-  nameEn: string;
-  path: string;
-  labelX: number;
-  labelY: number;
-  institutionsCount: number;
-}> = [
-  {
-    id: 'rangpur',
-    nameBn: 'রংপুর',
-    nameEn: 'Rangpur',
-    path: 'M 175 35 C 205 50, 230 85, 230 135 C 230 165, 200 190, 175 195 C 145 198, 120 185, 110 155 C 100 120, 115 65, 145 40 Z',
-    labelX: 165,
-    labelY: 115,
-    institutionsCount: 64,
-  },
-  {
-    id: 'rajshahi',
-    nameBn: 'রাজশাহী',
-    nameEn: 'Rajshahi',
-    path: 'M 120 175 C 145 185, 185 195, 205 235 C 215 275, 195 315, 165 335 C 135 355, 80 345, 50 315 C 30 280, 45 235, 75 195 Z',
-    labelX: 115,
-    labelY: 260,
-    institutionsCount: 154,
-  },
-  {
-    id: 'mymensingh',
-    nameBn: 'ময়মনসিংহ',
-    nameEn: 'Mymensingh',
-    path: 'M 235 145 C 275 135, 325 145, 355 165 C 370 195, 360 235, 330 255 C 290 275, 250 260, 225 245 C 215 205, 215 165, 235 145 Z',
-    labelX: 290,
-    labelY: 200,
-    institutionsCount: 58,
-  },
-  {
-    id: 'sylhet',
-    nameBn: 'সিলেট',
-    nameEn: 'Sylhet',
-    path: 'M 365 165 C 405 135, 465 140, 515 170 C 545 205, 535 250, 495 280 C 445 305, 395 285, 375 255 C 355 225, 350 185, 365 165 Z',
-    labelX: 445,
-    labelY: 215,
-    institutionsCount: 98,
-  },
-  {
-    id: 'dhaka',
-    nameBn: 'ঢাকা',
-    nameEn: 'Dhaka',
-    path: 'M 220 255 C 260 255, 330 260, 365 270 C 390 305, 385 355, 365 395 C 325 425, 265 420, 225 395 C 190 365, 200 305, 220 255 Z',
-    labelX: 285,
-    labelY: 335,
-    institutionsCount: 432,
-  },
-  {
-    id: 'khulna',
-    nameBn: 'খুলনা',
-    nameEn: 'Khulna',
-    path: 'M 165 345 C 205 355, 235 385, 245 435 C 255 485, 235 540, 195 565 C 155 580, 115 555, 100 505 C 90 445, 115 375, 165 345 Z',
-    labelX: 175,
-    labelY: 450,
-    institutionsCount: 112,
-  },
-  {
-    id: 'barisal',
-    nameBn: 'বরিশাল',
-    nameEn: 'Barisal',
-    path: 'M 250 425 C 290 415, 340 430, 355 465 C 365 515, 345 560, 310 580 C 275 590, 245 565, 240 515 C 235 470, 240 440, 250 425 Z',
-    labelX: 295,
-    labelY: 490,
-    institutionsCount: 76,
-  },
-  {
-    id: 'chittagong',
-    nameBn: 'চট্টগ্রাম',
-    nameEn: 'Chattogram',
-    path: 'M 370 300 C 415 295, 465 325, 490 375 C 515 435, 545 515, 535 595 C 525 655, 485 695, 450 665 C 425 625, 415 545, 405 485 C 390 425, 355 375, 360 335 Z',
-    labelX: 445,
-    labelY: 460,
-    institutionsCount: 328,
-  },
-];
-
-export default function MapDirectoryPage() {
+export default function BangladeshMapPage() {
   const [selectedDivisionId, setSelectedDivisionId] = useState<string>('all');
-  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedUpazilaId, setSelectedUpazilaId] = useState<string>('all');
+  const [selectedMadrasa, setSelectedMadrasa] = useState<OfficialMadrasa | null>(
+    OFFICIAL_MADRASAS[0] || null
+  );
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeMadrasa, setActiveMadrasa] = useState<MapMadrasa | null>(MAP_MADRASAS[0]);
-  const [hoveredDivision, setHoveredDivision] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<'all' | 'qawmi' | 'alia' | 'hifz'>('all');
+  const [isSatellite, setIsSatellite] = useState(false);
+  const [viewMode, setViewMode] = useState<'split' | 'map-only' | 'list-only'>('split');
 
-  // Map view & theme controls
-  const [viewMode, setViewMode] = useState<'split' | 'mapOnly' | 'listOnly'>('split');
-  const [mapTheme, setMapTheme] = useState<'satellite' | 'emerald'>('satellite');
-  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  // Selected Division Object
+  const currentDivision = useMemo(() => {
+    if (selectedDivisionId === 'all') return null;
+    return BANGLADESH_DIVISIONS.find((d) => d.id === selectedDivisionId) || null;
+  }, [selectedDivisionId]);
 
-  // Filter logic
-  const filteredMadrasas = MAP_MADRASAS.filter((m) => {
-    const matchesDiv = selectedDivisionId === 'all' || m.divisionId === selectedDivisionId;
-    const matchesType = selectedType === 'all' || m.type === selectedType;
-    const matchesSearch =
-      m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.district.includes(searchQuery) ||
-      m.upazila.includes(searchQuery);
-    return matchesDiv && matchesType && matchesSearch;
-  });
+  // All Upazilas for the currently selected division
+  const availableUpazilas = useMemo(() => {
+    if (!currentDivision) return [];
+    const upazilaList: { id: string; nameBn: string; districtNameBn: string; lat: number; lng: number; zoom?: number }[] = [];
+    currentDivision.districts.forEach((dist) => {
+      dist.upazilas.forEach((up) => {
+        upazilaList.push({
+          id: up.id,
+          nameBn: up.nameBn,
+          districtNameBn: dist.nameBn,
+          lat: up.lat,
+          lng: up.lng,
+          zoom: up.zoom || 14,
+        });
+      });
+    });
+    return upazilaList;
+  }, [currentDivision]);
 
-  const activeDivisionObj = DIVISION_SHAPES.find((d) => d.id === selectedDivisionId);
+  // Selected Upazila Object
+  const currentUpazila = useMemo(() => {
+    if (selectedUpazilaId === 'all' || !availableUpazilas.length) return null;
+    return availableUpazilas.find((u) => u.id === selectedUpazilaId) || null;
+  }, [selectedUpazilaId, availableUpazilas]);
+
+  // Filtered Madrasas
+  const filteredMadrasas = useMemo(() => {
+    return OFFICIAL_MADRASAS.filter((m) => {
+      // Division filter
+      if (selectedDivisionId !== 'all' && m.divisionId !== selectedDivisionId) return false;
+      // Upazila filter
+      if (selectedUpazilaId !== 'all' && currentUpazila) {
+        // Match upazila name in Bengali or English
+        const upazilaNameBn = currentUpazila.nameBn.replace(/\s*\(.*\)/, '').trim();
+        if (!m.upazila.includes(upazilaNameBn) && !upazilaNameBn.includes(m.upazila)) {
+          return false;
+        }
+      }
+      // Type filter
+      if (typeFilter !== 'all' && m.type !== typeFilter) return false;
+      // Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchesName = m.name.toLowerCase().includes(q);
+        const matchesDistrict = m.district.toLowerCase().includes(q);
+        const matchesUpazila = m.upazila.toLowerCase().includes(q);
+        const matchesPrincipal = m.principal.toLowerCase().includes(q);
+        if (!matchesName && !matchesDistrict && !matchesUpazila && !matchesPrincipal) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [selectedDivisionId, selectedUpazilaId, currentUpazila, typeFilter, searchQuery]);
+
+  // Determine Map Camera Center and Zoom
+  const { centerLat, centerLng, zoomLevel } = useMemo(() => {
+    if (selectedMadrasa) {
+      return {
+        centerLat: selectedMadrasa.lat,
+        centerLng: selectedMadrasa.lng,
+        zoomLevel: 15,
+      };
+    }
+    if (currentUpazila) {
+      return {
+        centerLat: currentUpazila.lat,
+        centerLng: currentUpazila.lng,
+        zoomLevel: currentUpazila.zoom || 14,
+      };
+    }
+    if (currentDivision) {
+      return {
+        centerLat: currentDivision.lat,
+        centerLng: currentDivision.lng,
+        zoomLevel: currentDivision.zoom || 10,
+      };
+    }
+    return {
+      centerLat: BANGLADESH_CENTER[0],
+      centerLng: BANGLADESH_CENTER[1],
+      zoomLevel: BANGLADESH_DEFAULT_ZOOM,
+    };
+  }, [selectedMadrasa, currentUpazila, currentDivision]);
+
+  // Handlers for hierarchical navigation
+  const handleSelectDivision = (divId: string) => {
+    setSelectedDivisionId(divId);
+    setSelectedUpazilaId('all');
+    setSelectedMadrasa(null);
+
+    // Auto-select first madrasa in this division if available
+    if (divId !== 'all') {
+      const firstInDiv = OFFICIAL_MADRASAS.find((m) => m.divisionId === divId);
+      if (firstInDiv) setSelectedMadrasa(firstInDiv);
+    }
+  };
+
+  const handleSelectUpazila = (upazilaId: string) => {
+    setSelectedUpazilaId(upazilaId);
+    if (upazilaId === 'all') {
+      setSelectedMadrasa(null);
+      return;
+    }
+
+    const upazila = availableUpazilas.find((u) => u.id === upazilaId);
+    if (upazila) {
+      const upName = upazila.nameBn.replace(/\s*\(.*\)/, '').trim();
+      const match = OFFICIAL_MADRASAS.find(
+        (m) =>
+          m.divisionId === selectedDivisionId &&
+          (m.upazila.includes(upName) || upName.includes(m.upazila))
+      );
+      if (match) setSelectedMadrasa(match);
+      else setSelectedMadrasa(null);
+    }
+  };
+
+  const handleResetToBangladesh = () => {
+    setSelectedDivisionId('all');
+    setSelectedUpazilaId('all');
+    setSelectedMadrasa(OFFICIAL_MADRASAS[0] || null);
+    setSearchQuery('');
+    setTypeFilter('all');
+  };
 
   return (
-    <div style={{ padding: '1rem', maxWidth: '72rem', margin: '0 auto', fontFamily: 'Hind Siliguri, sans-serif' }}>
+    <div className="min-h-screen bg-slate-50/60 pb-16">
       {/* Top Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-            <Link href="/dashboard" style={{ color: '#64748b', textDecoration: 'none', fontSize: '0.825rem' }}>
-              ড্যাশবোর্ড
-            </Link>
-            <span style={{ color: '#cbd5e1' }}>/</span>
-            <span style={{ color: '#16a34a', fontWeight: '700', fontSize: '0.825rem' }}>ভৌগোলিক মানচিত্র</span>
-          </div>
-          <h1 style={{ fontSize: '1.45rem', fontWeight: '800', color: '#0f172a' }}>
-            বাংলাদেশের ভৌগোলিক ইসলামিক শিক্ষা মানচিত্র (Interactive GIS Map)
-          </h1>
-          <p style={{ fontSize: '0.825rem', color: '#64748b' }}>
-            মানচিত্রে বিভাগের ভৌগোলিক সীমানা, সক্রিয় শিক্ষা হাবের জিপিএস পিন এবং শীর্ষ প্রতিষ্ঠানের পারফরম্যান্স পরখ করুন
-          </p>
-        </div>
+      <div className="bg-white border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 mb-1">
+                <Link href="/dashboard" className="hover:text-emerald-700 transition-colors">
+                  ড্যাশবোর্ড
+                </Link>
+                <span>/</span>
+                <span className="text-emerald-700">ভৌগোলিক মানচিত্র</span>
+              </div>
+              <h1 className="text-xl md:text-2xl font-black text-slate-900 flex items-center gap-2.5">
+                <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-md shadow-emerald-600/30">
+                  <Compass className="h-5 w-5" />
+                </span>
+                বাংলাদেশের অফিশিয়াল ইসলামিক শিক্ষা মানচিত্র (Official GIS Map)
+              </h1>
+              <p className="text-xs md:text-sm text-slate-600 mt-1">
+                ওপেনস্ট্রিটম্যাপ ও স্যাটেলাইট টাইলস দ্বারা চালিত বাস্তব ভৌগোলিক মানচিত্র — বিভাগ থেকে উপজেলা পর্যায়ে অনুসন্ধান করুন
+              </p>
+            </div>
 
-        {/* View Switcher Controls */}
-        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ background: '#f1f5f9', padding: '0.25rem', borderRadius: '8px', display: 'flex', gap: '0.25rem' }}>
-            <button
-              onClick={() => setViewMode('split')}
-              style={{
-                background: viewMode === 'split' ? '#ffffff' : 'transparent',
-                border: 'none',
-                padding: '0.35rem 0.75rem',
-                borderRadius: '6px',
-                fontSize: '0.775rem',
-                fontWeight: '700',
-                color: viewMode === 'split' ? '#0f172a' : '#64748b',
-                cursor: 'pointer',
-                boxShadow: viewMode === 'split' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              }}
-            >
-              দ্বৈত ভিউ (ম্যাপ + তালিকা)
-            </button>
-            <button
-              onClick={() => setViewMode('mapOnly')}
-              style={{
-                background: viewMode === 'mapOnly' ? '#ffffff' : 'transparent',
-                border: 'none',
-                padding: '0.35rem 0.75rem',
-                borderRadius: '6px',
-                fontSize: '0.775rem',
-                fontWeight: '700',
-                color: viewMode === 'mapOnly' ? '#0f172a' : '#64748b',
-                cursor: 'pointer',
-                boxShadow: viewMode === 'mapOnly' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              }}
-            >
-              শুধু মানচিত্র ভিউ
-            </button>
-            <button
-              onClick={() => setViewMode('listOnly')}
-              style={{
-                background: viewMode === 'listOnly' ? '#ffffff' : 'transparent',
-                border: 'none',
-                padding: '0.35rem 0.75rem',
-                borderRadius: '6px',
-                fontSize: '0.775rem',
-                fontWeight: '700',
-                color: viewMode === 'listOnly' ? '#0f172a' : '#64748b',
-                cursor: 'pointer',
-                boxShadow: viewMode === 'listOnly' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
-              }}
-            >
-              শুধু তালিকা ভিউ
-            </button>
+            {/* View Mode Switches */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('split')}
+                  className={`rounded-lg px-3 py-1.5 transition-all ${
+                    viewMode === 'split'
+                      ? 'bg-white text-emerald-800 shadow-sm font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  দ্বৈত ভিউ (ম্যাপ + বিস্তারিত)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('map-only')}
+                  className={`rounded-lg px-3 py-1.5 transition-all ${
+                    viewMode === 'map-only'
+                      ? 'bg-white text-emerald-800 shadow-sm font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  শুধু মানচিত্র
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list-only')}
+                  className={`rounded-lg px-3 py-1.5 transition-all ${
+                    viewMode === 'list-only'
+                      ? 'bg-white text-emerald-800 shadow-sm font-bold'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  শুধু তালিকা
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsSatellite(!isSatellite)}
+                className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all shadow-sm ${
+                  isSatellite
+                    ? 'bg-emerald-600 text-white shadow-emerald-600/30 ring-2 ring-emerald-400/50'
+                    : 'bg-slate-900 text-slate-200 hover:bg-slate-800'
+                }`}
+              >
+                <Layers className="h-3.5 w-3.5" />
+                {isSatellite ? '🛰️ স্যাটেলাইট মোড সক্রিয়' : '🗺️ স্যাটেলাইট মোড'}
+              </button>
+            </div>
           </div>
 
-          <button
-            onClick={() => setMapTheme(mapTheme === 'satellite' ? 'emerald' : 'satellite')}
-            style={{
-              background: '#ffffff',
-              border: '1.5px solid #cbd5e1',
-              padding: '0.35rem 0.75rem',
-              borderRadius: '8px',
-              fontSize: '0.775rem',
-              fontWeight: '700',
-              cursor: 'pointer',
-              color: '#334155',
-            }}
-          >
-            {mapTheme === 'satellite' ? '🛰️ স্যাটেলাইট মোড' : '🗺️ এমারেল্ড ভৌগোলিক মোড'}
-          </button>
+          {/* Breadcrumb Hierarchy */}
+          <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 flex-wrap">
+              <button
+                type="button"
+                onClick={handleResetToBangladesh}
+                className="flex items-center gap-1 text-emerald-700 hover:underline font-bold"
+              >
+                🇧🇩 সমগ্র বাংলাদেশ
+              </button>
+              {currentDivision && (
+                <>
+                  <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDivision(currentDivision.id)}
+                    className="text-emerald-800 hover:underline font-bold"
+                  >
+                    🏛️ {currentDivision.nameBn} বিভাগ
+                  </button>
+                </>
+              )}
+              {currentUpazila && (
+                <>
+                  <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
+                  <span className="text-slate-900 font-extrabold bg-emerald-50 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-200">
+                    📍 {currentUpazila.nameBn}
+                  </span>
+                </>
+              )}
+            </div>
+
+            {(selectedDivisionId !== 'all' || selectedUpazilaId !== 'all') && (
+              <button
+                type="button"
+                onClick={handleResetToBangladesh}
+                className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-emerald-700 transition-colors"
+              >
+                <RotateCcw className="h-3 w-3" />
+                সমগ্র বাংলাদেশে রিসেট করুন
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Top Filter Bar */}
-      <div
-        className="card"
-        style={{
-          padding: '0.85rem 1rem',
-          background: '#ffffff',
-          marginBottom: '1rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '0.75rem',
-        }}
-      >
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.8rem', fontWeight: '700', color: '#475569' }}>বিভাগ নির্বাচন:</span>
-          <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+      {/* Navigation Filter Tabs Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4 space-y-3">
+        {/* LEVEL 1: Division Selector */}
+        <div className="bg-white rounded-2xl p-3.5 shadow-sm border border-slate-200/80">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-bold text-slate-500 flex items-center gap-1.5">
+              <span>🏛️ ১. বিভাগ নির্বাচন করুন:</span>
+            </span>
+            <span className="text-[11px] text-slate-400 font-medium">৮টি বিভাগ</span>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             <button
-              onClick={() => setSelectedDivisionId('all')}
-              style={{
-                padding: '0.25rem 0.65rem',
-                borderRadius: '6px',
-                fontSize: '0.75rem',
-                fontWeight: '700',
-                cursor: 'pointer',
-                border: selectedDivisionId === 'all' ? '1.5px solid #16a34a' : '1px solid #e2e8f0',
-                background: selectedDivisionId === 'all' ? '#f0fdf4' : '#ffffff',
-                color: selectedDivisionId === 'all' ? '#16a34a' : '#475569',
-              }}
+              type="button"
+              onClick={() => handleSelectDivision('all')}
+              className={`shrink-0 rounded-xl px-3.5 py-2 text-xs font-bold transition-all ${
+                selectedDivisionId === 'all'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-400/40'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200/70 border border-slate-200'
+              }`}
             >
               সমগ্র বাংলাদেশ (৮টি বিভাগ)
             </button>
-            {DIVISION_SHAPES.map((d) => (
-              <button
-                key={d.id}
-                onClick={() => setSelectedDivisionId(d.id)}
-                style={{
-                  padding: '0.25rem 0.55rem',
-                  borderRadius: '6px',
-                  fontSize: '0.75rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                  border: selectedDivisionId === d.id ? '1.5px solid #16a34a' : '1px solid #e2e8f0',
-                  background: selectedDivisionId === d.id ? '#f0fdf4' : '#ffffff',
-                  color: selectedDivisionId === d.id ? '#16a34a' : '#475569',
-                }}
-              >
-                {d.nameBn}
-              </button>
-            ))}
+
+            {BANGLADESH_DIVISIONS.map((div) => {
+              const count = OFFICIAL_MADRASAS.filter((m) => m.divisionId === div.id).length;
+              const isSelected = selectedDivisionId === div.id;
+              return (
+                <button
+                  key={div.id}
+                  type="button"
+                  onClick={() => handleSelectDivision(div.id)}
+                  className={`shrink-0 rounded-xl px-3.5 py-2 text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    isSelected
+                      ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/25 ring-2 ring-emerald-400/40'
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200/70 border border-slate-200'
+                  }`}
+                >
+                  <span>{div.nameBn}</span>
+                  <span
+                    className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                      isSelected ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-600'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
-        {/* Search */}
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <input
-            type="text"
-            placeholder="মাদরাসা বা জেলা খুঁজুন..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              padding: '0.35rem 0.75rem',
-              borderRadius: '6px',
-              border: '1px solid #cbd5e1',
-              fontSize: '0.8rem',
-              width: '13rem',
-            }}
-          />
+        {/* LEVEL 2: Upazila Selector (Shows when a Division is selected) */}
+        {currentDivision && availableUpazilas.length > 0 && (
+          <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-white rounded-2xl p-3.5 shadow-sm border border-emerald-200 animate-fadeIn">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-black text-emerald-950 flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 text-emerald-600" />
+                <span>২. {currentDivision.nameBn} বিভাগের উপজেলা ও জোন নির্বাচন করুন (ট্যাপ করলেই সরাসরি জুম হবে):</span>
+              </span>
+              <span className="text-[11px] text-emerald-700 font-bold">
+                {availableUpazilas.length}টি উপজেলা/এলাকা উপলব্ধ
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+              <button
+                type="button"
+                onClick={() => handleSelectUpazila('all')}
+                className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition-all ${
+                  selectedUpazilaId === 'all'
+                    ? 'bg-emerald-700 text-white shadow-sm ring-2 ring-emerald-500/40'
+                    : 'bg-white text-slate-700 hover:bg-slate-100 border border-emerald-200'
+                }`}
+              >
+                📍 {currentDivision.nameBn}র সব উপজেলা
+              </button>
+
+              {availableUpazilas.map((up) => {
+                const isSelected = selectedUpazilaId === up.id;
+                // Count madrasas in this upazila
+                const upCleanName = up.nameBn.replace(/\s*\(.*\)/, '').trim();
+                const count = OFFICIAL_MADRASAS.filter(
+                  (m) =>
+                    m.divisionId === currentDivision.id &&
+                    (m.upazila.includes(upCleanName) || upCleanName.includes(m.upazila))
+                ).length;
+
+                return (
+                  <button
+                    key={up.id}
+                    type="button"
+                    onClick={() => handleSelectUpazila(up.id)}
+                    className={`shrink-0 rounded-xl px-3 py-1.5 text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-emerald-700 text-white shadow-sm ring-2 ring-emerald-500/40'
+                        : 'bg-white text-slate-700 hover:bg-emerald-100/50 border border-emerald-200'
+                    }`}
+                  >
+                    <span>{up.nameBn}</span>
+                    {count > 0 && (
+                      <span
+                        className={`rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
+                          isSelected ? 'bg-white/30 text-white' : 'bg-emerald-100 text-emerald-800'
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Search Bar & Type Filters */}
+        <div className="bg-white rounded-2xl p-3 shadow-sm border border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative w-full sm:w-80">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <input
+              type="text"
+              placeholder="মাদ্রাসা, জেলা বা উপজেলা খুঁজুন..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 text-xs md:text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-slate-50/50 text-slate-800 placeholder-slate-400"
+            />
+          </div>
+
+          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-0.5 no-scrollbar">
+            <span className="text-xs font-bold text-slate-400 shrink-0 mr-1 flex items-center gap-1">
+              <Filter className="h-3 w-3" />
+              ধারা:
+            </span>
+            <button
+              type="button"
+              onClick={() => setTypeFilter('all')}
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${
+                typeFilter === 'all'
+                  ? 'bg-slate-900 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              সব ধারা ({OFFICIAL_MADRASAS.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setTypeFilter('qawmi')}
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${
+                typeFilter === 'qawmi'
+                  ? 'bg-emerald-700 text-white'
+                  : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+              }`}
+            >
+              কওমি কিতাব ও ইফতা
+            </button>
+            <button
+              type="button"
+              onClick={() => setTypeFilter('hifz')}
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${
+                typeFilter === 'hifz'
+                  ? 'bg-amber-700 text-white'
+                  : 'bg-amber-50 text-amber-800 hover:bg-amber-100'
+              }`}
+            >
+              হিফজুল কুরআন
+            </button>
+            <button
+              type="button"
+              onClick={() => setTypeFilter('alia')}
+              className={`rounded-xl px-3 py-1.5 text-xs font-bold transition-all shrink-0 ${
+                typeFilter === 'alia'
+                  ? 'bg-blue-700 text-white'
+                  : 'bg-blue-50 text-blue-800 hover:bg-blue-100'
+              }`}
+            >
+              আলিয়া (কামিল/ফাজিল)
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Main Content Layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: viewMode === 'mapOnly' ? '1fr' : viewMode === 'listOnly' ? '1fr' : '1.35fr 1fr', gap: '1.25rem' }}>
-        {/* Left Column: Interactive Visual Bangladesh SVG Map */}
-        {viewMode !== 'listOnly' && (
-          <div
-            className="card"
-            style={{
-              padding: '1.25rem',
-              background: mapTheme === 'satellite' ? '#090d16' : '#f8fafc',
-              border: mapTheme === 'satellite' ? '1.5px solid #1e293b' : '1.5px solid #cbd5e1',
-              borderRadius: '16px',
-              position: 'relative',
-              overflow: 'hidden',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-            }}
-          >
-            {/* Map Header & Info Overlay */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#22c55e', display: 'inline-block', boxShadow: '0 0 10px #22c55e' }}></span>
-                <span style={{ fontSize: '0.85rem', fontWeight: '800', color: mapTheme === 'satellite' ? '#ffffff' : '#0f172a' }}>
-                  {activeDivisionObj ? `${activeDivisionObj.nameBn} বিভাগীয় ম্যাপ ভিউ` : 'সমগ্র বাংলাদেশ ভৌগোলিক ম্যাপ'}
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
-                <button
-                  onClick={() => setZoomLevel((z) => Math.min(z + 0.15, 1.4))}
-                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: mapTheme === 'satellite' ? '#ffffff' : '#0f172a', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                  title="জুম ইন"
-                >
-                  +
-                </button>
-                <button
-                  onClick={() => setZoomLevel((z) => Math.max(z - 0.15, 0.85))}
-                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: mapTheme === 'satellite' ? '#ffffff' : '#0f172a', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}
-                  title="জুম আউট"
-                >
-                  -
-                </button>
-                <button
-                  onClick={() => { setZoomLevel(1); setSelectedDivisionId('all'); }}
-                  style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: mapTheme === 'satellite' ? '#ffffff' : '#0f172a', padding: '0.2rem 0.5rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem' }}
-                >
-                  রিসেট
-                </button>
-              </div>
+      {/* Main Content Area */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-5">
+        {viewMode === 'list-only' ? (
+          // LIST ONLY VIEW
+          <div className="space-y-4">
+            <div className="text-sm font-bold text-slate-700">
+              পাওয়া গেছে: {filteredMadrasas.length}টি প্রতিষ্ঠান
             </div>
-
-            {/* Map Legend & Compass */}
-            <div style={{ position: 'absolute', bottom: '1.25rem', left: '1.25rem', zIndex: 10, background: mapTheme === 'satellite' ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255, 255, 255, 0.9)', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: mapTheme === 'satellite' ? '#94a3b8' : '#475569', marginBottom: '0.3rem' }}>
-                ম্যাপ সংকেত (Map Legend):
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', fontSize: '0.675rem', color: mapTheme === 'satellite' ? '#e2e8f0' : '#1e293b' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a' }}></span>
-                  কওমি জামিয়া হাব
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#2563eb' }}></span>
-                  আন্তর্জাতিক হিফজ একাডেমি
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#9333ea' }}></span>
-                  আলিয়া কামিল মাদরাসা
-                </div>
-              </div>
-            </div>
-
-            {/* Compass */}
-            <div style={{ position: 'absolute', top: '3.5rem', right: '1.5rem', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <div style={{ width: '28px', height: '28px', borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444', fontWeight: '900', fontSize: '0.75rem', background: 'rgba(0,0,0,0.3)' }}>
-                N
-              </div>
-              <span style={{ fontSize: '0.65rem', color: mapTheme === 'satellite' ? '#94a3b8' : '#64748b' }}>উত্তর</span>
-            </div>
-
-            {/* The SVG Canvas */}
-            <div style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', transform: `scale(${zoomLevel})`, transformOrigin: 'center center', transition: 'transform 0.2s ease' }}>
-              <svg
-                viewBox="0 0 600 700"
-                style={{ width: '100%', maxHeight: '540px', overflow: 'visible' }}
-              >
-                {/* SVG Defs for Gradients & Filters */}
-                <defs>
-                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-                    <feGaussianBlur stdDeviation="6" result="blur" />
-                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                  </filter>
-                  <radialGradient id="radarPing" cx="50%" cy="50%" r="50%">
-                    <stop offset="0%" stopColor="#22c55e" stopOpacity="0.8" />
-                    <stop offset="100%" stopColor="#22c55e" stopOpacity="0" />
-                  </radialGradient>
-                </defs>
-
-                {/* Geographic Grid Lines (Latitudes & Longitudes) */}
-                <g stroke={mapTheme === 'satellite' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'} strokeWidth="1" strokeDasharray="3,3">
-                  <line x1="20" y1="140" x2="580" y2="140" />
-                  <line x1="20" y1="280" x2="580" y2="280" />
-                  <line x1="20" y1="420" x2="580" y2="420" />
-                  <line x1="20" y1="560" x2="580" y2="560" />
-                  <line x1="150" y1="20" x2="150" y2="680" />
-                  <line x1="300" y1="20" x2="300" y2="680" />
-                  <line x1="450" y1="20" x2="450" y2="680" />
-                </g>
-
-                {/* Bay of Bengal Text */}
-                <text
-                  x="280"
-                  y="660"
-                  fill={mapTheme === 'satellite' ? 'rgba(56, 189, 248, 0.3)' : 'rgba(14, 165, 233, 0.4)'}
-                  fontSize="16"
-                  fontWeight="800"
-                  letterSpacing="4"
-                  textAnchor="middle"
-                >
-                  বঙ্গোপসাগর (BAY OF BENGAL)
-                </text>
-
-                {/* 8 DIVISION REGION PATHS */}
-                {DIVISION_SHAPES.map((div) => {
-                  const isSelected = selectedDivisionId === div.id;
-                  const isHovered = hoveredDivision === div.id;
-                  const isDimmed = selectedDivisionId !== 'all' && selectedDivisionId !== div.id;
-
-                  const fillColor = isSelected
-                    ? (mapTheme === 'satellite' ? '#166534' : '#bbf7d0')
-                    : isHovered
-                    ? (mapTheme === 'satellite' ? '#1e3a5f' : '#dbeafe')
-                    : isDimmed
-                    ? (mapTheme === 'satellite' ? '#0f172a' : '#f1f5f9')
-                    : (mapTheme === 'satellite' ? '#132338' : '#e2e8f0');
-
-                  const strokeColor = isSelected
-                    ? '#22c55e'
-                    : isHovered
-                    ? '#38bdf8'
-                    : (mapTheme === 'satellite' ? '#334155' : '#cbd5e1');
-
-                  return (
-                    <g
-                      key={div.id}
-                      onClick={() => setSelectedDivisionId(selectedDivisionId === div.id ? 'all' : div.id)}
-                      onMouseEnter={() => setHoveredDivision(div.id)}
-                      onMouseLeave={() => setHoveredDivision(null)}
-                      style={{ cursor: 'pointer', transition: 'all 0.2s ease' }}
-                    >
-                      <path
-                        d={div.path}
-                        fill={fillColor}
-                        stroke={strokeColor}
-                        strokeWidth={isSelected ? '3' : '1.75'}
-                        filter={isSelected ? 'url(#glow)' : undefined}
-                      />
-
-                      {/* Division Center Label & Count Badge */}
-                      <g transform={`translate(${div.labelX}, ${div.labelY})`}>
-                        <rect
-                          x="-35"
-                          y="-16"
-                          width="70"
-                          height="28"
-                          rx="6"
-                          fill={isSelected ? '#16a34a' : mapTheme === 'satellite' ? 'rgba(15, 23, 42, 0.85)' : 'rgba(255,255,255,0.9)'}
-                          stroke={isSelected ? '#4ade80' : 'rgba(255,255,255,0.2)'}
-                          strokeWidth="1"
-                        />
-                        <text
-                          x="0"
-                          y="-2"
-                          textAnchor="middle"
-                          fill={isSelected ? '#ffffff' : mapTheme === 'satellite' ? '#f8fafc' : '#0f172a'}
-                          fontSize="10"
-                          fontWeight="800"
-                        >
-                          {div.nameBn}
-                        </text>
-                        <text
-                          x="0"
-                          y="9"
-                          textAnchor="middle"
-                          fill={isSelected ? '#dcfce7' : mapTheme === 'satellite' ? '#94a3b8' : '#64748b'}
-                          fontSize="8"
-                          fontWeight="700"
-                        >
-                          {div.institutionsCount} প্রতিষ্ঠান
-                        </text>
-                      </g>
-                    </g>
-                  );
-                })}
-
-                {/* GPS RADAR PIN MARKERS FOR MADRASAS */}
-                {filteredMadrasas.map((madrasa) => {
-                  const isMadrasaActive = activeMadrasa?.id === madrasa.id;
-                  const pinColor = madrasa.type === 'qawmi' ? '#16a34a' : madrasa.type === 'hifz' ? '#2563eb' : '#9333ea';
-
-                  return (
-                    <g
-                      key={madrasa.id}
-                      transform={`translate(${madrasa.mapX}, ${madrasa.mapY})`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveMadrasa(madrasa);
-                      }}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      {/* Animated Radar Pulse Ring */}
-                      <circle cx="0" cy="0" r={isMadrasaActive ? "18" : "12"} fill={pinColor} opacity="0.25">
-                        <animate attributeName="r" values="8;22;8" dur="2.5s" repeatCount="indefinite" />
-                        <animate attributeName="opacity" values="0.4;0.05;0.4" dur="2.5s" repeatCount="indefinite" />
-                      </circle>
-
-                      {/* Solid Pin Dot */}
-                      <circle
-                        cx="0"
-                        cy="0"
-                        r={isMadrasaActive ? "7" : "5"}
-                        fill={pinColor}
-                        stroke="#ffffff"
-                        strokeWidth="2"
-                        filter={isMadrasaActive ? 'url(#glow)' : undefined}
-                      />
-
-                      {/* Pin Callout Marker */}
-                      {isMadrasaActive && (
-                        <g transform="translate(0, -14)">
-                          <polygon points="-4,-6 4,-6 0,-1" fill="#ffffff" />
-                          <rect
-                            x="-50"
-                            y="-24"
-                            width="100"
-                            height="18"
-                            rx="4"
-                            fill="#0f172a"
-                            stroke="#38bdf8"
-                            strokeWidth="1.5"
-                          />
-                          <text
-                            x="0"
-                            y="-12"
-                            textAnchor="middle"
-                            fill="#ffffff"
-                            fontSize="8"
-                            fontWeight="800"
-                          >
-                            {madrasa.name.slice(0, 14)}...
-                          </text>
-                        </g>
-                      )}
-                    </g>
-                  );
-                })}
-              </svg>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredMadrasas.map((m) => (
+                <InstitutionCard
+                  key={m.id}
+                  madrasa={m}
+                  isSelected={selectedMadrasa?.id === m.id}
+                  onSelect={() => {
+                    setSelectedMadrasa(m);
+                    setViewMode('split');
+                  }}
+                />
+              ))}
             </div>
           </div>
-        )}
+        ) : (
+          // SPLIT OR MAP-ONLY VIEW
+          <div className={`grid gap-5 ${viewMode === 'map-only' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-12'}`}>
+            {/* Left/Main Map Column */}
+            <div className={viewMode === 'map-only' ? 'col-span-1' : 'lg:col-span-7 xl:col-span-8'}>
+              <OfficialGISMap
+                madrasas={filteredMadrasas}
+                selectedMadrasa={selectedMadrasa}
+                onSelectMadrasa={(m) => setSelectedMadrasa(m)}
+                centerLat={centerLat}
+                centerLng={centerLng}
+                zoomLevel={zoomLevel}
+                isSatellite={isSatellite}
+                onToggleSatellite={() => setIsSatellite(!isSatellite)}
+              />
 
-        {/* Right Column: Active Pin Inspector Card & Ranked Madrasa List */}
-        {viewMode !== 'mapOnly' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {/* Active Madrasa Pin Inspector Card */}
-            {activeMadrasa && (
-              <div
-                className="card"
-                style={{
-                  padding: '1.25rem',
-                  background: '#ffffff',
-                  borderTop: '4px solid #16a34a',
-                  boxShadow: '0 4px 15px rgba(0,0,0,0.08)',
-                }}
-              >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                  <span
-                    style={{
-                      fontSize: '0.725rem',
-                      fontWeight: '700',
-                      padding: '0.2rem 0.6rem',
-                      borderRadius: '999px',
-                      background: activeMadrasa.type === 'qawmi' ? '#f0fdf4' : activeMadrasa.type === 'hifz' ? '#eff6ff' : '#f5f3ff',
-                      color: activeMadrasa.type === 'qawmi' ? '#16a34a' : activeMadrasa.type === 'hifz' ? '#2563eb' : '#7c3aed',
-                      border: '1px solid #bbf7d0',
-                    }}
-                  >
-                    {activeMadrasa.typeLabel}
+              {/* Quick Info Strip Under Map */}
+              <div className="mt-3 flex items-center justify-between text-xs text-slate-500 bg-white px-4 py-2.5 rounded-xl border border-slate-200">
+                <div className="flex items-center gap-2">
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+                  <span>
+                    প্রদর্শিত প্রতিষ্ঠান: <strong>{filteredMadrasas.length}টি</strong>
                   </span>
-
-                  {activeMadrasa.isVerified && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontSize: '0.7rem', fontWeight: '700', color: '#2563eb', background: '#eff6ff', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                      ✓ অফিশিয়াল ব্লু ভেরিফাইড
-                    </span>
-                  )}
                 </div>
-
-                <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.25rem' }}>
-                  {activeMadrasa.name}
-                </h3>
-                <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.75rem' }}>
-                  {activeMadrasa.upazila}, {activeMadrasa.district} | প্রধান: <strong>{activeMadrasa.principal}</strong>
-                </p>
-
-                {/* Stats Bar */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', background: '#f8fafc', padding: '0.65rem', borderRadius: '8px', textAlign: 'center', marginBottom: '0.85rem' }}>
-                  <div>
-                    <div style={{ fontSize: '0.675rem', color: '#64748b' }}>শিক্ষার্থী</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: '800', color: '#16a34a' }}>{activeMadrasa.students} জন</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.675rem', color: '#64748b' }}>পাসের হার</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: '800', color: '#2563eb' }}>{activeMadrasa.passRate}%</div>
-                  </div>
-                  <div>
-                    <div style={{ fontSize: '0.675rem', color: '#64748b' }}>রেটিং</div>
-                    <div style={{ fontSize: '0.95rem', fontWeight: '800', color: '#ca8a04' }}>{activeMadrasa.rating} ★</div>
-                  </div>
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-emerald-600 inline-block" /> কওমি
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-amber-600 inline-block" /> হিফজ
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="h-2 w-2 rounded-full bg-blue-600 inline-block" /> আলিয়া
+                  </span>
                 </div>
+              </div>
+            </div>
 
-                {/* 1-Tap WhatsApp & Call Action Buttons */}
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <a
-                    href={`https://wa.me/${activeMadrasa.whatsapp}?text=${encodeURIComponent(`আসসালামু আলাইকুম, আমি নূরহাব মানচিত্র ডিরেক্টরি থেকে ${activeMadrasa.name} সম্পর্কে জানতে চাই।`)}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      flex: 1,
-                      background: '#16a34a',
-                      color: '#ffffff',
-                      padding: '0.45rem',
-                      borderRadius: '6px',
-                      fontSize: '0.8rem',
-                      fontWeight: '700',
-                      textDecoration: 'none',
-                      textAlign: 'center',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.35rem',
-                    }}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                    </svg>
-                    হোয়াটসঅ্যাপ ইনকোয়ারি
-                  </a>
+            {/* Right Details Column (Hidden in map-only) */}
+            {viewMode === 'split' && (
+              <div className="lg:col-span-5 xl:col-span-4 space-y-4">
+                {selectedMadrasa ? (
+                  <div className="bg-white rounded-2xl p-5 shadow-sm border border-slate-200 relative overflow-hidden animate-fadeIn">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-emerald-100/50 to-transparent rounded-bl-full pointer-events-none" />
 
-                  <a
-                    href={`tel:${activeMadrasa.phone}`}
-                    style={{
-                      background: '#f1f5f9',
-                      color: '#0f172a',
-                      padding: '0.45rem 0.75rem',
-                      borderRadius: '6px',
-                      fontSize: '0.8rem',
-                      fontWeight: '700',
-                      textDecoration: 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                    }}
-                  >
-                    সরাসরি কল
-                  </a>
+                    {/* Badge row */}
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span
+                        className={`rounded-full px-3 py-1 text-xs font-bold ${
+                          selectedMadrasa.type === 'qawmi'
+                            ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                            : selectedMadrasa.type === 'hifz'
+                            ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                            : 'bg-blue-50 text-blue-800 border border-blue-200'
+                        }`}
+                      >
+                        {selectedMadrasa.typeLabel}
+                      </span>
+                      {selectedMadrasa.isVerified && (
+                        <span className="flex items-center gap-1 text-[11px] font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-200">
+                          <CheckCircle className="h-3 w-3 text-sky-600" />
+                          অফিশিয়াল ব্লু ভেরিফাইড
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Title & Principal */}
+                    <h2 className="text-lg font-black text-slate-900 leading-snug">
+                      {selectedMadrasa.name}
+                    </h2>
+                    <p className="text-xs font-medium text-slate-500 mt-1">
+                      {selectedMadrasa.upazila}, {selectedMadrasa.district} | প্রধান: {selectedMadrasa.principal}
+                    </p>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      📍 {selectedMadrasa.address} (স্থাপিত: {selectedMadrasa.established} খ্রি.)
+                    </p>
+
+                    {/* Key Stats Card */}
+                    <div className="grid grid-cols-3 gap-2 my-4 bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">শিক্ষার্থী</div>
+                        <div className="text-base font-black text-slate-800 mt-0.5">
+                          {selectedMadrasa.students} জন
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">পাসের হার</div>
+                        <div className="text-base font-black text-emerald-600 mt-0.5">
+                          {selectedMadrasa.passRate}%
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">রেটিং</div>
+                        <div className="text-base font-black text-amber-500 mt-0.5">
+                          {selectedMadrasa.rating} ★
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Facilities Tags */}
+                    {selectedMadrasa.facilities && selectedMadrasa.facilities.length > 0 && (
+                      <div className="mb-4">
+                        <div className="text-[11px] font-bold text-slate-400 mb-1.5">ক্যাম্পাস সুবিধা ও বিশেষত্ব:</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {selectedMadrasa.facilities.map((fac, idx) => (
+                            <span
+                              key={idx}
+                              className="rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600"
+                            >
+                              ✓ {fac}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Action Buttons */}
+                    <div className="space-y-2 pt-2 border-t border-slate-100">
+                      <div className="grid grid-cols-2 gap-2">
+                        <a
+                          href={`https://wa.me/${selectedMadrasa.whatsapp}?text=${encodeURIComponent(
+                            `আসসালামু আলাইকুম, আমি নূরহাব (NoorHub) প্ল্যাটফর্ম থেকে ${selectedMadrasa.name} সম্পর্কে বিস্তারিত তথ্য ও ভর্তির বিষয়ে জানতে যোগাযোগ করছি।`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2.5 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700 transition-all text-center"
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                          হোয়াটসঅ্যাপ ইনকোয়ারি
+                        </a>
+                        <a
+                          href={`tel:${selectedMadrasa.phone}`}
+                          className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-800 transition-all text-center"
+                        >
+                          <Phone className="h-4 w-4" />
+                          সরাসরি কল
+                        </a>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <a
+                          href={`https://www.google.com/maps/dir/?api=1&destination=${selectedMadrasa.lat},${selectedMadrasa.lng}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-200 transition-all text-center border border-slate-200"
+                        >
+                          <Navigation className="h-3.5 w-3.5 text-emerald-600" />
+                          গুগল ম্যাপস ডিরেকশন
+                        </a>
+                        <Link
+                          href="/dashboard/syllabus"
+                          className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-200 transition-all text-center border border-slate-200"
+                        >
+                          <BookOpen className="h-3.5 w-3.5 text-slate-600" />
+                          সিলেবাস ও কারিকুলাম
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 text-center text-slate-400">
+                    <MapPin className="h-10 w-10 mx-auto mb-2 text-slate-300" />
+                    <p className="text-sm font-semibold text-slate-600">কোনো প্রতিষ্ঠান নির্বাচন করা হয়নি</p>
+                    <p className="text-xs text-slate-400 mt-1">মানচিত্রের যেকোনো পিনে বা নিচের তালিকায় ক্লিক করুন</p>
+                  </div>
+                )}
+
+                {/* Leaderboard / Top Institutions List */}
+                <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                      <Award className="h-4 w-4 text-amber-500" />
+                      শীর্ষ প্রতিষ্ঠানসমূহ ({filteredMadrasas.length}টি)
+                    </h3>
+                    <span className="text-[11px] text-slate-400">ট্যাপ করলে জুম হবে</span>
+                  </div>
+
+                  <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
+                    {filteredMadrasas.map((m) => {
+                      const isSelected = selectedMadrasa?.id === m.id;
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => setSelectedMadrasa(m)}
+                          className={`w-full text-left p-2.5 rounded-xl border transition-all flex items-center justify-between gap-2 ${
+                            isSelected
+                              ? 'bg-emerald-50/70 border-emerald-400 shadow-sm'
+                              : 'bg-slate-50/60 border-slate-100 hover:bg-slate-100/80'
+                          }`}
+                        >
+                          <div className="min-w-0 flex-1">
+                            <div className="text-xs font-bold text-slate-900 truncate">{m.name}</div>
+                            <div className="text-[11px] text-slate-500 truncate mt-0.5">
+                              {m.typeLabel} • {m.upazila}, {m.district}
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <div className="text-xs font-bold text-emerald-700">{m.passRate}%</div>
+                            <div className="text-[10px] text-amber-600 font-bold">{m.rating} ★</div>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
             )}
-
-            {/* List of Madrasas under current Filter */}
-            <div className="card" style={{ padding: '1rem', background: '#ffffff' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  মানচিত্রের শীর্ষ প্রতিষ্ঠানসমূহ ({filteredMadrasas.length}টি)
-                </h4>
-                <span style={{ fontSize: '0.725rem', color: '#64748b' }}>
-                  (ট্যাপ করলে ম্যাপে জুম হবে)
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '380px', overflowY: 'auto' }}>
-                {filteredMadrasas.map((m) => {
-                  const isSelected = activeMadrasa?.id === m.id;
-                  return (
-                    <div
-                      key={m.id}
-                      onClick={() => setActiveMadrasa(m)}
-                      style={{
-                        padding: '0.65rem 0.85rem',
-                        borderRadius: '8px',
-                        border: isSelected ? '1.5px solid #16a34a' : '1px solid #e2e8f0',
-                        background: isSelected ? '#f0fdf4' : '#ffffff',
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                          <div style={{ fontSize: '0.875rem', fontWeight: '800', color: '#0f172a' }}>
-                            {m.name}
-                          </div>
-                          <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                            {m.typeLabel} | {m.upazila}, {m.district}
-                          </div>
-                        </div>
-
-                        <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#16a34a' }}>
-                          {m.passRate}%
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// Reusable Institution Card for List View
+function InstitutionCard({
+  madrasa,
+  isSelected,
+  onSelect,
+}: {
+  madrasa: OfficialMadrasa;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <div
+      onClick={onSelect}
+      className={`cursor-pointer rounded-2xl p-5 transition-all border ${
+        isSelected
+          ? 'bg-emerald-50/60 border-emerald-400 shadow-md'
+          : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm'
+      }`}
+    >
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <span
+          className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
+            madrasa.type === 'qawmi'
+              ? 'bg-emerald-100 text-emerald-800'
+              : madrasa.type === 'hifz'
+              ? 'bg-amber-100 text-amber-800'
+              : 'bg-blue-100 text-blue-800'
+          }`}
+        >
+          {madrasa.typeLabel}
+        </span>
+        <span className="text-xs font-bold text-amber-500">★ {madrasa.rating}</span>
+      </div>
+
+      <h3 className="text-base font-extrabold text-slate-900 leading-snug">{madrasa.name}</h3>
+      <p className="text-xs text-slate-500 mt-1">
+        📍 {madrasa.upazila}, {madrasa.district} | প্রধান: {madrasa.principal}
+      </p>
+
+      <div className="grid grid-cols-2 gap-2 my-3 p-2 bg-slate-50 rounded-xl text-center text-xs">
+        <div>
+          শিক্ষার্থী: <strong>{madrasa.students} জন</strong>
+        </div>
+        <div>
+          পাসের হার: <strong className="text-emerald-600">{madrasa.passRate}%</strong>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs font-bold text-emerald-700">
+        <span>মানচিত্রে অবস্থান ও জুম দেখুন</span>
+        <ArrowRight className="h-4 w-4" />
       </div>
     </div>
   );
