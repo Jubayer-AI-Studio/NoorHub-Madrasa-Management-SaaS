@@ -21,6 +21,8 @@ export interface ClassItem {
   id: string;
   name: string;
   curriculumType: 'qawmi' | 'alia' | 'general' | 'hifz';
+  section?: string;
+  classTeacher?: string;
   description: string;
 }
 
@@ -29,24 +31,40 @@ const defaultClasses: ClassItem[] = [
     id: 'c-qawmi-mizan',
     name: 'মিজান জামাত (ইবতেদায়ী)',
     curriculumType: 'qawmi',
+    section: 'ক শাখা',
+    classTeacher: 'মাওলানা মাহমুদ হাসান',
     description: 'আরবি ভাষার মৌলিক শব্দতত্ত্ব ও ফার্সি ব্যাকরণের প্রাথমিক জামাত।',
+  },
+  {
+    id: 'c-qawmi-nahbemeer',
+    name: 'নাহবেমীর জামাত',
+    curriculumType: 'qawmi',
+    section: 'ক শাখা',
+    classTeacher: 'মাওলানা আবুল কালাম',
+    description: 'আরবি ব্যাকরণ ও বাক্য গঠনের (ইলমুন নাহু) বুনিয়াদী জামাত।',
   },
   {
     id: 'c-qawmi-dawrah',
     name: 'দাওরায়ে হাদীস (তাকমীল)',
     curriculumType: 'qawmi',
+    section: 'প্রধান জামাত',
+    classTeacher: 'মুফতী আব্দুর রহমান',
     description: 'মাস্টার্স সমমান সর্বোচ্চ হাদিস শাস্ত্রের জামাত।',
   },
   {
     id: 'c-alia-dakhil',
     name: 'দাখিল ১০ম শ্রেণি (মাদরাসা বোর্ড)',
     curriculumType: 'alia',
+    section: 'সাধারণ বিভাগ',
+    classTeacher: 'মাওলানা আতিকুর রহমান',
     description: 'বাংলাদেশ মাদরাসা শিক্ষা বোর্ডের দাখিল সমাপনী পাবলিক পরীক্ষা শ্রেণি।',
   },
   {
     id: 'c-gen-class8',
     name: '৮ম শ্রেণি (জেনারেল স্কুল)',
     curriculumType: 'general',
+    section: 'A শাখা',
+    classTeacher: 'জনাব শফিকুল ইসলাম',
     description: 'জাতীয় শিক্ষাক্রম ও পাঠ্যপুস্তক বোর্ডের (NCTB) নিম্ন-মাধ্যমিক শ্রেণি।',
   },
 ];
@@ -114,11 +132,29 @@ const defaultKitabs: KitabItem[] = [
   },
 ];
 
+// Preset Jamats to quick-load
+const qawmiPresets: Array<{ name: string; desc: string }> = [
+  { name: 'নূরানী ও মক্তব', desc: 'কুরআন শিক্ষা, কায়দা ও আমপারা' },
+  { name: 'নাজেরা বিভাগ', desc: 'পূর্ণ কুরআন মাজিদ বিশুদ্ধ তেলাওয়াত' },
+  { name: 'হিফজুল কুরআন', desc: '১-৩০ পারা হিফজ ও তাজভীদ' },
+  { name: 'মিজান জামাত', desc: 'মিজান, মুন্শাআব, পাঞ্জেগাঞ্জ' },
+  { name: 'নাহবেমীর জামাত', desc: 'নাহবেমীর, মিআতে আমেল, সরফ' },
+  { name: 'হেদায়াতুন্নাহব জামাত', desc: 'হেদায়াতুন্নাহব, ইলমুস সীগাহ' },
+  { name: 'কাফিয়া জামাত', desc: 'কাফিয়া, শরহে তাহজীব, কুদূরী' },
+  { name: 'শরহে বেকায়া জামাত', desc: 'শরহে বেকায়া, উসুলুশ শাশী' },
+  { name: 'জালালাইন জামাত', desc: 'তাফসীরে জালালাইন, মুখতাসার' },
+  { name: 'মেশকাত জামাত', desc: 'মেশকাত শরীফ, হিদায়া' },
+  { name: 'দাওরায়ে হাদীস (তাকমীল)', desc: 'বুখারী, মুসলিম, সিহাহ সিত্তাহ' },
+];
+
 export default function DynamicSyllabusPage() {
   const [classes, setClasses] = useState<ClassItem[]>(defaultClasses);
   const [kitabs, setKitabs] = useState<KitabItem[]>(defaultKitabs);
   const [activeCurriculum, setActiveCurriculum] = useState<'all' | 'qawmi' | 'alia' | 'general' | 'hifz'>('all');
   const [activeClassId, setActiveClassId] = useState<string>('c-qawmi-mizan');
+
+  // Main Page View Mode: 'books' or 'class-manager'
+  const [viewMode, setViewMode] = useState<'books' | 'class-manager'>('books');
 
   // Modal states
   const [viewingKitab, setViewingKitab] = useState<KitabItem | null>(null);
@@ -142,6 +178,8 @@ export default function DynamicSyllabusPage() {
   const [newClass, setNewClass] = useState({
     name: '',
     curriculumType: 'qawmi' as 'qawmi' | 'alia' | 'general' | 'hifz',
+    section: 'ক শাখা',
+    classTeacher: '',
     description: '',
   });
 
@@ -225,14 +263,41 @@ export default function DynamicSyllabusPage() {
       id: `c-${Date.now()}`,
       name: newClass.name,
       curriculumType: newClass.curriculumType,
+      section: newClass.section || 'ক শাখা',
+      classTeacher: newClass.classTeacher || 'দায়িত্বপ্রাপ্ত শিক্ষক',
       description: newClass.description || 'প্রতিষ্ঠানের নিয়মিত পাঠ্যক্রম শ্রেণি।',
     };
 
     const updated = [...classes, newClassItem];
     saveClasses(updated);
     setActiveClassId(newClassItem.id);
-    setNewClass({ name: '', curriculumType: 'qawmi', description: '' });
+    setNewClass({ name: '', curriculumType: 'qawmi', section: 'ক শাখা', classTeacher: '', description: '' });
     setShowAddClassModal(false);
+  };
+
+  // Load all standard Qawmi Jamats in 1-click
+  const handleLoadQawmiPresets = () => {
+    const existingNames = new Set(classes.map((c) => c.name));
+    const newItems: ClassItem[] = [];
+    qawmiPresets.forEach((p, idx) => {
+      if (!existingNames.has(p.name)) {
+        newItems.push({
+          id: `c-qawmi-preset-${Date.now()}-${idx}`,
+          name: p.name,
+          curriculumType: 'qawmi',
+          section: 'ক শাখা',
+          classTeacher: 'দায়িত্বপ্রাপ্ত উস্তাদ',
+          description: p.desc,
+        });
+      }
+    });
+    if (newItems.length > 0) {
+      const updated = [...classes, ...newItems];
+      saveClasses(updated);
+      alert(`${newItems.length}টি কওমি জামাত সফলভাবে যুক্ত হয়েছে!`);
+    } else {
+      alert('সকল কওমি জামাত ইতিমধ্যে যুক্ত রয়েছে।');
+    }
   };
 
   // Delete Kitab
@@ -241,6 +306,19 @@ export default function DynamicSyllabusPage() {
       const updated = kitabs.filter((k) => k.id !== id);
       saveKitabs(updated);
       if (viewingKitab?.id === id) setViewingKitab(null);
+    }
+  };
+
+  // Delete Class
+  const handleDeleteClass = (classId: string, className: string) => {
+    if (confirm(`আপনি কি "${className}" শ্রেণিটি এবং এর সকল কিতাব মুছে ফেলতে চান?`)) {
+      const updatedClasses = classes.filter((c) => c.id !== classId);
+      const updatedKitabs = kitabs.filter((k) => k.classId !== classId);
+      saveClasses(updatedClasses);
+      saveKitabs(updatedKitabs);
+      if (activeClassId === classId && updatedClasses.length > 0) {
+        setActiveClassId(updatedClasses[0].id);
+      }
     }
   };
 
@@ -338,14 +416,58 @@ export default function DynamicSyllabusPage() {
             <span style={{ color: '#16a34a', fontWeight: '700', fontSize: '0.825rem' }}>সিলেবাস ও কিতাব সারসংক্ষেপ</span>
           </div>
           <h1 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.375rem', fontWeight: '800', color: '#0f172a' }}>
-            সিলেবাস ও পাঠ্য কিতাব হাব
+            শ্রেণি, সিলেবাস ও কিতাব হাব
           </h1>
           <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.825rem', color: '#64748b' }}>
-            কওমি, আলিয়া ও সাধারণ স্কুলের যে কোনো ক্লাসে যত ইচ্ছা কিতাব যোগ করুন এবং যে কেউ ট্যাপ করে বইয়ের পূর্ণাঙ্গ সারসংক্ষেপ দেখতে পারবে
+            নতুন জামাত/শ্রেণি এন্ট্রি করুন এবং যে কোনো ক্লাসে যত ইচ্ছা কিতাব যুক্ত করে দর্শনার্থীদের বিস্তারিত সারসংক্ষেপ পড়তে দিন
           </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        {/* PROMINENT TOP ACTION BUTTONS */}
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+          {/* 1. Add Class Button (PROMINENT BLUE) */}
+          <button
+            onClick={() => setShowAddClassModal(true)}
+            style={{
+              background: '#2563eb',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '8px',
+              fontWeight: '700',
+              fontFamily: 'Hind Siliguri, sans-serif',
+              fontSize: '0.85rem',
+              padding: '0.5rem 0.95rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.45rem',
+              cursor: 'pointer',
+              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              <line x1="12" y1="11" x2="12" y2="17" />
+              <line x1="9" y1="14" x2="15" y2="14" />
+            </svg>
+            + নতুন শ্রেণি / জামাত এন্ট্রি
+          </button>
+
+          {/* 2. Add Kitab Button (PROMINENT GREEN) */}
+          <button
+            onClick={() => setShowAddKitabModal(true)}
+            className="btn btn-primary"
+            style={{ fontSize: '0.85rem', padding: '0.5rem 0.95rem', display: 'flex', alignItems: 'center', gap: '0.45rem' }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+              <line x1="12" y1="8" x2="12" y2="14" />
+              <line x1="9" y1="11" x2="15" y2="11" />
+            </svg>
+            + কিতাব / বই যোগ করুন
+          </button>
+
+          {/* 3. Print Button */}
           <button
             onClick={() => setPrintMode(true)}
             className="btn btn-secondary"
@@ -356,337 +478,686 @@ export default function DynamicSyllabusPage() {
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
               <rect x="6" y="14" width="12" height="8" />
             </svg>
-            সিলেবাস শিট প্রিন্ট
-          </button>
-          <button
-            onClick={() => setShowAddKitabModal(true)}
-            className="btn btn-primary"
-            style={{ fontSize: '0.825rem', padding: '0.5rem 0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            + কিতাব / বই যোগ করুন
+            সিলেবাস প্রিন্ট
           </button>
         </div>
       </div>
 
-      {/* Public Visitor Notice Card */}
-      <div
-        className="card"
-        style={{
-          padding: '0.85rem 1.1rem',
-          marginBottom: '1rem',
-          background: '#eff6ff',
-          border: '1.5px solid #bfdbfe',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.75rem',
-        }}
-      >
-        <div
+      {/* VIEW SWITCHER TABS: [পাঠ্য কিতাব ও সামারি ভিউ] vs [শ্রেণি ও জামাত ডিরেক্টরি (নতুন এন্ট্রি)] */}
+      <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '2px solid #e2e8f0', marginBottom: '1.25rem' }}>
+        <button
+          onClick={() => setViewMode('books')}
           style={{
-            width: '2.25rem',
-            height: '2.25rem',
-            borderRadius: '50%',
-            background: '#dbeafe',
+            background: 'none',
+            border: 'none',
+            borderBottom: viewMode === 'books' ? '3px solid #16a34a' : '3px solid transparent',
+            color: viewMode === 'books' ? '#16a34a' : '#64748b',
+            fontFamily: 'Hind Siliguri, sans-serif',
+            fontWeight: '700',
+            fontSize: '0.95rem',
+            padding: '0.6rem 1rem',
+            cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
+            gap: '0.5rem',
           }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="16" x2="12" y2="12" />
-            <line x1="12" y1="8" x2="12.01" y2="8" />
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
           </svg>
-        </div>
-        <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.825rem', color: '#1e40af', lineHeight: '1.5', margin: 0 }}>
-          <strong>সাধারণ মানুষ ও অভিভাবকদের জন্য উন্মুক্ত:</strong> বাইরের যেকোনো ব্যক্তি যেকোনো কিতাবের উপর ট্যাপ করলেই সেই কিতাবে কী পড়ানো হচ্ছে, কেন পড়ানো হচ্ছে এবং ছাত্ররা কী শিখবে—তার প্রাঞ্জল সারসংক্ষেপ ও রূপরেখা পড়তে পারবেন।
-        </p>
+          পাঠ্য কিতাব ও সারসংক্ষেপ ভিউ
+        </button>
+
+        <button
+          onClick={() => setViewMode('class-manager')}
+          style={{
+            background: 'none',
+            border: 'none',
+            borderBottom: viewMode === 'class-manager' ? '3px solid #2563eb' : '3px solid transparent',
+            color: viewMode === 'class-manager' ? '#2563eb' : '#64748b',
+            fontFamily: 'Hind Siliguri, sans-serif',
+            fontWeight: '700',
+            fontSize: '0.95rem',
+            padding: '0.6rem 1rem',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+          }}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+          </svg>
+          সকল শ্রেণি ও জামাত ব্যবস্থাপনা ({classes.length}টি শ্রেণি)
+        </button>
       </div>
 
-      {/* Curriculum Filter Pills */}
-      <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.4rem', marginBottom: '1rem' }}>
-        {[
-          { id: 'all', label: 'সকল কারিকুলাম' },
-          { id: 'qawmi', label: 'কওমি নেজামী' },
-          { id: 'alia', label: 'আলিয়া মাদরাসা' },
-          { id: 'general', label: 'জেনারেল স্কুল' },
-          { id: 'hifz', label: 'হিফজুল কুরআন' },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveCurriculum(tab.id as any)}
+      {/* ======================================================== */}
+      {/* VIEW 1: BOOKS & SUMMARIES                                */}
+      {/* ======================================================== */}
+      {viewMode === 'books' && (
+        <>
+          {/* Public Notice Card */}
+          <div
+            className="card"
             style={{
-              fontFamily: 'Hind Siliguri, sans-serif',
-              fontSize: '0.825rem',
-              fontWeight: activeCurriculum === tab.id ? '700' : '500',
-              padding: '0.4rem 0.85rem',
-              borderRadius: '999px',
-              border: activeCurriculum === tab.id ? '1.5px solid #16a34a' : '1px solid #e2e8f0',
-              background: activeCurriculum === tab.id ? '#f0fdf4' : '#ffffff',
-              color: activeCurriculum === tab.id ? '#16a34a' : '#475569',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Classes Selector with "+ Add Class" */}
-      <div className="card" style={{ padding: '0.85rem', marginBottom: '1.25rem', background: '#f8fafc' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>
-            শ্রেণি বা জামাত সিলেক্ট করুন ({filteredClasses.length}টি শ্রেণি):
-          </span>
-          <button
-            onClick={() => setShowAddClassModal(true)}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#2563eb',
-              fontFamily: 'Hind Siliguri, sans-serif',
-              fontWeight: '700',
-              fontSize: '0.8rem',
-              cursor: 'pointer',
+              padding: '0.85rem 1.1rem',
+              marginBottom: '1rem',
+              background: '#eff6ff',
+              border: '1.5px solid #bfdbfe',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.25rem',
+              gap: '0.75rem',
             }}
           >
-            + নতুন শ্রেণি তৈরি করুন
-          </button>
-        </div>
+            <div
+              style={{
+                width: '2.25rem',
+                height: '2.25rem',
+                borderRadius: '50%',
+                background: '#dbeafe',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            </div>
+            <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.825rem', color: '#1e40af', lineHeight: '1.5', margin: 0 }}>
+              <strong>দর্শনার্থী ও সাধারণ অভিভাবকদের জন্য উন্মুক্ত:</strong> বাইরের যে কেউ যেকোনো কিতাবের উপর ট্যাপ করলেই সেই কিতাবে কী পড়ানো হচ্ছে, কেন পড়ানো হচ্ছে এবং ছাত্ররা কী শিখবে—তার প্রাঞ্জল সারসংক্ষেপ ও রূপরেখা পড়তে পারবেন।
+            </p>
+          </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-          {filteredClasses.map((c) => {
-            const count = kitabs.filter((k) => k.classId === c.id).length;
-            const isSelected = activeClassId === c.id;
-            return (
+          {/* Curriculum Filter Pills */}
+          <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.4rem', marginBottom: '1rem' }}>
+            {[
+              { id: 'all', label: 'সকল কারিকুলাম' },
+              { id: 'qawmi', label: 'কওমি নেজামী' },
+              { id: 'alia', label: 'আলিয়া মাদরাসা' },
+              { id: 'general', label: 'জেনারেল স্কুল' },
+              { id: 'hifz', label: 'হিফজুল কুরআন' },
+            ].map((tab) => (
               <button
-                key={c.id}
-                onClick={() => setActiveClassId(c.id)}
+                key={tab.id}
+                onClick={() => setActiveCurriculum(tab.id as any)}
                 style={{
                   fontFamily: 'Hind Siliguri, sans-serif',
                   fontSize: '0.825rem',
-                  fontWeight: isSelected ? '700' : '600',
+                  fontWeight: activeCurriculum === tab.id ? '700' : '500',
+                  padding: '0.4rem 0.85rem',
+                  borderRadius: '999px',
+                  border: activeCurriculum === tab.id ? '1.5px solid #16a34a' : '1px solid #e2e8f0',
+                  background: activeCurriculum === tab.id ? '#f0fdf4' : '#ffffff',
+                  color: activeCurriculum === tab.id ? '#16a34a' : '#475569',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Classes Selector with BIG prominent "+ Add Class" button */}
+          <div className="card" style={{ padding: '0.85rem', marginBottom: '1.25rem', background: '#f8fafc' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>
+                শ্রেণি বা জামাত সিলেক্ট করুন ({filteredClasses.length}টি শ্রেণি উপলব্ধ):
+              </span>
+
+              {/* Explicit link to add new class */}
+              <button
+                onClick={() => setShowAddClassModal(true)}
+                style={{
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: '6px',
+                  color: '#2563eb',
+                  fontFamily: 'Hind Siliguri, sans-serif',
+                  fontWeight: '700',
+                  fontSize: '0.8rem',
+                  padding: '0.25rem 0.6rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                + নতুন শ্রেণি এন্ট্রি করুন
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem', alignItems: 'center' }}>
+              {/* Highlighted "+ শ্রেণি তৈরি" button directly in the pills row */}
+              <button
+                onClick={() => setShowAddClassModal(true)}
+                style={{
+                  fontFamily: 'Hind Siliguri, sans-serif',
+                  fontSize: '0.825rem',
+                  fontWeight: '700',
                   padding: '0.45rem 0.85rem',
                   borderRadius: '8px',
-                  border: isSelected ? '2px solid #16a34a' : '1px solid #cbd5e1',
-                  background: isSelected ? '#f0fdf4' : '#ffffff',
-                  color: isSelected ? '#15803d' : '#334155',
+                  border: '1.5px dashed #2563eb',
+                  background: '#f8fafc',
+                  color: '#2563eb',
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '0.4rem',
+                  flexShrink: 0,
                 }}
               >
-                {c.name}
-                <span
-                  style={{
-                    fontSize: '0.7rem',
-                    padding: '0.1rem 0.4rem',
-                    borderRadius: '999px',
-                    background: isSelected ? '#dcfce7' : '#f1f5f9',
-                    color: isSelected ? '#166534' : '#64748b',
-                    fontWeight: '700',
-                  }}
-                >
-                  {count} বই
-                </span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                + নতুন জামাত/শ্রেণি
               </button>
-            );
-          })}
-        </div>
-      </div>
 
-      {/* Selected Class Header Banner */}
-      {currentClass && (
-        <div
-          className="card"
-          style={{
-            padding: '1rem',
-            marginBottom: '1.25rem',
-            background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-            borderLeft: '4px solid #16a34a',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: '0.75rem',
-          }}
-        >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h2 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                {currentClass.name}
-              </h2>
-              <span style={{ fontSize: '0.7rem', fontWeight: '700', padding: '0.15rem 0.5rem', borderRadius: '999px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
-                {currentClass.curriculumType === 'qawmi'
-                  ? 'কওমি'
-                  : currentClass.curriculumType === 'alia'
-                  ? 'আলিয়া'
-                  : currentClass.curriculumType === 'general'
-                  ? 'জেনারেল'
-                  : 'হিফজ'}
-              </span>
+              {filteredClasses.map((c) => {
+                const count = kitabs.filter((k) => k.classId === c.id).length;
+                const isSelected = activeClassId === c.id;
+                return (
+                  <button
+                    key={c.id}
+                    onClick={() => setActiveClassId(c.id)}
+                    style={{
+                      fontFamily: 'Hind Siliguri, sans-serif',
+                      fontSize: '0.825rem',
+                      fontWeight: isSelected ? '700' : '600',
+                      padding: '0.45rem 0.85rem',
+                      borderRadius: '8px',
+                      border: isSelected ? '2px solid #16a34a' : '1px solid #cbd5e1',
+                      background: isSelected ? '#f0fdf4' : '#ffffff',
+                      color: isSelected ? '#15803d' : '#334155',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {c.name}
+                    <span
+                      style={{
+                        fontSize: '0.7rem',
+                        padding: '0.1rem 0.4rem',
+                        borderRadius: '999px',
+                        background: isSelected ? '#dcfce7' : '#f1f5f9',
+                        color: isSelected ? '#166534' : '#64748b',
+                        fontWeight: '700',
+                      }}
+                    >
+                      {count} বই
+                    </span>
+                  </button>
+                );
+              })}
             </div>
-            <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem', margin: 0 }}>
-              {currentClass.description}
-            </p>
           </div>
 
-          <button
-            onClick={() => setShowAddKitabModal(true)}
-            className="btn btn-primary"
-            style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
+          {/* Selected Class Banner */}
+          {currentClass && (
+            <div
+              className="card"
+              style={{
+                padding: '1rem',
+                marginBottom: '1.25rem',
+                background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+                borderLeft: '4px solid #16a34a',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '0.75rem',
+              }}
+            >
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h2 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                    {currentClass.name}
+                  </h2>
+                  <span style={{ fontSize: '0.7rem', fontWeight: '700', padding: '0.15rem 0.5rem', borderRadius: '999px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
+                    {currentClass.curriculumType === 'qawmi'
+                      ? 'কওমি'
+                      : currentClass.curriculumType === 'alia'
+                      ? 'আলিয়া'
+                      : currentClass.curriculumType === 'general'
+                      ? 'জেনারেল'
+                      : 'হিফজ'}
+                  </span>
+                  {currentClass.section && (
+                    <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', borderRadius: '4px', background: '#f1f5f9', color: '#475569' }}>
+                      শাখা: {currentClass.section}
+                    </span>
+                  )}
+                </div>
+                <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem', margin: 0 }}>
+                  {currentClass.description}
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={() => setShowAddKitabModal(true)}
+                  className="btn btn-primary"
+                  style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
+                >
+                  + এই শ্রেণিতে কিতাব যোগ করুন
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Kitabs List */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.95rem', fontWeight: '700', color: '#0f172a' }}>
+                নির্ধারিত পাঠ্য কিতাব ও বিষয়সমূহ ({currentKitabs.length}টি)
+              </h3>
+              <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                যেকোনো কিতাবে ট্যাপ করে পূর্ণাঙ্গ সারসংক্ষেপ পড়ুন
+              </span>
+            </div>
+
+            {currentKitabs.length === 0 ? (
+              <div className="card" style={{ padding: '2.5rem', textAlign: 'center', background: '#ffffff' }}>
+                <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.95rem', color: '#64748b', marginBottom: '1rem' }}>
+                  এই শ্রেণিতে এখনও কোনো কিতাব যুক্ত করা হয়নি। আপনি আপনার মাদরাসার কিতাবের নাম ও সামারি দিয়ে যোগ করতে পারেন।
+                </p>
+                <button
+                  onClick={() => setShowAddKitabModal(true)}
+                  className="btn btn-primary"
+                  style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+                >
+                  + প্রথম কিতাব যুক্ত করুন
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '0.85rem' }}>
+                {currentKitabs.map((kitab) => (
+                  <div
+                    key={kitab.id}
+                    className="card"
+                    style={{
+                      padding: '1.1rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      borderTop: '3px solid #16a34a',
+                      cursor: 'pointer',
+                      transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+                    }}
+                    onClick={() => setViewingKitab(kitab)}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
+                        <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: '4px', background: '#f1f5f9', color: '#475569', fontWeight: '600' }}>
+                          {kitab.category}
+                        </span>
+                        <span style={{ fontSize: '0.725rem', fontWeight: '700', color: '#16a34a', background: '#f0fdf4', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
+                          {kitab.fullMarks} নম্বর
+                        </span>
+                      </div>
+
+                      <h4 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.15rem' }}>
+                        {kitab.name}
+                      </h4>
+                      {kitab.originalName && kitab.originalName !== kitab.name && (
+                        <div style={{ fontSize: '0.8rem', color: '#2563eb', fontWeight: '600', marginBottom: '0.35rem', direction: 'rtl', textAlign: 'right' }}>
+                          {kitab.originalName}
+                        </div>
+                      )}
+
+                      <p style={{ fontSize: '0.775rem', color: '#64748b', marginBottom: '0.6rem' }}>
+                        মুসান্নিফ/লেখক: <strong>{kitab.author}</strong>
+                      </p>
+
+                      <p
+                        style={{
+                          fontSize: '0.8rem',
+                          color: '#475569',
+                          lineHeight: '1.5',
+                          marginBottom: '0.85rem',
+                          display: '-webkit-box',
+                          WebkitLineClamp: 3,
+                          WebkitBoxOrient: 'vertical',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        {kitab.summary}
+                      </p>
+                    </div>
+
+                    <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.65rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setViewingKitab(kitab);
+                        }}
+                        style={{
+                          background: '#f0fdf4',
+                          color: '#16a34a',
+                          border: '1px solid #bbf7d0',
+                          borderRadius: '6px',
+                          padding: '0.35rem 0.65rem',
+                          fontSize: '0.75rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                        }}
+                      >
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                          <circle cx="12" cy="12" r="3" />
+                        </svg>
+                        সারসংক্ষেপ পড়ুন
+                      </button>
+
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteKitab(kitab.id);
+                        }}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#ef4444',
+                          fontSize: '0.75rem',
+                          cursor: 'pointer',
+                          padding: '0.35rem',
+                        }}
+                        title="মুছে ফেলুন"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* ======================================================== */}
+      {/* VIEW 2: CLASS & JAMAT DIRECTORY & INLINE ADD             */}
+      {/* ======================================================== */}
+      {viewMode === 'class-manager' && (
+        <div>
+          {/* Quick Preset Actions */}
+          <div
+            className="card"
+            style={{
+              padding: '1.25rem',
+              marginBottom: '1.5rem',
+              background: '#f8fafc',
+              border: '1.5px solid #e2e8f0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+            }}
           >
-            + এই শ্রেণিতে নতুন কিতাব যোগ করুন
-          </button>
+            <div>
+              <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.05rem', fontWeight: '800', color: '#0f172a' }}>
+                দ্রুত শ্রেণি ও জামাত লোডার
+              </h3>
+              <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                এক ক্লিকে সকল কওমি জামাত (নূরানী হতে দাওরায়ে হাদিস) সিস্টেমে যুক্ত করে নিতে পারেন
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button
+                onClick={handleLoadQawmiPresets}
+                style={{
+                  background: '#f0fdf4',
+                  border: '1.5px solid #bbf7d0',
+                  color: '#16a34a',
+                  fontWeight: '700',
+                  fontFamily: 'Hind Siliguri, sans-serif',
+                  fontSize: '0.825rem',
+                  padding: '0.5rem 0.85rem',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                কওমির সকল জামাত একসাথে আনুন
+              </button>
+
+              <button
+                onClick={() => setShowAddClassModal(true)}
+                className="btn btn-primary"
+                style={{ fontSize: '0.825rem', padding: '0.5rem 0.85rem' }}
+              >
+                + ম্যানুয়াল নতুন শ্রেণি তৈরি
+              </button>
+            </div>
+          </div>
+
+          {/* Inline Add Class Form Card */}
+          <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem', background: '#ffffff', borderLeft: '4px solid #2563eb' }}>
+            <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.1rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.25rem' }}>
+              নতুন শ্রেণি / জামাত এন্ট্রি ফর্ম
+            </h3>
+            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
+              মাদরাসা বা স্কুলের যেকোনো নতুন শ্রেণি নিচের তথ্য পূরণ করে তাৎক্ষণিক যুক্ত করুন
+            </p>
+
+            <form onSubmit={handleCreateClass} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem', alignItems: 'flex-end' }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
+                  শ্রেণি / জামাতের নাম *
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="যেমন: কাফিয়া জামাত / দাখিল ৯ম"
+                  value={newClass.name}
+                  onChange={(e) => setNewClass({ ...newClass, name: e.target.value })}
+                  required
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
+                  কারিকুলাম ধরণ
+                </label>
+                <select
+                  className="input-field"
+                  value={newClass.curriculumType}
+                  onChange={(e) => setNewClass({ ...newClass, curriculumType: e.target.value as any })}
+                  style={{ width: '100%', padding: '0.5rem' }}
+                >
+                  <option value="qawmi">কওমি নেজামী</option>
+                  <option value="alia">আলিয়া মাদরাসা</option>
+                  <option value="general">জেনারেল স্কুল</option>
+                  <option value="hifz">হিফজুল কুরআন</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
+                  শাখা (Section)
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="যেমন: ক শাখা / বালক শাখা"
+                  value={newClass.section}
+                  onChange={(e) => setNewClass({ ...newClass, section: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
+                  দায়িত্বপ্রাপ্ত শিক্ষক / উস্তাদ
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="যেমন: মাওলানা আতিকুর রহমান"
+                  value={newClass.classTeacher}
+                  onChange={(e) => setNewClass({ ...newClass, classTeacher: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
+                  শ্রেণির উদ্দেশ্য বা সংক্ষিপ্ত বিবরণ
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="যেমন: শিক্ষার্থীদের আরবি ব্যাকরণ ও হাদিসের প্রামাণ্য জ্ঞান অর্জন..."
+                  value={newClass.description}
+                  onChange={(e) => setNewClass({ ...newClass, description: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ width: '100%', padding: '0.55rem', fontWeight: '700', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                  </svg>
+                  শ্রেণি সেভ করুন
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* All Classes List Table */}
+          <div className="card" style={{ padding: '1.25rem' }}>
+            <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.75rem' }}>
+              বর্তমান সকল শ্রেণি ও জামাত তালিকা ({classes.length}টি)
+            </h3>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #cbd5e1', textAlign: 'left' }}>
+                    <th style={{ padding: '0.6rem', color: '#64748b' }}>শ্রেণি / জামাত</th>
+                    <th style={{ padding: '0.6rem', color: '#64748b' }}>কারিকুলাম</th>
+                    <th style={{ padding: '0.6rem', color: '#64748b' }}>শাখা</th>
+                    <th style={{ padding: '0.6rem', color: '#64748b' }}>দায়িত্বপ্রাপ্ত শিক্ষক</th>
+                    <th style={{ padding: '0.6rem', textAlign: 'center', color: '#64748b' }}>কিতাব সংখ্যা</th>
+                    <th style={{ padding: '0.6rem', textAlign: 'center', color: '#64748b' }}>অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {classes.map((cls) => {
+                    const kCount = kitabs.filter((k) => k.classId === cls.id).length;
+                    return (
+                      <tr key={cls.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '0.65rem', fontWeight: '700', color: '#0f172a' }}>
+                          {cls.name}
+                          <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 'normal' }}>
+                            {cls.description}
+                          </div>
+                        </td>
+                        <td style={{ padding: '0.65rem' }}>
+                          <span style={{ fontSize: '0.75rem', padding: '0.15rem 0.45rem', borderRadius: '4px', background: '#f0fdf4', color: '#16a34a', fontWeight: '700', border: '1px solid #bbf7d0' }}>
+                            {cls.curriculumType === 'qawmi'
+                              ? 'কওমি'
+                              : cls.curriculumType === 'alia'
+                              ? 'আলিয়া'
+                              : cls.curriculumType === 'general'
+                              ? 'জেনারেল'
+                              : 'হিফজ'}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.65rem', color: '#475569' }}>{cls.section || '—'}</td>
+                        <td style={{ padding: '0.65rem', color: '#2563eb', fontWeight: '600' }}>
+                          {cls.classTeacher || '—'}
+                        </td>
+                        <td style={{ padding: '0.65rem', textAlign: 'center', fontWeight: '700', color: '#0f172a' }}>
+                          {kCount}টি কিতাব
+                        </td>
+                        <td style={{ padding: '0.65rem', textAlign: 'center' }}>
+                          <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
+                            <button
+                              onClick={() => {
+                                setActiveClassId(cls.id);
+                                setViewMode('books');
+                              }}
+                              style={{
+                                background: '#eff6ff',
+                                border: '1px solid #bfdbfe',
+                                color: '#2563eb',
+                                borderRadius: '4px',
+                                padding: '0.25rem 0.5rem',
+                                fontSize: '0.75rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              বই দেখুন
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClass(cls.id, cls.name)}
+                              style={{
+                                background: '#fef2f2',
+                                border: '1px solid #fecaca',
+                                color: '#dc2626',
+                                borderRadius: '4px',
+                                padding: '0.25rem 0.5rem',
+                                fontSize: '0.75rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              মুছুন
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Kitabs List */}
-      <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-          <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.95rem', fontWeight: '700', color: '#0f172a' }}>
-            নির্ধারিত পাঠ্য কিতাব ও বিষয়সমূহ ({currentKitabs.length}টি)
-          </h3>
-          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-            যেকোনো কিতাবে ট্যাপ করে পূর্ণাঙ্গ সামারি পড়ুন
-          </span>
-        </div>
-
-        {currentKitabs.length === 0 ? (
-          <div className="card" style={{ padding: '2.5rem', textAlign: 'center', background: '#ffffff' }}>
-            <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.95rem', color: '#64748b', marginBottom: '1rem' }}>
-              এই শ্রেণিতে এখনও কোনো কিতাব যুক্ত করা হয়নি। আপনি আপনার মাদরাসার কিতাবের নাম ও সামারি দিয়ে যোগ করতে পারেন।
-            </p>
-            <button
-              onClick={() => setShowAddKitabModal(true)}
-              className="btn btn-primary"
-              style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
-            >
-              + প্রথম কিতাব যুক্ত করুন
-            </button>
-          </div>
-        ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(290px, 1fr))', gap: '0.85rem' }}>
-            {currentKitabs.map((kitab) => (
-              <div
-                key={kitab.id}
-                className="card"
-                style={{
-                  padding: '1.1rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  borderTop: '3px solid #16a34a',
-                  cursor: 'pointer',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                }}
-                onClick={() => setViewingKitab(kitab)}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                    <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: '4px', background: '#f1f5f9', color: '#475569', fontWeight: '600' }}>
-                      {kitab.category}
-                    </span>
-                    <span style={{ fontSize: '0.725rem', fontWeight: '700', color: '#16a34a', background: '#f0fdf4', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                      {kitab.fullMarks} নম্বর
-                    </span>
-                  </div>
-
-                  <h4 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.15rem' }}>
-                    {kitab.name}
-                  </h4>
-                  {kitab.originalName && kitab.originalName !== kitab.name && (
-                    <div style={{ fontSize: '0.8rem', color: '#2563eb', fontWeight: '600', marginBottom: '0.35rem', direction: 'rtl', textAlign: 'right' }}>
-                      {kitab.originalName}
-                    </div>
-                  )}
-
-                  <p style={{ fontSize: '0.775rem', color: '#64748b', marginBottom: '0.6rem' }}>
-                    মুসান্নিফ/লেখক: <strong>{kitab.author}</strong>
-                  </p>
-
-                  <p
-                    style={{
-                      fontSize: '0.8rem',
-                      color: '#475569',
-                      lineHeight: '1.5',
-                      marginBottom: '0.85rem',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 3,
-                      WebkitBoxOrient: 'vertical',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    {kitab.summary}
-                  </p>
-                </div>
-
-                <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.65rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setViewingKitab(kitab);
-                    }}
-                    style={{
-                      background: '#f0fdf4',
-                      color: '#16a34a',
-                      border: '1px solid #bbf7d0',
-                      borderRadius: '6px',
-                      padding: '0.35rem 0.65rem',
-                      fontSize: '0.75rem',
-                      fontWeight: '700',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                    }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                    সারসংক্ষেপ পড়ুন
-                  </button>
-
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteKitab(kitab.id);
-                    }}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      color: '#ef4444',
-                      fontSize: '0.75rem',
-                      cursor: 'pointer',
-                      padding: '0.35rem',
-                    }}
-                    title="মুছে ফেলুন"
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="3 6 5 6 21 6" />
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* POPUP MODAL: Interactive Book Summary */}
+      {/* ======================================================== */}
+      {/* POPUP MODAL: Interactive Book Summary                    */}
+      {/* ======================================================== */}
       {viewingKitab && (
         <div
           style={{
@@ -828,7 +1299,9 @@ export default function DynamicSyllabusPage() {
         </div>
       )}
 
-      {/* POPUP MODAL: Add Custom Kitab */}
+      {/* ======================================================== */}
+      {/* POPUP MODAL: Add Custom Kitab                            */}
+      {/* ======================================================== */}
       {showAddKitabModal && (
         <div
           style={{
@@ -1007,7 +1480,9 @@ export default function DynamicSyllabusPage() {
         </div>
       )}
 
-      {/* POPUP MODAL: Add Custom Class */}
+      {/* ======================================================== */}
+      {/* POPUP MODAL: Add Custom Class                            */}
+      {/* ======================================================== */}
       {showAddClassModal && (
         <div
           style={{
@@ -1026,7 +1501,7 @@ export default function DynamicSyllabusPage() {
             className="card"
             style={{
               width: '100%',
-              maxWidth: '28rem',
+              maxWidth: '30rem',
               padding: '1.5rem',
               background: '#ffffff',
               borderRadius: '16px',
@@ -1034,8 +1509,8 @@ export default function DynamicSyllabusPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-              <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.2rem', fontWeight: '800', color: '#0f172a' }}>
-                নতুন শ্রেণি / জামাত তৈরি করুন
+              <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.25rem', fontWeight: '800', color: '#0f172a' }}>
+                নতুন শ্রেণি / জামাত এন্ট্রি
               </h3>
               <button
                 onClick={() => setShowAddClassModal(false)}
@@ -1045,7 +1520,7 @@ export default function DynamicSyllabusPage() {
               </button>
             </div>
             <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
-              যেকোনো সিলেবাসের অধীনে নতুন একটি শ্রেণি যুক্ত করুন
+              কওমি, আলিয়া, হিফজ বা স্কুলের জন্য যেকোনো নতুন শ্রেণি তৈরি করুন
             </p>
 
             <form onSubmit={handleCreateClass} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -1056,7 +1531,7 @@ export default function DynamicSyllabusPage() {
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="যেমন: কাফিয়া জামাত / ৭ম শ্রেণি"
+                  placeholder="যেমন: কাফিয়া জামাত / ৭ম শ্রেণি / হিফজ ১ম বিভাগ"
                   value={newClass.name}
                   onChange={(e) => setNewClass({ ...newClass, name: e.target.value })}
                   required
@@ -1064,26 +1539,56 @@ export default function DynamicSyllabusPage() {
                 />
               </div>
 
-              <div>
-                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  কারিকুলাম সিলেক্ট করুন:
-                </label>
-                <select
-                  className="input-field"
-                  value={newClass.curriculumType}
-                  onChange={(e) => setNewClass({ ...newClass, curriculumType: e.target.value as any })}
-                  style={{ width: '100%', padding: '0.5rem' }}
-                >
-                  <option value="qawmi">কওমি নেজামী</option>
-                  <option value="alia">আলিয়া মাদরাসা</option>
-                  <option value="general">জেনারেল স্কুল</option>
-                  <option value="hifz">হিফজুল কুরআন</option>
-                </select>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    কারিকুলাম সিলেক্ট করুন:
+                  </label>
+                  <select
+                    className="input-field"
+                    value={newClass.curriculumType}
+                    onChange={(e) => setNewClass({ ...newClass, curriculumType: e.target.value as any })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  >
+                    <option value="qawmi">কওমি নেজামী</option>
+                    <option value="alia">আলিয়া মাদরাসা</option>
+                    <option value="general">জেনারেল স্কুল</option>
+                    <option value="hifz">হিফজুল কুরআন</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    শাখা (Section)
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="যেমন: ক শাখা / বালক শাখা"
+                    value={newClass.section}
+                    onChange={(e) => setNewClass({ ...newClass, section: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                </div>
               </div>
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  শ্রেণির সংক্ষিপ্ত উদ্দেশ্য / বিবরণ
+                  দায়িত্বপ্রাপ্ত শিক্ষক / শ্রেণি উস্তাদ
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  placeholder="যেমন: মাওলানা মাহমুদ হাসান"
+                  value={newClass.classTeacher}
+                  onChange={(e) => setNewClass({ ...newClass, classTeacher: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                  শ্রেণির উদ্দেশ্য বা সংক্ষিপ্ত বিবরণ
                 </label>
                 <textarea
                   className="input-field"
@@ -1105,7 +1610,7 @@ export default function DynamicSyllabusPage() {
                   বাতিল
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
-                  শ্রেণি তৈরি করুন
+                  শ্রেণি এন্ট্রি সম্পন্ন করুন
                 </button>
               </div>
             </form>

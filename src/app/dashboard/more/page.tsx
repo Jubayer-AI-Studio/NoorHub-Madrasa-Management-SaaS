@@ -8,6 +8,20 @@ export default function MoreMenuPage() {
       title: 'প্রশাসন ও অ্যাকাডেমিক',
       items: [
         {
+          href: '/dashboard/classes',
+          label: 'শ্রেণি ও জামাত ব্যবস্থাপনা',
+          desc: 'নতুন জামাত ও শ্রেণি এন্ট্রি, শিক্ষক দায়িত্ব ও শ্রেণি তালিকা',
+          icon: (
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+              <line x1="12" y1="11" x2="12" y2="17" />
+              <line x1="9" y1="14" x2="15" y2="14" />
+            </svg>
+          ),
+          bg: '#eff6ff',
+          border: '#bfdbfe',
+        },
+        {
           href: '/dashboard/teachers',
           label: 'উস্তাদ ও শিক্ষক ডিরেক্টরি',
           desc: 'শিক্ষক তালিকা, দায়িত্বপ্রাপ্ত জামাত ও মাসিক ভাতা',
@@ -76,8 +90,8 @@ export default function MoreMenuPage() {
         },
         {
           href: '/dashboard/syllabus',
-          label: 'সিলেবাস, কিতাব তালিকা ও লেসন প্ল্যানার',
-          desc: 'কওমি, আলিয়া ও সাধারণ স্কুলের বইয়ের তালিকা, মানবণ্টন ও পাঠ ট্র্যাকার',
+          label: 'শ্রেণি, সিলেবাস ও কিতাব ব্যবস্থাপনা',
+          desc: 'নতুন জামাত/শ্রেণি এন্ট্রি, কিতাবের তালিকা ও ১-ট্যাপ সামারি',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
