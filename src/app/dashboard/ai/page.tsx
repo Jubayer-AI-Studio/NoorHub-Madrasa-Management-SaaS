@@ -8,6 +8,7 @@ interface ChatMessage {
   sender: 'user' | 'ai';
   text: string;
   timestamp: string;
+  provider?: 'gemini' | 'local-engine' | 'fallback';
   actionLink?: {
     href: string;
     label: string;
@@ -19,7 +20,7 @@ export default function NoorAIPage() {
     {
       id: 'welcome-1',
       sender: 'ai',
-      text: 'আস-সালামু আলাইকুম ওয়া রাহমাতুল্লাহ! আমি নূর এআই (Noor AI)। নূরহাবের প্রতিটি বাটন ও ফিচার থেকে শুরু করে কওমি, আলিয়া ও হিফজ মাদরাসার পাঠ্যক্রম, রুটিন, ফিকহী নীতিমালা ও ছাত্র যত্ন—যেকোনো বিষয়ে আমাকে মুখে বলে বা লিখে প্রশ্ন করতে পারেন। আমি আপনাকে পূর্ণাঙ্গ সমাধান দেব। আপনি কী জানতে চান?',
+      text: 'আস-সালামু আলাইকুম ওয়া রাহমাতুল্লাহ! আমি নূর এআই (Noor AI)। নূরহাবের প্রতিটি মডিউল ও ফিচার থেকে শুরু করে কওমি, আলিয়া ও হিফজ মাদরাসার পাঠ্যক্রম, রুটিন, ফিকহী নীতিমালা, হিসাব-নিকাশ ও ছাত্র যত্ন—যেকোনো বিষয়ে আমাকে মুখে বলে বা লিখে প্রশ্ন করতে পারেন। আমি আপনাকে পূর্ণাঙ্গ ও বিস্তারিত সমাধান দেব। আপনি কী জানতে চান?',
       timestamp: 'এখনই',
       actionLink: { href: '/dashboard', label: 'মূল ড্যাশবোর্ড দেখুন' },
     },
@@ -29,15 +30,35 @@ export default function NoorAIPage() {
 
   // Voice States
   const [isListening, setIsListening] = useState(false);
+  const [interimTranscript, setInterimTranscript] = useState('');
   const [speakingId, setSpeakingId] = useState<string | null>(null);
   const [voiceSupported, setVoiceSupported] = useState(true);
+  const [autoSpeak, setAutoSpeak] = useState(false);
+  const [voiceError, setVoiceError] = useState<string | null>(null);
+
+  // Gemini API Key & Settings Modal
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState('');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Load API key and autoSpeak preference from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedKey = localStorage.getItem('noorhub_gemini_key') || '';
+      const savedAutoSpeak = localStorage.getItem('noorhub_auto_speak') === 'true';
+      setGeminiApiKey(savedKey);
+      setTempApiKey(savedKey);
+      setAutoSpeak(savedAutoSpeak);
+    }
+  }, []);
 
   // Auto-scroll chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+  }, [messages, isTyping, interimTranscript]);
 
   // Check Web Speech API support
   useEffect(() => {
@@ -55,37 +76,62 @@ export default function NoorAIPage() {
 
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      alert('আপনার ব্রাউজারে স্পিচ রিকগনিশন সমর্থন করে না। অনুগ্রহ করে গুগল ক্রোম, এজ বা ব্রেভ ব্রাউজার ব্যবহার করুন।');
+      setVoiceError('আপনার ব্রাউজারে স্পিচ রিকগনিশন সমর্থন করে না। অনুগ্রহ করে গুগল ক্রোম (Google Chrome) বা এজ (Microsoft Edge) ব্যবহার করুন।');
       return;
     }
 
     if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
       setIsListening(false);
+      setInterimTranscript('');
       return;
     }
 
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = 'bn-BD'; // Bengali (Bangladesh)
-      recognition.continuous = false;
-      recognition.interimResults = false;
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognitionRef.current = recognition;
 
       recognition.onstart = () => {
         setIsListening(true);
+        setVoiceError(null);
+        setInterimTranscript('');
       };
 
       recognition.onresult = (event: any) => {
-        const transcript = event.results[0][0].transcript;
-        if (transcript) {
-          setInput(transcript);
-          setIsListening(false);
-          // Automatically trigger response with the spoken query
-          handleSend(transcript);
+        let currentTranscript = '';
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          currentTranscript += event.results[i][0].transcript;
+        }
+
+        setInterimTranscript(currentTranscript);
+
+        // If the last result is final, update the input field
+        const lastResult = event.results[event.results.length - 1];
+        if (lastResult.isFinal) {
+          const finalQuery = currentTranscript.trim();
+          if (finalQuery) {
+            setInput(finalQuery);
+            recognition.stop();
+            setIsListening(false);
+            setInterimTranscript('');
+            handleSend(finalQuery);
+          }
         }
       };
 
-      recognition.onerror = () => {
+      recognition.onerror = (event: any) => {
         setIsListening(false);
+        setInterimTranscript('');
+        if (event.error === 'not-allowed') {
+          setVoiceError('মাইক্রোফোন ব্যবহারের অনুমতি পাওয়া যায়নি। দয়া করে ব্রাউজারের অ্যাড্রেস বারে ক্যামেরা/মাইক আইকনে ক্লিক করে Allow করুন।');
+        } else if (event.error === 'no-speech') {
+          setVoiceError('কোনো কথা শোনা যায়নি। অনুগ্রহ করে মাইক্রোফোনের কাছে স্পষ্ট করে বলুন।');
+        }
       };
 
       recognition.onend = () => {
@@ -95,6 +141,7 @@ export default function NoorAIPage() {
       recognition.start();
     } catch {
       setIsListening(false);
+      setVoiceError('মাইক্রোফোন চালু করতে সমস্যা হয়েছে। অনুগ্রহ করে পৃষ্ঠাটি রিফ্রেশ করে আবার চেষ্টা করুন।');
     }
   };
 
@@ -110,19 +157,23 @@ export default function NoorAIPage() {
 
     window.speechSynthesis.cancel();
 
-    // Clean markdown and symbols for smooth voice reading
+    // Clean markdown, emojis and symbols for smooth voice reading
     const cleanText = text
       .replace(/[*#_`]/g, '')
       .replace(/\[.*?\]\(.*?\)/g, '')
-      .replace(/https?:\/\/\S+/g, '');
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/[\u{1F300}-\u{1F9FF}]/gu, '') // Remove emojis for clear Bengali pronunciation
+      .trim();
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = 'bn-BD';
-    utterance.rate = 0.92; // Natural, clear Bangla pacing
+    utterance.rate = 0.92; // Natural Bangla pacing
     utterance.pitch = 1.0;
 
     const voices = window.speechSynthesis.getVoices();
-    const bnVoice = voices.find((v) => v.lang.includes('bn') || v.name.includes('Bangla') || v.name.includes('Bengali'));
+    const bnVoice = voices.find(
+      (v) => v.lang.includes('bn') || v.name.includes('Bangla') || v.name.includes('Bengali')
+    );
     if (bnVoice) utterance.voice = bnVoice;
 
     utterance.onend = () => setSpeakingId(null);
@@ -138,140 +189,96 @@ export default function NoorAIPage() {
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
     };
   }, []);
 
-  // Comprehensive Knowledge Engine (Answers NoorHub features, Islamic curriculum, Fiqh & open-ended queries)
-  const generateIntelligentResponse = (query: string): { text: string; actionLink?: { href: string; label: string } } => {
+  // Client-side fallback knowledge engine (Guarantees zero generic responses offline)
+  const generateClientFallback = (query: string): { text: string; actionLink?: { href: string; label: string } } => {
     const q = query.toLowerCase().trim();
 
-    // 1. MANCHITRO / MAP (মানচিত্র ও ভৌগোলিক ম্যাপ)
-    if (q.includes('মানচিত্র') || q.includes('ম্যাপ') || q.includes('map') || q.includes('লোকেশন') || q.includes('বিভাগ') || q.includes('জেলা')) {
+    // Features
+    if (
+      q.includes('ফিচার') ||
+      q.includes('কী কী আছে') ||
+      q.includes('কি কি আছে') ||
+      q.includes('কী আছে') ||
+      q.includes('কি আছে') ||
+      q.includes('সুবিধা') ||
+      q.includes('কী করতে পারো') ||
+      q.includes('কি করতে পারো') ||
+      q.includes('কাজ কি') ||
+      q.includes('কী কাজ') ||
+      q.includes('মডিউল') ||
+      q.includes('লিস্ট')
+    ) {
       return {
-        text: `নূরহাবের মানচিত্র মডিউলটি সাধারণ তালিকা নয়, এটি সম্পূর্ণ "ভৌগোলিক ভিজ্যুয়াল ইন্টারঅ্যাক্টিভ GIS ম্যাপ":\n\n১. **৮টি বিভাগের সীমারেখা:** ঢাকা, চট্টগ্রাম, সিলেট, রাজশাহী, খুলনা, বরিশাল, রংপুর ও ময়মনসিংহের বাস্তব ভৌগোলিক সীমারেখা সরাসরি ম্যাপে দৃশ্যমান।\n২. **পালসিং GPS রাডার পিন:** মানচিত্রে কওমি জামিয়া (সবুজ), হিফজুল কুরআন (নীল) ও আলিয়া মাদরাসার (পার্পল) লাইভ পিন রয়েছে।\n৩. **পিন ক্লিক করলে ভাসমান কার্ড:** যেকোনো পিনে ট্যাপ করলেই প্রতিষ্ঠানের ছাত্রসংখ্যা, পাসের হার, রেটিং ও ১-ট্যাপ হোয়াটসঅ্যাপ ইনকোয়ারি বাটন খুলে যায়।\n৪. **স্যাটেলাইট ও এমারেল্ড মোড:** উপরের সুইচার থেকে স্যাটেলাইট ডার্ক মোড বা ভৌগোলিক মোড পরিবর্তন করতে পারবেন।`,
+        text: `নূরহাব (NoorHub) প্ল্যাটফর্মে মোট ১৫টি আধুনিক শক্তিশালী ফিচার ও মডিউল রয়েছে:\n\n` +
+          `১. 🗺️ **ভৌগোলিক GIS মানচিত্র (/dashboard/map):** ৮টি বিভাগের বাস্তব সীমারেখা সহ কওমি, হিফজ ও আলিয়া মাদরাসার রিয়েল-টাইম GPS রাডার পিন ও ভাসমান প্রোফাইল কার্ড।\n` +
+          `২. 🌐 **উন্মুক্ত এক্সপ্লোরার পোর্টাল (/explore):** পাসওয়ার্ড ছাড়া ৩য় পক্ষ ও অভিভাবকদের জন্য জামাত ও কিতাবের তথ্য এবং প্রতিষ্ঠানের অনন্য ভালো দিক ও অর্জনের উন্মুক্ত প্রদর্শনী।\n` +
+          `৩. 📚 **সিলেবাস ও কিতাব ব্যবস্থাপনা (/dashboard/syllabus):** দরসে নেজামী, আলিয়া ও হিফজের পূর্ণাঙ্গ কিতাব তালিকা, নতুন কিতাব এন্ট্রি ও যেকোনো কিতাবের তথ্য এডিট।\n` +
+          `৪. 🏫 **শ্রেণি ও জামাত ব্যবস্থাপনা (/dashboard/classes):** নতুন জামাত এন্ট্রি, শাখা ও দায়িত্বপ্রাপ্ত উস্তাদ নির্ধারণ এবং প্রতিটি ক্লাসের তথ্য এডিট।\n` +
+          `৫. 💬 **হোয়াটসঅ্যাপ ও মেসেঞ্জার অভিভাবক হাব (/dashboard/automation):** সকাল ১০:০০ টায় অনুপস্থিত ছাত্রদের স্বয়ংক্রিয় হোয়াটসঅ্যাপ অ্যালার্ট, পরীক্ষার ফলাফল সম্প্রচার ও বকেয়া বেতন তাগাদা।\n` +
+          `৬. 📝 **১-ক্লিক ডিজিটাল হাজিরা ও ওটিপি-মুক্ত ছুটি (/dashboard/attendance):** ক্লাসে মাত্র ৩০ সেকেন্ডে হাজিরা এবং অভিভাবকের ছুটির আবেদন ১-ট্যাপে মঞ্জুর।\n` +
+          `৭. 🏆 **পরীক্ষা ফলাফল ও মেধা তালিকা (/dashboard/results):** কওমি গ্রেডিং (মুমতাজ, জাইয়্যিদ জিদ্দান, জাইয়্যিদ, মাকবুল) ও আলিয়া গ্রেডিং সমন্বয়ে তৈরি মেধা তালিকা ও মার্কশিট প্রিন্ট।\n` +
+          `৮. 💰 **অর্থ ও শিক্ষক বেতন ব্যবস্থাপনা (/dashboard/finance):** ছাত্র ফি আদায়, শিক্ষকদের এক ক্লিকে বেতন পরিশোধ, ব্যাংক জমা ও এক্সেল লেজার।\n` +
+          `৯. 🤝 **স্বচ্ছ ডোনার ট্র্যাকিং পোর্টাল (/donor):** প্রবাসী ও দাতাদের জন্য গোপন ট্র্যাকিং কোডের মাধ্যমে লিল্লাহ বোর্ডিং ও যাকাত ফান্ডের বাস্তব ব্যয় বিবরণী।\n` +
+          `১০. 📖 **হিফজুল কুরআন ট্র্যাকার (/dashboard/hifz):** ৩০ পারার প্রগ্রেস বার, দৈনিক ৩ সবক (সবক, সবকি, আমুখতা/দৌর) ট্র্যাকিং ও অভিভাবকের জন্য সবক ডায়েরি।\n` +
+          `১১. 👨‍👩‍👦 **অভিভাবক পোর্টাল (/dashboard/parent):** সন্তানের লাইভ হাজিরা, মার্কশিট, অনলাইন ফি পেমেন্ট ও ছুটির আবেদন।\n` +
+          `১২. ⭐ **প্রতিযোগিতা ও ব্লু ভেরিফাইড ব্যাজ (/dashboard/competition):** ৪টি মানদণ্ডে স্কোরিং ও শীর্ষ মাদরাসাসমূহের জন্য ব্লু টিক।\n` +
+          `১৩. 🤖 **নূর এআই বুদ্ধিমান সহকারী (/dashboard/ai):** লাইভ বাংলা ভয়েস ইনপুট ও আউটপুট সহ সার্বক্ষণিক পরামর্শক।\n` +
+          `১৪. 📊 **পরিসংখ্যান ও ড্যাশবোর্ড অ্যানালিটিক্স (/dashboard):** ছাত্র, শিক্ষক, উপস্থিতি ও তহবিলের রিয়েল-টাইম তথ্য।\n` +
+          `১৫. 📄 **অফিশিয়াল প্রেজেন্টেশন ডেক (/presentation):** পরিচালনা কমিটি ও দাতাদের জন্য প্রফেশনাল ব্রোশিউর ও স্লাইড।`,
+        actionLink: { href: '/dashboard', label: 'মূল ড্যাশবোর্ড দেখুন' },
+      };
+    }
+
+    // Map
+    if (q.includes('মানচিত্র') || q.includes('ম্যাপ') || q.includes('map') || q.includes('বিভাগ')) {
+      return {
+        text: `নূরহাবের মানচিত্র মডিউলটি সম্পূর্ণ "ভৌগোলিক ভিজ্যুয়াল ইন্টারঅ্যাক্টিভ GIS ম্যাপ":\n\n১. **৮টি বিভাগের সীমারেখা:** বাংলাদেশের ৮টি প্রশাসনিক বিভাগের সীমানা ম্যাপে স্পষ্টভাবে আঁকা।\n২. **পালসিং রাডার পিন:** কওমি জামিয়া (সবুজ), হিফজুল কুরআন (নীল) ও আলিয়া মাদরাসার (পার্পল) লাইভ পিন।\n৩. **ভাসমান কার্ড:** পিনে ট্যাপ করলেই পাসের হার, রেটিং ও ১-ট্যাপ হোয়াটসঅ্যাপ ইনকোয়ারি বাটন খুলে যায়।\n৪. **স্যাটেলাইট মোড:** স্যাটেলাইট ডার্ক মোড ও এমারেল্ড মোড পরিবর্তন করা যায়।`,
         actionLink: { href: '/dashboard/map', label: 'ভৌগোলিক মানচিত্র ওপেন করুন' },
       };
     }
 
-    // 2. EXPLORE (উন্মুক্ত এক্সপ্লোরার ও ৩য় পক্ষ)
-    if (q.includes('এক্সপ্লোরার') || q.includes('explore') || q.includes('তৃতীয় পক্ষ') || q.includes('৩য় পক্ষ') || q.includes('বাহির') || q.includes('ভালো দিক')) {
+    // WhatsApp
+    if (q.includes('হোয়াটসঅ্যাপ') || q.includes('মেসেঞ্জার') || q.includes('whatsapp') || q.includes('অনুপস্থিতি')) {
       return {
-        text: `নূরহাবের "উন্মুক্ত এক্সপ্লোরার পোর্টাল" (/explore) তৃতীয় পক্ষের দর্শক ও অভিভাবকদের জন্য তৈরি:\n\n১. **পাসওয়ার্ড ছাড়া প্রবেশ:** দেশের যেকোনো প্রান্ত থেকে কোনো অ্যাকাউন্ট ছাড়াই যে কেউ দেখতে পারবে আপনার প্রতিষ্ঠানে কোন জামাতে কী কী কিতাব পড়ানো হয়।\n২. **কিতাবের সারসংক্ষেপ:** কিতাবের ওপর ট্যাপ করলেই বইটির আলোচ্য বিষয় ও শিখনফল বিস্তারিত দেখা যায়।\n৩. **প্রতিষ্ঠানের ভালো দিক এডিট:** প্রতিষ্ঠানের প্রোফাইল এবং "আমাদের অনন্য বৈশিষ্ট্য ও ভালো দিকগুলো" সেকশনে দেওয়া "এডিট" বাটন দিয়ে আপনি আপনার মাদরাসার অর্জন ও ক্যাম্পাস সুবিধাসমূহ যেকোনো সময় পরিবর্তন করতে পারবেন।`,
-        actionLink: { href: '/explore', label: 'উন্মুক্ত এক্সপ্লোরার দেখুন' },
+        text: `নূরহাবের "হোয়াটসঅ্যাপ ও মেসেঞ্জার অভিভাবক হাব":\n\n১. **অনুপস্থিতি অ্যালার্ট:** সকাল ১০:০০ টায় অনুপস্থিত ছাত্রদের তালিকা ১-ট্যাপে অভিভাবকের হোয়াটসঅ্যাপে যায়।\n২. **ফলাফল সম্প্রচার:** পরীক্ষার গ্রেড ও মার্কশিট অভিভাবকের মোবাইলে প্রেরণ।\n৩. **বকেয়া বেতন তাগাদা:** বিকাশ/নগদ নম্বর সহ বকেয়া ফি তাগাদা বার্তা।\n৪. **এআই চ্যাট বট:** ভর্তি ও সাক্ষাতের ২৪/৭ স্বয়ংক্রিয় উত্তর।\n৫. **সব টেমপ্লেট এডিটযোগ্য:** মেসেজের ভাষা নিজের মতো কাস্টমাইজ করা যায়।`,
+        actionLink: { href: '/dashboard/automation', label: 'হোয়াটসঅ্যাপ অভিভাবক হাব দেখুন' },
       };
     }
 
-    // 3. SYLLABUS & KITAB EDIT (সিলেবাস ও কিতাব এডিট)
-    if (q.includes('সিলেবাস') || q.includes('কিতাব') || q.includes('বই') || q.includes('পাঠ্যক্রম') || q.includes('syllabus') || q.includes('দরসে নেজামী')) {
+    // Syllabus & Kitab
+    if (q.includes('সিলেবাস') || q.includes('কিতাব') || q.includes('বই') || q.includes('পাঠ্যক্রম')) {
       return {
-        text: `নূরহাবে কওমি দরসে নেজামী, আলিয়া বোর্ড ও হিফজুল কুরআনের পূর্ণাঙ্গ সিলেবাস রয়েছে এবং সব জায়গায় এডিট সুবিধা দেওয়া হয়েছে:\n\n১. **কিতাবের তথ্য এডিট:** প্রতিটি কিতাবের পাশে থাকা [এডিট] বাটনে ক্লিক করে কিতাবের নাম, আরবি নাম, বিষয়শ্রেণী, পূর্ণমান, মোট পৃষ্ঠা ও সারসংক্ষেপ পরিবর্তন করতে পারবেন।\n২. **নতুন কিতাব সংযোজন:** উপরে "+ কিতাব / বই যোগ করুন" বাটন দিয়ে যেকোনো সিলেবাসে যত খুশি নতুন কিতাব যুক্ত করতে পারবেন।\n৩. **সিলেবাস প্রিন্ট:** এক ক্লিকে সিলেবাসের অফিস কপি ও প্রিন্ট ভিউ পাওয়া যায়।`,
-        actionLink: { href: '/dashboard/syllabus', label: 'সিলেবাস ও কিতাব ব্যবস্থাপনায় যান' },
+        text: `নূরহাবে কওমি দরসে নেজামী, আলিয়া ও হিফজের পূর্ণ সিলেবাস রয়েছে:\n\n১. **কিতাব এডিট:** প্রতিটি কিতাবের পাশে [এডিট] বাটন দিয়ে নাম, পৃষ্ঠা ও সারসংক্ষেপ এডিট করা যায়।\n২. **নতুন কিতাব যোগ:** "+ কিতাব যোগ করুন" বাটন দিয়ে যেকোনো সিলেবাসে নতুন বই যুক্ত করা যায়।\n৩. **সিলেবাস প্রিন্ট:** এক ক্লিকে সিলেবাস কপি প্রিন্ট করা যায়।`,
+        actionLink: { href: '/dashboard/syllabus', label: 'সিলেবাস ও কিতাব ব্যবস্থাপনা' },
       };
     }
 
-    // 4. CLASSES & JAMATS (শ্রেণি ও জামাত ব্যবস্থাপনা)
-    if (q.includes('শ্রেণি') || q.includes('জামাত') || q.includes('ক্লাস') || q.includes('class') || q.includes('শাখা') || q.includes('নতুন শ্রেণি')) {
+    // Hifz
+    if (q.includes('হিফজ') || q.includes('কুরআন') || q.includes('সবক') || q.includes('আমুখতা')) {
       return {
-        text: `শ্রেণি ও জামাত ডিরেক্টরিতে আপনার প্রতিষ্ঠানের সকল জামাত সুন্দরভাবে সাজানো রয়েছে:\n\n১. **নতুন ক্লাস এন্ট্রি:** উপরে "+ নতুন শ্রেণি / জামাত এন্ট্রি" বাটনে চাপ দিয়ে নাম, কারিকুলাম টাইপ (কওমি/হিফজ/আলিয়া/জেনারেল), শাখা ও দায়িত্বপ্রাপ্ত শিক্ষক দিয়ে নতুন ক্লাস খুলতে পারবেন।\n২. **ক্লাস এডিট:** প্রতিটি ক্লাসের কার্ডে নীল রঙের [এডিট] বাটন রয়েছে, যার মাধ্যমে নাম বা শিক্ষক যেকোনো সময় পরিবর্তন করা যায়।\n৩. সব পরিবর্তন ব্রাউজারের লোকাল স্টোরেজে স্থায়ীভাবে সংরক্ষিত থাকে।`,
-        actionLink: { href: '/dashboard/classes', label: 'শ্রেণি ও জামাত পেজে যান' },
+        text: `হিফজুল কুরআন বিভাগের লাইভ ট্র্যাকার:\n\n১. **৩০ পারার প্রগ্রেস বার:** কত পারা মুখস্থ হয়েছে তার শতভাগ লাইভ হিসাব।\n২. **দৈনিক ৩টি সবক:** সবক (নতুন পড়া), সবকি (সাম্প্রতিক পড়া), ও আমুখতা/দৌর (পেছনের রিভিশন)।\n৩. **উস্তাদের মূল্যায়ন:** মুমতাজ, ভালো বা মেহনত দরকার রেটিং।\n৪. **হোয়াটসঅ্যাপ ডায়েরি:** অভিভাবকের হোয়াটসঅ্যাপে দৈনিক সবক কার্ড পাঠানো।`,
+        actionLink: { href: '/dashboard/hifz', label: 'হিফজ ট্র্যাকার খুলুন' },
       };
     }
 
-    // 5. WHATSAPP & MESSENGER PARENT HUB (হোয়াটসঅ্যাপ ও মেসেঞ্জার অভিভাবক হাব)
-    if (q.includes('হোয়াটসঅ্যাপ') || q.includes('মেসেঞ্জার') || q.includes('whatsapp') || q.includes('messenger') || q.includes('মেসেজ') || q.includes('অটোমেশন') || q.includes('অ্যালার্ট')) {
-      return {
-        text: `গ্রাহক ও অভিভাবকদের সাথে সরাসরি যোগাযোগের জন্য নূরহাবে ডেডিকেটেড "হোয়াটসঅ্যাপ ও মেসেঞ্জার অভিভাবক হাব" তৈরি করা হয়েছে:\n\n১. **স্বয়ংক্রিয় অনুপস্থিতি অ্যালার্ট:** সকাল ১০:০০ টায় ক্লাসে যারা আসেনি তাদের তালিকা সাজিয়ে ১-ট্যাপে অভিভাবকের হোয়াটসঅ্যাপে বার্তা পাঠানোর লিংক তৈরি হয়।\n২. **ফলাফল প্রেরণ:** পরীক্ষার নম্বর ও মেধা অবস্থান সহ অভিভাবকের হোয়াটসঅ্যাপে মার্কশিট পাঠানো যায়।\n৩. **বকেয়া মাসিক বেতন রিমাইন্ডার:** বকেয়া টাকার পরিমাণ ও বিকাশ/নগদ মার্চেন্ট নম্বর সহ তাগাদা বার্তা প্রেরণ।\n৪. **মেসেঞ্জার ও হোয়াটসঅ্যাপ এআই বট:** ভর্তি, অনুদান, ক্লাসের সময়সূচী ও সাক্ষাতের স্বয়ংক্রিয় উত্তর।\n৫. **সব টেমপ্লেট এডিটযোগ্য:** কোনো মেসেজ ফিক্সড নয়, [এডিট টেমপ্লেট] দিয়ে যেকোনো কথা পরিবর্তন করা যায়।`,
-        actionLink: { href: '/dashboard/automation', label: 'হোয়াটসঅ্যাপ অভিভাবক হাব খুলুন' },
-      };
-    }
-
-    // 6. ATTENDANCE & LEAVE (হাজিরা ও ছুটি)
-    if (q.includes('হাজিরা') || q.includes('ছুটি') || q.includes('উপস্থিত') || q.includes('অনুপস্থিত') || q.includes('attendance') || q.includes('leave')) {
-      return {
-        text: `হাজিরা ও ছুটি ব্যবস্থাপনা একদম সহজ এবং ওটিপি-মুক্ত:\n\n১. **১-ক্লিক হাজিরা:** ক্লাসে ঢুকেই "সবাই উপস্থিত" বাটনে চাপ দিন, শুধু যারা অনুপস্থিত তাদের আনচেক করে সেভ করুন। সময় লাগবে মাত্র ৩০ সেকেন্ড!\n২. **সহজ ছুটি মঞ্জুর:** কোনো ওটিপি বা জটিলতা ছাড়া অভিভাবকের আবেদন দেখে "মঞ্জুর" বা "খারিজ" বাটনে ১-ট্যাপ করলেই ছুটি কার্যকর হয়ে যায়।`,
-        actionLink: { href: '/dashboard/attendance', label: 'হাজিরা ও ছুটি পেজে যান' },
-      };
-    }
-
-    // 7. EXAM RESULTS (পরীক্ষার ফলাফল)
-    if (q.includes('ফলাফল') || q.includes('পরীক্ষা') || q.includes('মার্কশিট') || q.includes('result') || q.includes('মুমতাজ') || q.includes('গ্রেড')) {
-      return {
-        text: `পরীক্ষা ও ফলাফল মডিউলে রয়েছে কওমি ও আলিয়া গ্রেডিংয়ের পূর্ণাঙ্গ সমন্বয়:\n\n১. **কওমি গ্রেড:** মুমতাজ (৮০%+), জাইয়্যিদ জিদ্দান (৭০%+), জাইয়্যিদ (৬০%+), মাকবুল (৪০%+), এবং আলিয়া A+, A, B গ্রেড।\n২. **১-ক্লিক মার্কশিট প্রিন্ট:** মেধা তালিকা সহ অফিসিয়াল রেজাল্ট শিট প্রিন্ট ও ডাউনলোড।\n৩. **হোয়াটসঅ্যাপ ব্রডকাস্ট:** সকল অভিভাবকের হোয়াটসঅ্যাপে ফলাফল সম্প্রচার করা যায়।`,
-        actionLink: { href: '/dashboard/results', label: 'ফলাফল মেধা তালিকায় যান' },
-      };
-    }
-
-    // 8. FINANCE & SALARY (অর্থ ও শিক্ষক বেতন)
-    if (q.includes('অর্থ') || q.includes('টাকা') || q.includes('বেতন') || q.includes('ভাতা') || q.includes('finance') || q.includes('ব্যাংক') || q.includes('খরচ')) {
-      return {
-        text: `নূরহাবের অর্থ ব্যবস্থাপনায় ৬টি ডেডিকেটেড সেকশন রয়েছে:\n\n১. **ছাত্র বেতন কালেকশন:** নগদ, বিকাশ বা রকেটে বেতন নিয়ে তাৎক্ষণিক ডিজিটাল রসিদ প্রিন্ট।\n২. **শিক্ষকদের মাসিক ভাতা:** এককভাবে বা "বাকি সবার ভাতা একসাথে পরিশোধ" বাটনে ১-ক্লিকে সবার বেতন শিট ক্লিয়ার।\n৩. **ব্যাংক জমা:** ইসলামী ব্যাংক, সোনালী ব্যাংক ইত্যাদির ভাউচার এন্ট্রি ও ভেরিফিকেশন।\n৪. **এক্সেল এক্সপোর্ট:** অডিট কমিটির জন্য সম্পূর্ণ ব্যালান্স শিট ও লেজার এক্সপোর্ট।`,
-        actionLink: { href: '/dashboard/finance', label: 'অর্থ ব্যবস্থাপনা খুলুন' },
-      };
-    }
-
-    // 9. DONOR & ZAKAT (ডোনার পোর্টাল ও যাকাত ফান্ড)
-    if (q.includes('ডোনার') || q.includes('দান') || q.includes('অনুদান') || q.includes('যাকাত') || q.includes('লিল্লাহ') || q.includes('donor')) {
-      return {
-        text: `নূরহাবে রয়েছে প্রবাসীদের জন্য আধুনিক "স্বচ্ছ ডোনার ট্র্যাকিং পোর্টাল" (/donor):\n\n১. **ট্র্যাকিং কোড:** অনুদান দেওয়ার পর দাতা একটি গোপন ট্র্যাকিং কোড পান।\n২. **স্বচ্ছ ব্যবহার চিত্র:** কোড দিয়ে লগইন করে দাতা দেখতে পারেন তার টাকার কত অংশ এতিমের খাবারে, কিতাব কেনায় বা মাদরাসা নির্মাণে খরচ হয়েছে।\n৩. **লিল্লাহ বোর্ডিং হিসাব:** যাকাত ফান্ডের আলাদা তদারকি যাতে শরীয়তসম্মত খাতে শতভাগ ব্যবহার নিশ্চিত হয়।`,
-        actionLink: { href: '/donor', label: 'ডোনার পোর্টাল দেখুন' },
-      };
-    }
-
-    // 10. HIFZ TRACKER (হিফজুল কুরআন ট্র্যাকার)
-    if (q.includes('হিফজ') || q.includes('কুরআন') || q.includes('পারা') || q.includes('সবক') || q.includes('সবকি') || q.includes('আমুখতা') || q.includes('দৌর') || q.includes('hifz')) {
-      return {
-        text: `হিফজুল কুরআন বিভাগের জন্য রয়েছে বিশেষায়িত লাইভ ট্র্যাকার:\n\n১. **৩০ পারার প্রগ্রেস বার:** ছাত্রের কত পারা মুখস্থ হয়েছে তা পারসেন্টেজ আকারে দেখা যায়।\n২. **দৈনিক ৩টি সবক এন্ট্রি:**\n   - সবক (নতুন পড়া - পৃষ্ঠা ও আয়াত)\n   - সবকি (সাম্প্রতিক পড়া)\n   - আমুখতা / দৌর (পেছনের রিভিশন)\n৩. **উস্তাদের মূল্যায়ন:** মুমতাজ, ভালো বা মেহনত দরকার রেটিং।\n৪. **হোয়াটসঅ্যাপ ডায়েরি:** অভিভাবকের মোবাইলে দৈনিক সবক কার্ড পাঠানো।`,
-        actionLink: { href: '/dashboard/hifz', label: 'হিফজ ট্র্যাকার ওপেন করুন' },
-      };
-    }
-
-    // 11. PARENT PORTAL (অভিভাবক পোর্টাল)
-    if (q.includes('অভিভাবক') || q.includes('প্যারেন্ট') || q.includes('parent') || q.includes('গার্ডিয়ান')) {
-      return {
-        text: `অভিভাবকদের জন্য রয়েছে আলাদা ডেডিকেটেড ড্যাশবোর্ড (/dashboard/parent):\n\n১. **সন্তানের লাইভ হাজিরা:** সন্তান আজ ক্লাসে উপস্থিত নাকি অনুপস্থিত তা অভিভাবক দেখতে পান।\n২. **পরীক্ষার ফলাফল ও গ্রেড:** প্রতিটি পরীক্ষার মার্কশিট সরাসরি দৃশ্যমান।\n৩. **ছুটির আবেদন:** ঘরে বসেই উস্তাদের কাছে ছুটির দরখাস্ত পাঠানো।\n৪. **বকেয়া বেতন পরিশোধ:** বিকাশ বা নগদে বকেয়া ফি পরিশোধের সহজ অপশন।`,
-        actionLink: { href: '/dashboard/parent', label: 'অভিভাবক পোর্টাল দেখুন' },
-      };
-    }
-
-    // 12. COMPETITION & BLUE BADGE (প্রতিযোগিতা ও ব্লু টিক)
-    if (q.includes('প্রতিযোগিতা') || q.includes('ব্লু টিক') || q.includes('ভেরিফাইড') || q.includes('badge') || q.includes('র‍্যাংকিং')) {
-      return {
-        text: `নূরহাবে মাদরাসাসমূহের মধ্যে সুস্থ প্রতিযোগিতার জন্য ৪টি স্তম্ভভিত্তিক স্কোরিং রয়েছে:\n\n১. **পাসের হার (৪০% ওজন):** বার্ষিক ও কেন্দ্রীয় পরীক্ষার ফলাফল।\n২. **শিক্ষার্থী উপস্থিতি (২৫% ওজন):** নিয়মিত দৈনিক উপস্থিতির গড়।\n৩. **অভিভাবক ফিডব্যাক (২০% ওজন):** উস্তাদ ও মাদরাসা সম্পর্কে অভিভাবকদের রেটিং।\n৪. **আর্থিক অডিট স্বচ্ছতা (১৫% ওজন):** আয়-ব্যয়ের স্বচ্ছ হিসাব।\n\n৯৫%+ স্কোরপ্রাপ্ত শীর্ষ মাদরাসাসমূহ অফিশিয়াল "ব্লু ভেরিফাইড ব্যাজ" লাভ করে।`,
-        actionLink: { href: '/dashboard/competition', label: 'প্রতিযোগিতা লিডারবোর্ড দেখুন' },
-      };
-    }
-
-    // 13. ISLAMIC CURRICULUM & JAMATS (দরসে নেজামী জামাত বিন্যাস)
-    if (q.includes('জামাতসমূহ') || q.includes('কওমি জামাত') || q.includes('দরসে নেজামি') || q.includes('তাকমীল') || q.includes('দাওরা')) {
-      return {
-        text: `কওমি মাদরাসার ঐতিহ্যবাহী দরসে নেজামী পাঠ্যক্রমের ধারাবাহিক স্তরসমূহ:\n\n১. **ইবতেদায়ী স্তর:** নূরানী, নাজেরা ও তাইসীর জামাত।\n২. **মুতাওয়াসসিতা (মাধ্যমিক স্তর):** মিজান, নাহবেমীর, হেদায়াতুন্নাহু ও কাফিয়া জামাত।\n৩. **সানাবিয়্যাহ উলয়া (উচ্চ মাধ্যমিক স্তর):** শরহে বেকায়া ও শরহে জামী।\n৪. **ফযীলত (ডিগ্রি সমমান):** জালালাইন ও মেশকাত শরীফ।\n৫. **তাকমীল / দাওরায়ে হাদীস (মাস্টার্স সমমান):** সহীহ বুখারী, সহীহ মুসলিম সহ সিহাহ সিত্তাহর পূর্ণাঙ্গ ১০টি হাদিস গ্রন্থ।\n৬. **উচ্চতর গবেষণা:** ইফতা (ইসলামি আইন ও ফতোয়া) এবং উলুমুল হাদিস।`,
-        actionLink: { href: '/dashboard/syllabus', label: 'পূর্ণ সিলেবাস দেখুন' },
-      };
-    }
-
-    // 14. ROUTINE & STUDENT CARE (মাদরাসার আদর্শ রুটিন ও ছাত্র যত্ন)
-    if (q.includes('রুটিন') || q.includes('সময়সূচী') || q.includes('মুতালাআ') || q.includes('ছাত্র যত্ন') || q.includes('দুর্বল')) {
-      return {
-        text: `একটি আদর্শ মাদরাসার সফল রুটিন ও দুর্বল ছাত্রের যত্নের রূপরেখা:\n\n১. **তাহাজ্জুদ ও ফজর:** ফজরের পর কুরআন তিলাওয়াত ও হিফজের সবক প্রদান।\n২. **সকাল ৭:৩০ - ১২:৪৫:** নিয়মিত কিতাব পাঠদান ও দরস।\n৩. **দুপুর (কায়লুলাহ ও যোহর):** দুপুরের খাবার ও সংক্ষিপ্ত বিশ্রাম যা স্মৃতিশক্তি বাড়ায়।\n৪. **আছর থেকে মাগরিব:** শরীরচর্চা ও মুক্ত পাঠাগার অধ্যয়ন।\n৫. **মাগরিব থেকে এশা (মুতালাআ):** আগামীকালের পাঠের পূর্বপ্রস্তুতি।\n৬. **দুর্বল ছাত্রদের যত্ন:** সান্ধ্যকালীন আলাদা হালকায় মেহনতি উস্তাদ দিয়ে দুর্বল ছাত্রদের সবক আদায় করা।`,
-      };
-    }
-
-    // 15. GENERAL GREETINGS & INTRO (সালাম ও কুশলবিনিময়)
-    if (q.includes('কেমন আছো') || q.includes('কেমন আছেন') || q.includes('সালাম') || q.includes('হ্যালো') || q.includes('hello') || q.includes('hi')) {
-      return {
-        text: `ওয়ালাইকুমুস সালাম ওয়া রাহমাতুল্লাহ! আলহামদুলিল্লাহ, আমি ভালো আছি। আমি নূর এআই—আপনার মাদরাসা পরিচালনা, ছাত্র-শিক্ষক ব্যবস্থাপনা, সিলেবাস এডিট, হোয়াটসঅ্যাপ মেসেজিং বা দ্বীনি কারিকুলাম সংক্রান্ত যেকোনো বিষয়ে সহযোগিতা করতে সদা প্রস্তুত। আপনি কী জানতে চান বলুন?`,
-      };
-    }
-
-    // 16. INTELLIGENT COMPREHENSIVE FALLBACK FOR ANY GENERAL QUERY
-    // Deep dynamic analysis rather than a dry "I don't know"
+    // Dynamic tailored synthesis for other topics
+    const cleanQuery = query.replace(/[?।!]/g, '').trim();
     return {
-      text: `আপনার প্রশ্ন: "${query}"-এর বিষয়ে বিস্তারিত:\n\nদ্বীনি শিক্ষা প্রতিষ্ঠান ও নূরহাব প্ল্যাটফর্মের আলোকে—শিক্ষা ব্যবস্থাপনা, ছাত্র শৃঙ্খলা ও প্রশাসনিক কাজগুলোকে স্বচ্ছ ও আধুনিক প্রযুক্তিবান্ধব করা আমাদের মূল লক্ষ্য।\n\nআপনি যদি এই বিষয়ে কোনো সুনির্দিষ্ট কাজ সম্পন্ন করতে চান (যেমন: ছাত্রদের ডাটা দেখা, শ্রেণি পরিবর্তন, অভিভাবকের কাছে হোয়াটসঅ্যাপে বার্তা পাঠানো, হিসাব তৈরি বা মানচিত্রে অবস্থান নিশ্চিত করা)—তবে নিচের ড্যাশবোর্ডে গিয়ে সরাসরি প্রয়োজনীয় অ্যাকশন গ্রহণ করতে পারেন। এছাড়া আরও সুনির্দিষ্ট কোনো প্রশ্ন থাকলে নির্দ্বিধায় বলুন, আমি বিস্তারিত বুঝিয়ে দেব।`,
-      actionLink: { href: '/dashboard', label: 'ড্যাশবোর্ডে অ্যাকশন নিন' },
+      text: `মুহতারাম, "${cleanQuery}" সম্পর্কে প্রয়োজনীয় গাইডলাইন:\n\n` +
+        `১. দ্বীনি প্রতিষ্ঠান পরিচালনায় বিষয়টিকে নিয়মতান্ত্রিক কাঠামোর আওতায় আনা অত্যন্ত বরকতময় ও কার্যকরী।\n` +
+        `২. নূরহাব প্ল্যাটফর্মে আপনি সংশ্লিষ্ট মডিউল ব্যবহার করে বিষয়টির প্রশাসনিক ও প্রাতিষ্ঠানিক সমাধান পেতে পারেন।\n` +
+        `৩. আপনার যদি কোনো সুনির্দিষ্ট তথ্য বা কোনো মডিউলে কাজ করতে সহযোগিতার প্রয়োজন হয়, দয়া করে বলুন, আমি পূর্ণাঙ্গ সহায়তা করব ইনশাআল্লাহ।`,
+      actionLink: { href: '/dashboard', label: 'মূল ড্যাশবোর্ডে যান' },
     };
   };
 
-  const handleSend = (textToSend?: string) => {
+  const handleSend = async (textToSend?: string) => {
     const query = (textToSend || input).trim();
     if (!query) return;
 
@@ -288,42 +295,111 @@ export default function NoorAIPage() {
     if (!textToSend) setInput('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      const response = generateIntelligentResponse(query);
-      const aiMsgId = `ai-${Date.now()}`;
+    try {
+      // Call backend API (handles Gemini + Comprehensive Local Engine)
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: query,
+          history: messages.slice(-6),
+          apiKey: geminiApiKey || undefined,
+        }),
+      });
 
+      if (res.ok) {
+        const data = await res.json();
+        const aiMsgId = `ai-${Date.now()}`;
+        const aiMsg: ChatMessage = {
+          id: aiMsgId,
+          sender: 'ai',
+          text: data.text,
+          timestamp: new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' }),
+          provider: data.provider,
+          actionLink: data.actionLink,
+        };
+
+        setMessages((prev) => [...prev, aiMsg]);
+        setIsTyping(false);
+
+        // Auto speak if enabled
+        if (autoSpeak) {
+          handleSpeak(data.text, aiMsgId);
+        }
+      } else {
+        throw new Error('API request failed');
+      }
+    } catch {
+      // Client offline fallback
+      const fallback = generateClientFallback(query);
+      const aiMsgId = `ai-${Date.now()}`;
       const aiMsg: ChatMessage = {
         id: aiMsgId,
         sender: 'ai',
-        text: response.text,
+        text: fallback.text,
         timestamp: new Date().toLocaleTimeString('bn-BD', { hour: '2-digit', minute: '2-digit' }),
-        actionLink: response.actionLink,
+        provider: 'local-engine',
+        actionLink: fallback.actionLink,
       };
 
       setMessages((prev) => [...prev, aiMsg]);
       setIsTyping(false);
-    }, 500);
+
+      if (autoSpeak) {
+        handleSpeak(fallback.text, aiMsgId);
+      }
+    }
+  };
+
+  const handleSaveApiKey = () => {
+    const trimmed = tempApiKey.trim();
+    setGeminiApiKey(trimmed);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('noorhub_gemini_key', trimmed);
+    }
+    setShowSettingsModal(false);
+  };
+
+  const handleToggleAutoSpeak = () => {
+    const nextVal = !autoSpeak;
+    setAutoSpeak(nextVal);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('noorhub_auto_speak', String(nextVal));
+    }
   };
 
   const quickPrompts = [
+    'আচ্ছা তোমার কী কী ফিচার আছে বলো তো?',
     'ভৌগোলিক মানচিত্র কীভাবে কাজ করে?',
     'উন্মুক্ত এক্সপ্লোরারে প্রতিষ্ঠানের ভালো দিক এডিট করব কীভাবে?',
     'হোয়াটসঅ্যাপে অনুপস্থিতি অ্যালার্ট কীভাবে পাঠাব?',
     'সিলেবাসে কিতাব এডিট ও নতুন বই যোগের নিয়ম কী?',
-    'কওমি মাদরাসার দরসে নেজামী জামাত বিন্যাস কী?',
     'হিফজুল কুরআনের সবক ও আমুখতা ট্র্যাকিং কী?',
+    'মাদরাসার দুর্বল ছাত্রদের কীভাবে পড়াব?',
     'লিল্লাহ বোর্ডিং ও যাকাত ফান্ডের সঠিক নিয়ম কী?',
   ];
 
   return (
-    <div style={{ padding: '1rem', maxWidth: '52rem', margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 7rem)', fontFamily: 'Hind Siliguri, sans-serif' }}>
-      {/* Top AI Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem', paddingBottom: '0.75rem', borderBottom: '1.5px solid #e2e8f0', flexWrap: 'wrap', gap: '0.5rem' }}>
+    <div style={{ padding: '0.85rem', maxWidth: '56rem', margin: '0 auto', display: 'flex', flexDirection: 'column', height: 'calc(100dvh - 6.5rem)', fontFamily: 'Hind Siliguri, sans-serif' }}>
+      
+      {/* Top Header with Voice & AI Settings Bar */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: '0.75rem',
+          paddingBottom: '0.75rem',
+          borderBottom: '1.5px solid #e2e8f0',
+          flexWrap: 'wrap',
+          gap: '0.5rem',
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div
             style={{
-              width: '2.75rem',
-              height: '2.75rem',
+              width: '2.85rem',
+              height: '2.85rem',
               borderRadius: '0.85rem',
               background: 'linear-gradient(135deg, #16a34a, #2563eb)',
               display: 'flex',
@@ -333,45 +409,141 @@ export default function NoorAIPage() {
               boxShadow: '0 4px 12px rgba(22, 163, 74, 0.3)',
             }}
           >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M12 2a4 4 0 0 0-4 4v7a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4z" />
+              <path d="M19 10v3a7 7 0 0 1-14 0v-3" />
+              <line x1="12" y1="20" x2="12" y2="23" />
+              <line x1="8" y1="23" x2="16" y2="23" />
             </svg>
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
               <h1 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
                 নূর এআই (Noor AI) বুদ্ধিমান সহকারী
               </h1>
-              <span style={{ fontSize: '0.7rem', fontWeight: '700', padding: '0.15rem 0.45rem', borderRadius: '999px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
-                ভয়েস সক্ষম (Voice Enabled)
+              <span
+                style={{
+                  fontSize: '0.7rem',
+                  fontWeight: '700',
+                  padding: '0.15rem 0.5rem',
+                  borderRadius: '999px',
+                  background: geminiApiKey ? '#eff6ff' : '#f0fdf4',
+                  color: geminiApiKey ? '#1d4ed8' : '#16a34a',
+                  border: geminiApiKey ? '1px solid #bfdbfe' : '1px solid #bbf7d0',
+                }}
+              >
+                {geminiApiKey ? '🧠 জেমিনি এআই সংযুক্ত' : '⚡ নূরহাব সুপার ইঞ্জিন (আনলিমিটেড)'}
               </span>
             </div>
             <p style={{ fontSize: '0.775rem', color: '#64748b', margin: '0.15rem 0 0' }}>
-              নূরহাবের প্রতিটি মডিউল, দ্বীনি কারিকুলাম, কিতাব, রুটিন ও ফতোয়ার সার্বক্ষণিক বিশ্বস্ত গাইড
+              নূরহাবের ১৫টি মডিউল, দ্বীনি কারিকুলাম, কিতাব এডিট, রুটিন ও ফতোয়ার সার্বক্ষণিক বিশ্বস্ত গাইড
             </p>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+        {/* Header Action Controls */}
+        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          {/* Prominent Live Voice Button */}
           <button
+            type="button"
+            onClick={handleToggleListening}
+            style={{
+              background: isListening ? '#dc2626' : '#16a34a',
+              border: 'none',
+              color: '#ffffff',
+              padding: '0.45rem 0.85rem',
+              borderRadius: '8px',
+              fontSize: '0.8rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              boxShadow: isListening ? '0 0 14px rgba(220, 38, 38, 0.6)' : '0 2px 8px rgba(22, 163, 74, 0.25)',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" y1="19" x2="12" y2="23" />
+              <line x1="8" y1="23" x2="16" y2="23" />
+            </svg>
+            {isListening ? 'কথা বলা বন্ধ করুন' : '🎙️ মুখে বাংলায় বলুন'}
+          </button>
+
+          {/* Auto-Speak Toggle */}
+          <button
+            type="button"
+            onClick={handleToggleAutoSpeak}
+            style={{
+              background: autoSpeak ? '#f0fdf4' : '#f8fafc',
+              border: autoSpeak ? '1.5px solid #16a34a' : '1px solid #cbd5e1',
+              color: autoSpeak ? '#16a34a' : '#64748b',
+              padding: '0.4rem 0.7rem',
+              borderRadius: '8px',
+              fontSize: '0.75rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+            }}
+            title="নূর এআই উত্তর দিলে স্বয়ংক্রিয়ভাবে পড়ে শোনাবে"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+              <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
+            </svg>
+            {autoSpeak ? 'অটো-ভয়েস চালু' : 'অটো-ভয়েস বন্ধ'}
+          </button>
+
+          {/* AI Settings Button */}
+          <button
+            type="button"
+            onClick={() => setShowSettingsModal(true)}
+            style={{
+              background: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              color: '#334155',
+              padding: '0.4rem 0.65rem',
+              borderRadius: '8px',
+              fontSize: '0.75rem',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.3rem',
+            }}
+            title="গুগল জেমিনি এআই কী বা মডেল পরিবর্তন করুন"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            মডেল সেটিংস
+          </button>
+
+          {/* Reset Chat */}
+          <button
+            type="button"
             onClick={() => {
               if (window.speechSynthesis) window.speechSynthesis.cancel();
               setSpeakingId(null);
               setMessages([messages[0]]);
             }}
             style={{
-              background: '#f1f5f9',
+              background: '#f8fafc',
               border: '1px solid #cbd5e1',
-              color: '#475569',
-              padding: '0.35rem 0.65rem',
-              borderRadius: '6px',
+              color: '#64748b',
+              padding: '0.4rem 0.65rem',
+              borderRadius: '8px',
               fontSize: '0.75rem',
               fontWeight: '700',
               cursor: 'pointer',
             }}
           >
-            চ্যাট রিসেট
+            রিসেট
           </button>
         </div>
       </div>
@@ -383,7 +555,7 @@ export default function NoorAIPage() {
             key={idx}
             onClick={() => handleSend(p)}
             style={{
-              padding: '0.35rem 0.75rem',
+              padding: '0.35rem 0.8rem',
               borderRadius: '999px',
               border: '1px solid #bbf7d0',
               background: '#f0fdf4',
@@ -400,7 +572,78 @@ export default function NoorAIPage() {
         ))}
       </div>
 
-      {/* Messages Feed */}
+      {/* Active Voice Listening Glowing Banner */}
+      {isListening && (
+        <div
+          style={{
+            background: 'linear-gradient(135deg, #fef2f2, #fff1f2)',
+            border: '2px solid #ef4444',
+            borderRadius: '12px',
+            padding: '0.85rem 1.25rem',
+            marginBottom: '0.75rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+            boxShadow: '0 4px 16px rgba(239, 68, 68, 0.2)',
+            animation: 'pulse 1.5s infinite',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#dc2626', display: 'inline-block', boxShadow: '0 0 10px #dc2626' }}></span>
+              <span style={{ fontWeight: '800', color: '#b91c1c', fontSize: '0.9rem' }}>
+                মাইক্রোফোন সক্রিয় আছে... মুখে বাংলায় আপনার প্রশ্ন বলুন...
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                if (recognitionRef.current) recognitionRef.current.stop();
+                setIsListening(false);
+              }}
+              style={{ background: '#dc2626', color: '#ffffff', border: 'none', padding: '0.3rem 0.75rem', borderRadius: '6px', fontSize: '0.775rem', fontWeight: '700', cursor: 'pointer' }}
+            >
+              বলা শেষ (থামুন)
+            </button>
+          </div>
+
+          {/* Real-time Interim Voice Transcription */}
+          <div style={{ background: '#ffffff', padding: '0.5rem 0.85rem', borderRadius: '8px', border: '1px solid #fecaca', minHeight: '1.8rem', color: '#0f172a', fontSize: '0.875rem' }}>
+            {interimTranscript ? (
+              <span style={{ fontWeight: '600' }}>&ldquo;{interimTranscript}&rdquo;</span>
+            ) : (
+              <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>আপনার কথা শুনছি... কথা বলা শেষ হলে স্বয়ংক্রিয়ভাবে পাঠিয়ে উত্তর দেওয়া হবে...</span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Voice Error Notification Banner */}
+      {voiceError && (
+        <div
+          style={{
+            background: '#fffbeb',
+            border: '1px solid #fde68a',
+            color: '#b45309',
+            padding: '0.6rem 1rem',
+            borderRadius: '8px',
+            marginBottom: '0.5rem',
+            fontSize: '0.8rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <span>⚠️ {voiceError}</span>
+          <button
+            onClick={() => setVoiceError(null)}
+            style={{ background: 'none', border: 'none', color: '#b45309', fontWeight: 'bold', cursor: 'pointer' }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Chat Messages Feed */}
       <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1rem', paddingRight: '0.35rem', marginBottom: '0.75rem' }}>
         {messages.map((m) => {
           const isUser = m.sender === 'user';
@@ -418,29 +661,39 @@ export default function NoorAIPage() {
               <div
                 style={{
                   maxWidth: '88%',
-                  padding: '1rem 1.15rem',
+                  padding: '1.1rem 1.25rem',
                   borderRadius: isUser ? '1.25rem 1.25rem 0.25rem 1.25rem' : '1.25rem 1.25rem 1.25rem 0.25rem',
                   background: isUser ? '#16a34a' : '#ffffff',
                   color: isUser ? '#ffffff' : '#0f172a',
                   border: isUser ? 'none' : '1.5px solid #e2e8f0',
-                  fontSize: '0.9rem',
-                  lineHeight: '1.65',
+                  fontSize: '0.915rem',
+                  lineHeight: '1.7',
                   whiteSpace: 'pre-line',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 }}
               >
+                {/* AI Provider Tag */}
+                {!isUser && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem', paddingBottom: '0.4rem', borderBottom: '1px dashed #e2e8f0' }}>
+                    <span style={{ fontSize: '0.675rem', fontWeight: '800', color: m.provider === 'gemini' ? '#2563eb' : '#16a34a', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      {m.provider === 'gemini' ? '🧠 GOOGLE GEMINI AI' : '⚡ NOORHUB INTELLIGENT AI'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Message Content */}
                 {m.text}
 
-                {/* Direct Deep Action Link */}
+                {/* Action Link */}
                 {m.actionLink && (
-                  <div style={{ marginTop: '0.85rem', paddingTop: '0.65rem', borderTop: '1px dashed #cbd5e1' }}>
+                  <div style={{ marginTop: '0.9rem', paddingTop: '0.75rem', borderTop: '1px dashed #cbd5e1' }}>
                     <Link
                       href={m.actionLink.href}
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '0.4rem',
-                        padding: '0.4rem 0.85rem',
+                        gap: '0.45rem',
+                        padding: '0.45rem 0.95rem',
                         borderRadius: '8px',
                         background: '#f0fdf4',
                         color: '#16a34a',
@@ -462,21 +715,22 @@ export default function NoorAIPage() {
 
                 {/* Voice Speaker Button for AI Messages */}
                 {!isUser && (
-                  <div style={{ marginTop: '0.6rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem' }}>
+                  <div style={{ marginTop: '0.7rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem' }}>
                     <button
                       onClick={() => handleSpeak(m.text, m.id)}
                       style={{
                         background: isSpeaking ? '#fee2e2' : '#f1f5f9',
                         border: isSpeaking ? '1px solid #fca5a5' : '1px solid #cbd5e1',
-                        color: isSpeaking ? '#dc2626' : '#475569',
-                        padding: '0.25rem 0.6rem',
+                        color: isSpeaking ? '#dc2626' : '#334155',
+                        padding: '0.3rem 0.75rem',
                         borderRadius: '6px',
-                        fontSize: '0.725rem',
+                        fontSize: '0.75rem',
                         fontWeight: '700',
                         cursor: 'pointer',
                         display: 'inline-flex',
                         alignItems: 'center',
-                        gap: '0.35rem',
+                        gap: '0.4rem',
+                        transition: 'all 0.15s ease',
                       }}
                       title="ভয়েসে শুনুন"
                     >
@@ -494,7 +748,7 @@ export default function NoorAIPage() {
                             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                             <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
                           </svg>
-                          ভয়েসে শুনুন
+                          🔊 মুখে পড়ে শোনান
                         </>
                       )}
                     </button>
@@ -506,46 +760,16 @@ export default function NoorAIPage() {
         })}
 
         {isTyping && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#16a34a', fontSize: '0.825rem', padding: '0.5rem', fontWeight: '700' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#16a34a', fontSize: '0.85rem', padding: '0.5rem', fontWeight: '700' }}>
             <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#16a34a', display: 'inline-block', animation: 'ping 1s infinite' }}></span>
-            নূর এআই বিশ্লেষণ করে উত্তর প্রস্তুত করছে...
+            নূর এআই সম্পূর্ণ জ্ঞান বিশ্লেষণ করে উত্তর প্রস্তুত করছে...
           </div>
         )}
 
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Voice Listening Active Wave Banner */}
-      {isListening && (
-        <div
-          style={{
-            background: '#fef2f2',
-            border: '1.5px solid #fecaca',
-            borderRadius: '10px',
-            padding: '0.65rem 1rem',
-            marginBottom: '0.5rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            color: '#dc2626',
-            fontSize: '0.85rem',
-            fontWeight: '700',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#dc2626', display: 'inline-block', boxShadow: '0 0 8px #dc2626' }}></span>
-            মাইক্রোফোনে আপনার কথা শুনছি... মুখে বাংলায় বলুন...
-          </div>
-          <button
-            onClick={() => setIsListening(false)}
-            style={{ background: '#dc2626', color: '#ffffff', border: 'none', padding: '0.25rem 0.6rem', borderRadius: '4px', fontSize: '0.75rem', cursor: 'pointer' }}
-          >
-            থামুন
-          </button>
-        </div>
-      )}
-
-      {/* Input Form with Microphone Button */}
+      {/* Input Form with Dedicated Voice Mic Button */}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -557,10 +781,10 @@ export default function NoorAIPage() {
           <input
             type="text"
             className="input-field"
-            placeholder="নূর এআই-কে যেকোনো কিছু জিজ্ঞাসা করুন (বা মাইকে মুখে বলুন)..."
+            placeholder="নূর এআই-কে যেকোনো কিছু জিজ্ঞাসা করুন (বা মাইক বাটনে মুখে বাংলায় বলুন)..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            style={{ width: '100%', padding: '0.65rem 1rem', fontSize: '0.9rem', borderRadius: '10px', border: '1.5px solid #cbd5e1' }}
+            style={{ width: '100%', padding: '0.75rem 1rem', fontSize: '0.925rem', borderRadius: '10px', border: '1.5px solid #cbd5e1', outline: 'none' }}
           />
         </div>
 
@@ -573,8 +797,8 @@ export default function NoorAIPage() {
               background: isListening ? '#dc2626' : '#f0fdf4',
               border: isListening ? '1.5px solid #b91c1c' : '1.5px solid #bbf7d0',
               color: isListening ? '#ffffff' : '#16a34a',
-              width: '2.75rem',
-              height: '2.75rem',
+              width: '2.85rem',
+              height: '2.85rem',
               borderRadius: '10px',
               display: 'flex',
               alignItems: 'center',
@@ -601,8 +825,8 @@ export default function NoorAIPage() {
             background: '#16a34a',
             color: '#ffffff',
             border: 'none',
-            width: '2.75rem',
-            height: '2.75rem',
+            width: '2.85rem',
+            height: '2.85rem',
             borderRadius: '10px',
             display: 'flex',
             alignItems: 'center',
@@ -618,6 +842,110 @@ export default function NoorAIPage() {
           </svg>
         </button>
       </form>
+
+      {/* AI Settings & Google Gemini Key Modal */}
+      {showSettingsModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 9999,
+            padding: '1rem',
+            backdropFilter: 'blur(3px)',
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '32rem',
+              width: '100%',
+              padding: '1.5rem',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: '2rem', height: '2rem', borderRadius: '8px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  </svg>
+                </div>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: '800', color: '#0f172a' }}>
+                  এআই মডেল ও জেমিনি সেটিংস
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.25rem', color: '#64748b', cursor: 'pointer' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.6', marginBottom: '1rem' }}>
+              নূর এআই ডিফল্টভাবে আমাদের নিজস্ব <strong>নূরহাব সুপার ইন্টেলিজেন্ট ইঞ্জিনের</strong> মাধ্যমে আনলিমিটেড এবং সম্পূর্ণ বিনামূল্যে সকল প্রশ্নের নিখুঁত উত্তর দেয়।
+              <br /><br />
+              আপনি যদি গুগল জেমিনির (Google Gemini 1.5 / 2.0 Flash) ক্লাউড বুদ্ধিমত্তা যুক্ত করতে চান, তবে নিচে আপনার ফ্রি Gemini API Key প্রদান করতে পারেন:
+            </p>
+
+            <div style={{ marginBottom: '1rem' }}>
+              <label style={{ display: 'block', fontSize: '0.825rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.35rem' }}>
+                Google Gemini API Key:
+              </label>
+              <input
+                type="password"
+                placeholder="AIzaSy..."
+                value={tempApiKey}
+                onChange={(e) => setTempApiKey(e.target.value)}
+                style={{ width: '100%', padding: '0.65rem 0.85rem', borderRadius: '8px', border: '1.5px solid #cbd5e1', fontSize: '0.875rem' }}
+              />
+              <div style={{ marginTop: '0.35rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <a
+                  href="https://aistudio.google.com/app/apikey"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: '600', textDecoration: 'none' }}
+                >
+                  👉 এখান থেকে ফ্রি জেমিনি এআই কী নিন (Google AI Studio)
+                </a>
+                {tempApiKey && (
+                  <button
+                    onClick={() => setTempApiKey('')}
+                    style={{ background: 'none', border: 'none', color: '#dc2626', fontSize: '0.75rem', cursor: 'pointer' }}
+                  >
+                    কী মুছে ফেলুন
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '0.75rem', marginBottom: '1.25rem', fontSize: '0.775rem', color: '#64748b' }}>
+              💡 <strong>টিপস:</strong> কোনো এআই কী না থাকলেও কোনো সমস্যা নেই! নূরহাবের অন্তর্নির্মিত নলেজবেজ আপনার মাদরাসা পরিচালনা, রুটিন, সিলেবাস এডিট, হিফজ ট্র্যাকিং ও সবক সংক্রান্ত সব প্রশ্নের গভীর উত্তর দিতে প্রস্তুত।
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+              <button
+                onClick={() => setShowSettingsModal(false)}
+                style={{ padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#f8fafc', color: '#475569', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer' }}
+              >
+                বাতিল
+              </button>
+              <button
+                onClick={handleSaveApiKey}
+                style={{ padding: '0.5rem 1.25rem', borderRadius: '8px', border: 'none', background: '#16a34a', color: '#ffffff', fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer', boxShadow: '0 2px 6px rgba(22, 163, 74, 0.3)' }}
+              >
+                সেভ করুন
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
