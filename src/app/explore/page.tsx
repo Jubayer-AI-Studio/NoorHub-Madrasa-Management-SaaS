@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 interface InstitutionProfile {
@@ -291,6 +291,12 @@ export default function PublicExplorerPage() {
   const [selectedDivision, setSelectedDivision] = useState<string>('all');
   const [activeInstitution, setActiveInstitution] = useState<InstitutionProfile>(INSTITUTIONS_DATA[0]);
 
+  // Edit Institution Modal State
+  const [isEditingInst, setIsEditingInst] = useState(false);
+  const [editFormData, setEditFormData] = useState<InstitutionProfile | null>(null);
+  const [newHighlight, setNewHighlight] = useState('');
+  const [newFacility, setNewFacility] = useState('');
+
   // Selected Book for Summary Modal
   const [selectedKitabSummary, setSelectedKitabSummary] = useState<{
     name: string;
@@ -298,6 +304,79 @@ export default function PublicExplorerPage() {
     category: string;
     summary: string;
   } | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('noorhub_explore_institutions');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setInstitutions(parsed);
+          setActiveInstitution(parsed[0]);
+        }
+      }
+    } catch {}
+  }, []);
+
+  const saveInstitutions = (updated: InstitutionProfile[]) => {
+    setInstitutions(updated);
+    try {
+      localStorage.setItem('noorhub_explore_institutions', JSON.stringify(updated));
+    } catch {}
+  };
+
+  const handleStartEditInst = () => {
+    if (activeInstitution) {
+      setEditFormData(JSON.parse(JSON.stringify(activeInstitution)));
+      setIsEditingInst(true);
+    }
+  };
+
+  const handleSaveEditInst = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editFormData) return;
+
+    const updated = institutions.map((inst) =>
+      inst.id === editFormData.id ? editFormData : inst
+    );
+    saveInstitutions(updated);
+    setActiveInstitution(editFormData);
+    setIsEditingInst(false);
+  };
+
+  const handleAddHighlight = () => {
+    if (!newHighlight.trim() || !editFormData) return;
+    setEditFormData({
+      ...editFormData,
+      highlights: [...editFormData.highlights, newHighlight.trim()],
+    });
+    setNewHighlight('');
+  };
+
+  const handleRemoveHighlight = (idx: number) => {
+    if (!editFormData) return;
+    setEditFormData({
+      ...editFormData,
+      highlights: editFormData.highlights.filter((_, i) => i !== idx),
+    });
+  };
+
+  const handleAddFacility = () => {
+    if (!newFacility.trim() || !editFormData) return;
+    setEditFormData({
+      ...editFormData,
+      facilities: [...editFormData.facilities, newFacility.trim()],
+    });
+    setNewFacility('');
+  };
+
+  const handleRemoveFacility = (idx: number) => {
+    if (!editFormData) return;
+    setEditFormData({
+      ...editFormData,
+      facilities: editFormData.facilities.filter((_, i) => i !== idx),
+    });
+  };
 
   // Filter logic
   const filteredInstitutions = institutions.filter((inst) => {
@@ -680,6 +759,31 @@ export default function PublicExplorerPage() {
                       </svg>
                       সরাসরি ফোন কল
                     </a>
+
+                    <button
+                      onClick={handleStartEditInst}
+                      style={{
+                        background: '#eff6ff',
+                        color: '#2563eb',
+                        border: '1.5px solid #bfdbfe',
+                        padding: '0.45rem 1rem',
+                        borderRadius: '8px',
+                        fontWeight: '700',
+                        fontSize: '0.8rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem',
+                        cursor: 'pointer',
+                        marginTop: '0.25rem',
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      প্রতিষ্ঠানের তথ্য ও বৈশিষ্ট্য এডিট
+                    </button>
                   </div>
                 </div>
 
@@ -706,13 +810,37 @@ export default function PublicExplorerPage() {
 
               {/* SECTION 1: প্রতিষ্ঠানের ভালো দিক ও অনন্য বৈশিষ্ট্যসমূহ (Our Strengths & Highlights) */}
               <div className="card" style={{ padding: '1.5rem', background: '#ffffff', borderLeft: '4px solid #ca8a04' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" strokeWidth="2.5">
-                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-                  </svg>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                    আমাদের অনন্য বৈশিষ্ট্য ও ভালো দিকগুলো
-                  </h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" strokeWidth="2.5">
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                    <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                      আমাদের অনন্য বৈশিষ্ট্য ও ভালো দিকগুলো
+                    </h3>
+                  </div>
+                  <button
+                    onClick={handleStartEditInst}
+                    style={{
+                      background: '#fefce8',
+                      color: '#854d0e',
+                      border: '1px solid #fde047',
+                      padding: '0.35rem 0.75rem',
+                      borderRadius: '6px',
+                      fontSize: '0.775rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.3rem',
+                    }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    বৈশিষ্ট্য ও সুবিধা পরিবর্তন
+                  </button>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', marginBottom: '1.25rem' }}>
@@ -911,6 +1039,353 @@ export default function PublicExplorerPage() {
                 বন্ধ করুন
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* POPUP MODAL: Edit Institution Information & Highlights */}
+      {isEditingInst && editFormData && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 150,
+            padding: '1rem',
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '38rem',
+              width: '100%',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '1.5rem',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.25)',
+              border: '1px solid #e2e8f0',
+              fontFamily: 'Hind Siliguri, sans-serif',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: '2.25rem', height: '2.25rem', borderRadius: '8px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                    প্রতিষ্ঠানের প্রোফাইল ও ভালো দিক এডিট
+                  </h3>
+                  <p style={{ fontSize: '0.775rem', color: '#64748b', margin: 0 }}>
+                    তৃতীয় পক্ষের দর্শকদের জন্য আপনার প্রতিষ্ঠানের যাবতীয় তথ্য ও অনন্য অর্জন পরিবর্তন করুন
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsEditingInst(false)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.4rem', cursor: 'pointer', padding: '0.2rem' }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditInst} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
+                  প্রতিষ্ঠানের নাম *
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="input-field"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
+                    মুহতামিম / অধ্যক্ষের নাম
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={editFormData.principal}
+                    onChange={(e) => setEditFormData({ ...editFormData, principal: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
+                    প্রতিষ্ঠানের ধরন
+                  </label>
+                  <select
+                    className="input-field"
+                    value={editFormData.type}
+                    onChange={(e) => {
+                      const t = e.target.value as any;
+                      const label = t === 'qawmi' ? 'কওমি কিতাব ও হিফজ' : t === 'alia' ? 'আলিয়া মাদরাসা' : t === 'hifz' ? 'হিফজুল কুরআন' : 'জেনারেল';
+                      setEditFormData({ ...editFormData, type: t, typeLabel: label });
+                    }}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  >
+                    <option value="qawmi">কওমি মাদরাসা</option>
+                    <option value="alia">আলিয়া মাদরাসা</option>
+                    <option value="hifz">হিফজুল কুরআন</option>
+                    <option value="general">জেনারেল একাডেমি</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
+                    সরাসরি ফোন নম্বর
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={editFormData.phone}
+                    onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
+                    হোয়াটসঅ্যাপ নম্বর (যেমন: 88018...)
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={editFormData.whatsapp}
+                    onChange={(e) => setEditFormData({ ...editFormData, whatsapp: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
+                  ঠিকানা
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={editFormData.address}
+                  onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    শিক্ষার্থী
+                  </label>
+                  <input
+                    type="number"
+                    className="input-field"
+                    value={editFormData.students}
+                    onChange={(e) => setEditFormData({ ...editFormData, students: Number(e.target.value) })}
+                    style={{ width: '100%', padding: '0.4rem', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    শিক্ষক
+                  </label>
+                  <input
+                    type="number"
+                    className="input-field"
+                    value={editFormData.teachers}
+                    onChange={(e) => setEditFormData({ ...editFormData, teachers: Number(e.target.value) })}
+                    style={{ width: '100%', padding: '0.4rem', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    পাসের হার %
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className="input-field"
+                    value={editFormData.passRate}
+                    onChange={(e) => setEditFormData({ ...editFormData, passRate: Number(e.target.value) })}
+                    style={{ width: '100%', padding: '0.4rem', fontSize: '0.85rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    রেটিং (৫-এ)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    className="input-field"
+                    value={editFormData.rating}
+                    onChange={(e) => setEditFormData({ ...editFormData, rating: Number(e.target.value) })}
+                    style={{ width: '100%', padding: '0.4rem', fontSize: '0.85rem' }}
+                  />
+                </div>
+              </div>
+
+              {/* HIGHLIGHTS SECTION */}
+              <div style={{ background: '#fefce8', padding: '0.85rem', borderRadius: '10px', border: '1px solid #fef08a' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '800', color: '#854d0e', display: 'block', marginBottom: '0.5rem' }}>
+                  আমাদের ভালো দিক ও অনন্য বৈশিষ্ট্যসমূহ (যা দর্শকরা দেখবে)
+                </label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '0.65rem' }}>
+                  {editFormData.highlights.map((h, i) => (
+                    <div key={i} style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={h}
+                        onChange={(e) => {
+                          const updatedH = [...editFormData.highlights];
+                          updatedH[i] = e.target.value;
+                          setEditFormData({ ...editFormData, highlights: updatedH });
+                        }}
+                        style={{ flex: 1, padding: '0.4rem 0.6rem', fontSize: '0.825rem', background: '#ffffff' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveHighlight(i)}
+                        style={{
+                          background: '#fee2e2',
+                          border: '1px solid #fca5a5',
+                          color: '#dc2626',
+                          borderRadius: '6px',
+                          padding: '0.4rem 0.6rem',
+                          cursor: 'pointer',
+                        }}
+                        title="মুছে ফেলুন"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  <input
+                    type="text"
+                    placeholder="নতুন একটি ভালো দিক বা বৈশিষ্ট্য লিখুন..."
+                    value={newHighlight}
+                    onChange={(e) => setNewHighlight(e.target.value)}
+                    style={{ flex: 1, padding: '0.4rem 0.6rem', fontSize: '0.825rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddHighlight}
+                    style={{
+                      background: '#ca8a04',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '0.4rem 0.85rem',
+                      fontSize: '0.8rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    + যোগ করুন
+                  </button>
+                </div>
+              </div>
+
+              {/* FACILITIES SECTION */}
+              <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: '800', color: '#334155', display: 'block', marginBottom: '0.5rem' }}>
+                  ক্যাম্পাস সুযোগ-সুবিধা
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.65rem' }}>
+                  {editFormData.facilities.map((fac, idx) => (
+                    <span
+                      key={idx}
+                      style={{
+                        background: '#ffffff',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '6px',
+                        padding: '0.3rem 0.6rem',
+                        fontSize: '0.775rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                      }}
+                    >
+                      ✓ {fac}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFacility(idx)}
+                        style={{ border: 'none', background: 'none', color: '#dc2626', cursor: 'pointer', fontWeight: 'bold' }}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.4rem' }}>
+                  <input
+                    type="text"
+                    placeholder="নতুন সুযোগ-সুবিধা লিখুন (যেমন: নিজস্ব জেনারেটর সুবিধা)..."
+                    value={newFacility}
+                    onChange={(e) => setNewFacility(e.target.value)}
+                    style={{ flex: 1, padding: '0.4rem 0.6rem', fontSize: '0.825rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddFacility}
+                    style={{
+                      background: '#3b82f6',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '0.4rem 0.85rem',
+                      fontSize: '0.8rem',
+                      fontWeight: '700',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    + যোগ করুন
+                  </button>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingInst(false)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                >
+                  বাতিল
+                </button>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{ flex: 1, background: '#16a34a', border: 'none' }}
+                >
+                  পরিবর্তন সংরক্ষণ করুন
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

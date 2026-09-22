@@ -102,6 +102,9 @@ export default function ClassesManagementPage() {
     description: '',
   });
 
+  // Edit Class State
+  const [editingClass, setEditingClass] = useState<ClassItem | null>(null);
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem('noorhub_classes_all');
@@ -134,6 +137,15 @@ export default function ClassesManagementPage() {
     saveClasses(updated);
     setNewClass({ name: '', curriculumType: 'qawmi', section: 'ক শাখা', classTeacher: '', studentCount: 0, description: '' });
     setShowModal(false);
+  };
+
+  const handleUpdateClass = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingClass || !editingClass.name) return;
+
+    const updated = classes.map((c) => (c.id === editingClass.id ? editingClass : c));
+    saveClasses(updated);
+    setEditingClass(null);
   };
 
   const handleDelete = (id: string, name: string) => {
@@ -296,7 +308,7 @@ export default function ClassesManagementPage() {
                 {c.studentCount || 0} জন শিক্ষার্থী
               </span>
 
-              <div style={{ display: 'flex', gap: '0.4rem' }}>
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                 <Link
                   href="/dashboard/syllabus"
                   style={{
@@ -312,6 +324,30 @@ export default function ClassesManagementPage() {
                 >
                   সিলেবাস দেখুন
                 </Link>
+
+                <button
+                  onClick={() => setEditingClass({ ...c })}
+                  style={{
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    color: '#2563eb',
+                    borderRadius: '6px',
+                    padding: '0.3rem 0.65rem',
+                    fontSize: '0.75rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.25rem',
+                  }}
+                  title="শ্রেণি এডিট করুন"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  এডিট
+                </button>
 
                 <button
                   onClick={() => handleDelete(c.id, c.name)}
@@ -482,6 +518,169 @@ export default function ClassesManagementPage() {
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
                   শ্রেণি এন্ট্রি সম্পন্ন করুন
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Edit Existing Class */}
+      {editingClass && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 150,
+            padding: '1rem',
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff',
+              borderRadius: '16px',
+              maxWidth: '32rem',
+              width: '100%',
+              padding: '1.5rem',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.2)',
+              border: '1px solid #e2e8f0',
+              fontFamily: 'Hind Siliguri, sans-serif',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ width: '2rem', height: '2rem', borderRadius: '8px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '1.2rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+                    শ্রেণি / জামাতের তথ্য পরিবর্তন (এডিট)
+                  </h2>
+                  <p style={{ fontSize: '0.75rem', color: '#64748b', margin: 0 }}>
+                    যেকোনো সময় শ্রেণির নাম, শিক্ষক, শাখা বা সিলেবাসের ধরন পরিবর্তন করুন
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setEditingClass(null)}
+                style={{ background: 'none', border: 'none', color: '#94a3b8', fontSize: '1.25rem', cursor: 'pointer' }}
+              >
+                ×
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateClass} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                  শ্রেণি / জামাতের নাম *
+                </label>
+                <input
+                  type="text"
+                  required
+                  className="input-field"
+                  placeholder="যেমন: শরহে বেকায়া, ১০ম শ্রেণি..."
+                  value={editingClass.name}
+                  onChange={(e) => setEditingClass({ ...editingClass, name: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    শিক্ষাক্রমের ধরন
+                  </label>
+                  <select
+                    className="input-field"
+                    value={editingClass.curriculumType}
+                    onChange={(e) => setEditingClass({ ...editingClass, curriculumType: e.target.value as any })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  >
+                    <option value="qawmi">কওমি মাদরাসা</option>
+                    <option value="alia">আলিয়া মাদরাসা</option>
+                    <option value="hifz">হিফজুল কুরআন</option>
+                    <option value="general">জেনারেল / স্কুল</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    শাখা / বিভাগ
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="যেমন: ক শাখা / দিবা"
+                    value={editingClass.section || ''}
+                    onChange={(e) => setEditingClass({ ...editingClass, section: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    শ্রেণি শিক্ষক / নিগরান
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    placeholder="দায়িত্বপ্রাপ্ত শিক্ষক"
+                    value={editingClass.classTeacher || ''}
+                    onChange={(e) => setEditingClass({ ...editingClass, classTeacher: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    শিক্ষার্থী সংখ্যা
+                  </label>
+                  <input
+                    type="number"
+                    className="input-field"
+                    placeholder="যেমন: ২৫"
+                    value={editingClass.studentCount || 0}
+                    onChange={(e) => setEditingClass({ ...editingClass, studentCount: Number(e.target.value) })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                  শ্রেণির বিবরণ / উদ্দেশ্য
+                </label>
+                <textarea
+                  className="input-field"
+                  rows={2}
+                  placeholder="এই শ্রেণির লক্ষ্য ও বিবরণ..."
+                  value={editingClass.description}
+                  onChange={(e) => setEditingClass({ ...editingClass, description: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingClass(null)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                >
+                  বাতিল
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#2563eb' }}>
+                  পরিবর্তন সংরক্ষণ করুন
                 </button>
               </div>
             </form>

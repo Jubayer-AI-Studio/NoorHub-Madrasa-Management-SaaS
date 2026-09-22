@@ -132,7 +132,6 @@ const defaultKitabs: KitabItem[] = [
   },
 ];
 
-// Preset Jamats to quick-load
 const qawmiPresets: Array<{ name: string; desc: string }> = [
   { name: 'নূরানী ও মক্তব', desc: 'কুরআন শিক্ষা, কায়দা ও আমপারা' },
   { name: 'নাজেরা বিভাগ', desc: 'পূর্ণ কুরআন মাজিদ বিশুদ্ধ তেলাওয়াত' },
@@ -160,6 +159,8 @@ export default function DynamicSyllabusPage() {
   const [viewingKitab, setViewingKitab] = useState<KitabItem | null>(null);
   const [showAddKitabModal, setShowAddKitabModal] = useState(false);
   const [showAddClassModal, setShowAddClassModal] = useState(false);
+  const [editingKitab, setEditingKitab] = useState<KitabItem | null>(null);
+  const [editingClass, setEditingClass] = useState<ClassItem | null>(null);
   const [printMode, setPrintMode] = useState(false);
 
   // New Kitab form
@@ -190,12 +191,9 @@ export default function DynamicSyllabusPage() {
       const savedKitabs = localStorage.getItem('noorhub_syllabus_kitabs');
       if (savedClasses) setClasses(JSON.parse(savedClasses));
       if (savedKitabs) setKitabs(JSON.parse(savedKitabs));
-    } catch {
-      // ignore
-    }
+    } catch {}
   }, []);
 
-  // Save to localStorage on change
   const saveClasses = (updated: ClassItem[]) => {
     setClasses(updated);
     try {
@@ -254,6 +252,19 @@ export default function DynamicSyllabusPage() {
     setShowAddKitabModal(false);
   };
 
+  // Update Existing Kitab Handler
+  const handleUpdateKitab = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingKitab) return;
+
+    const updated = kitabs.map((k) => (k.id === editingKitab.id ? editingKitab : k));
+    saveKitabs(updated);
+    if (viewingKitab?.id === editingKitab.id) {
+      setViewingKitab(editingKitab);
+    }
+    setEditingKitab(null);
+  };
+
   // Add Class handler
   const handleCreateClass = (e: React.FormEvent) => {
     e.preventDefault();
@@ -273,6 +284,16 @@ export default function DynamicSyllabusPage() {
     setActiveClassId(newClassItem.id);
     setNewClass({ name: '', curriculumType: 'qawmi', section: 'ক শাখা', classTeacher: '', description: '' });
     setShowAddClassModal(false);
+  };
+
+  // Update Existing Class Handler
+  const handleUpdateClass = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingClass) return;
+
+    const updated = classes.map((c) => (c.id === editingClass.id ? editingClass : c));
+    saveClasses(updated);
+    setEditingClass(null);
   };
 
   // Load all standard Qawmi Jamats in 1-click
@@ -419,13 +440,13 @@ export default function DynamicSyllabusPage() {
             শ্রেণি, সিলেবাস ও কিতাব হাব
           </h1>
           <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.825rem', color: '#64748b' }}>
-            নতুন জামাত/শ্রেণি এন্ট্রি করুন এবং যে কোনো ক্লাসে যত ইচ্ছা কিতাব যুক্ত করে দর্শনার্থীদের বিস্তারিত সারসংক্ষেপ পড়তে দিন
+            কোনো কিছুই ফিক্সড নয়—যে কোনো জামাত ও কিতাব এডিট করুন, নতুন যোগ করুন এবং যেকোনো পরিবর্তন সাথে সাথে সংরক্ষণ করুন
           </p>
         </div>
 
         {/* PROMINENT TOP ACTION BUTTONS */}
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          {/* 1. Add Class Button (PROMINENT BLUE) */}
+          {/* Add Class Button */}
           <button
             onClick={() => setShowAddClassModal(true)}
             style={{
@@ -449,10 +470,10 @@ export default function DynamicSyllabusPage() {
               <line x1="12" y1="11" x2="12" y2="17" />
               <line x1="9" y1="14" x2="15" y2="14" />
             </svg>
-            + নতুন শ্রেণি / জামাত এন্ট্রি
+            + নতুন শ্রেণি / জামাত
           </button>
 
-          {/* 2. Add Kitab Button (PROMINENT GREEN) */}
+          {/* Add Kitab Button */}
           <button
             onClick={() => setShowAddKitabModal(true)}
             className="btn btn-primary"
@@ -467,7 +488,7 @@ export default function DynamicSyllabusPage() {
             + কিতাব / বই যোগ করুন
           </button>
 
-          {/* 3. Print Button */}
+          {/* Print Button */}
           <button
             onClick={() => setPrintMode(true)}
             className="btn btn-secondary"
@@ -483,7 +504,7 @@ export default function DynamicSyllabusPage() {
         </div>
       </div>
 
-      {/* VIEW SWITCHER TABS: [পাঠ্য কিতাব ও সামারি ভিউ] vs [শ্রেণি ও জামাত ডিরেক্টরি (নতুন এন্ট্রি)] */}
+      {/* VIEW SWITCHER TABS */}
       <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '2px solid #e2e8f0', marginBottom: '1.25rem' }}>
         <button
           onClick={() => setViewMode('books')}
@@ -570,7 +591,7 @@ export default function DynamicSyllabusPage() {
               </svg>
             </div>
             <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.825rem', color: '#1e40af', lineHeight: '1.5', margin: 0 }}>
-              <strong>দর্শনার্থী ও সাধারণ অভিভাবকদের জন্য উন্মুক্ত:</strong> বাইরের যে কেউ যেকোনো কিতাবের উপর ট্যাপ করলেই সেই কিতাবে কী পড়ানো হচ্ছে, কেন পড়ানো হচ্ছে এবং ছাত্ররা কী শিখবে—তার প্রাঞ্জল সারসংক্ষেপ ও রূপরেখা পড়তে পারবেন।
+              <strong>১০০% কাস্টমাইজেশন ও এডিট সুবিধা:</strong> যে কোনো কিতাবের নাম, মুসান্নিফ, সারসংক্ষেপ ও মানবণ্টন এডিট বোতাম চেপে আপনার মাদরাসার চাহিদা অনুযায়ী পরিবর্তন করতে পারেন।
             </p>
           </div>
 
@@ -604,14 +625,13 @@ export default function DynamicSyllabusPage() {
             ))}
           </div>
 
-          {/* Classes Selector with BIG prominent "+ Add Class" button */}
+          {/* Classes Selector */}
           <div className="card" style={{ padding: '0.85rem', marginBottom: '1.25rem', background: '#f8fafc' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>
                 শ্রেণি বা জামাত সিলেক্ট করুন ({filteredClasses.length}টি শ্রেণি উপলব্ধ):
               </span>
 
-              {/* Explicit link to add new class */}
               <button
                 onClick={() => setShowAddClassModal(true)}
                 style={{
@@ -638,7 +658,6 @@ export default function DynamicSyllabusPage() {
             </div>
 
             <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem', alignItems: 'center' }}>
-              {/* Highlighted "+ শ্রেণি তৈরি" button directly in the pills row */}
               <button
                 onClick={() => setShowAddClassModal(true)}
                 style={{
@@ -708,7 +727,7 @@ export default function DynamicSyllabusPage() {
             </div>
           </div>
 
-          {/* Selected Class Banner */}
+          {/* Selected Class Banner with EDIT button */}
           {currentClass && (
             <div
               className="card"
@@ -751,6 +770,29 @@ export default function DynamicSyllabusPage() {
 
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button
+                  onClick={() => setEditingClass(currentClass)}
+                  style={{
+                    background: '#eff6ff',
+                    border: '1px solid #bfdbfe',
+                    color: '#2563eb',
+                    padding: '0.45rem 0.8rem',
+                    borderRadius: '8px',
+                    fontSize: '0.8rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
+                  শ্রেণি এডিট করুন
+                </button>
+
+                <button
                   onClick={() => setShowAddKitabModal(true)}
                   className="btn btn-primary"
                   style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
@@ -768,7 +810,7 @@ export default function DynamicSyllabusPage() {
                 নির্ধারিত পাঠ্য কিতাব ও বিষয়সমূহ ({currentKitabs.length}টি)
               </h3>
               <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                যেকোনো কিতাবে ট্যাপ করে পূর্ণাঙ্গ সারসংক্ষেপ পড়ুন
+                যেকোনো কিতাবে ট্যাপ করে পূর্ণাঙ্গ সারসংক্ষেপ পড়ুন বা এডিট করুন
               </span>
             </div>
 
@@ -842,31 +884,60 @@ export default function DynamicSyllabusPage() {
                     </div>
 
                     <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '0.65rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setViewingKitab(kitab);
-                        }}
-                        style={{
-                          background: '#f0fdf4',
-                          color: '#16a34a',
-                          border: '1px solid #bbf7d0',
-                          borderRadius: '6px',
-                          padding: '0.35rem 0.65rem',
-                          fontSize: '0.75rem',
-                          fontWeight: '700',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                        }}
-                      >
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                          <circle cx="12" cy="12" r="3" />
-                        </svg>
-                        সারসংক্ষেপ পড়ুন
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setViewingKitab(kitab);
+                          }}
+                          style={{
+                            background: '#f0fdf4',
+                            color: '#16a34a',
+                            border: '1px solid #bbf7d0',
+                            borderRadius: '6px',
+                            padding: '0.35rem 0.65rem',
+                            fontSize: '0.75rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                          }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                          </svg>
+                          সারসংক্ষেপ
+                        </button>
+
+                        {/* EDIT KITAB BUTTON */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingKitab(kitab);
+                          }}
+                          style={{
+                            background: '#eff6ff',
+                            color: '#2563eb',
+                            border: '1px solid #bfdbfe',
+                            borderRadius: '6px',
+                            padding: '0.35rem 0.65rem',
+                            fontSize: '0.75rem',
+                            fontWeight: '700',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                          }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                          </svg>
+                          এডিট
+                        </button>
+                      </div>
 
                       <button
                         onClick={(e) => {
@@ -1061,7 +1132,7 @@ export default function DynamicSyllabusPage() {
             </form>
           </div>
 
-          {/* All Classes List Table */}
+          {/* All Classes List Table with EDIT and DELETE */}
           <div className="card" style={{ padding: '1.25rem' }}>
             <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.75rem' }}>
               বর্তমান সকল শ্রেণি ও জামাত তালিকা ({classes.length}টি)
@@ -1128,6 +1199,24 @@ export default function DynamicSyllabusPage() {
                             >
                               বই দেখুন
                             </button>
+
+                            {/* EDIT CLASS BUTTON IN TABLE */}
+                            <button
+                              onClick={() => setEditingClass(cls)}
+                              style={{
+                                background: '#f0fdf4',
+                                border: '1px solid #bbf7d0',
+                                color: '#16a34a',
+                                borderRadius: '4px',
+                                padding: '0.25rem 0.5rem',
+                                fontSize: '0.75rem',
+                                fontWeight: '700',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              এডিট
+                            </button>
+
                             <button
                               onClick={() => handleDeleteClass(cls.id, cls.name)}
                               style={{
@@ -1272,21 +1361,51 @@ export default function DynamicSyllabusPage() {
 
             {/* Modal Actions */}
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.5rem', marginTop: '1rem', borderTop: '1px solid #e2e8f0', paddingTop: '0.85rem' }}>
-              <button
-                onClick={() => handleDeleteKitab(viewingKitab.id)}
-                style={{
-                  background: '#fef2f2',
-                  color: '#dc2626',
-                  border: '1px solid #fecaca',
-                  borderRadius: '8px',
-                  padding: '0.5rem 0.85rem',
-                  fontSize: '0.8rem',
-                  fontWeight: '700',
-                  cursor: 'pointer',
-                }}
-              >
-                মুছে ফেলুন
-              </button>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button
+                  onClick={() => {
+                    const k = viewingKitab;
+                    setViewingKitab(null);
+                    setEditingKitab(k);
+                  }}
+                  style={{
+                    background: '#eff6ff',
+                    color: '#2563eb',
+                    border: '1px solid #bfdbfe',
+                    borderRadius: '8px',
+                    padding: '0.5rem 0.85rem',
+                    fontSize: '0.8rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M12 20h9" />
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                  </svg>
+                  তথ্য ও সারসংক্ষেপ এডিট করুন
+                </button>
+
+                <button
+                  onClick={() => handleDeleteKitab(viewingKitab.id)}
+                  style={{
+                    background: '#fef2f2',
+                    color: '#dc2626',
+                    border: '1px solid #fecaca',
+                    borderRadius: '8px',
+                    padding: '0.5rem 0.85rem',
+                    fontSize: '0.8rem',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                  }}
+                >
+                  মুছে ফেলুন
+                </button>
+              </div>
+
               <button
                 onClick={() => setViewingKitab(null)}
                 className="btn btn-secondary"
@@ -1433,9 +1552,6 @@ export default function DynamicSyllabusPage() {
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
                   বইটির বিস্তারিত সারসংক্ষেপ (Summary) *
-                  <span style={{ fontSize: '0.7rem', fontWeight: 'normal', color: '#64748b', marginLeft: '0.35rem' }}>
-                    (বাইরের মানুষ ট্যাপ করলে যা দেখতে পাবে)
-                  </span>
                 </label>
                 <textarea
                   className="input-field"
@@ -1473,6 +1589,178 @@ export default function DynamicSyllabusPage() {
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
                   সংরক্ষণ করুন
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* POPUP MODAL: EDIT EXISTING KITAB                         */}
+      {/* ======================================================== */}
+      {editingKitab && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 160,
+            padding: '1rem',
+          }}
+          onClick={() => setEditingKitab(null)}
+        >
+          <div
+            className="card"
+            style={{
+              width: '100%',
+              maxWidth: '34rem',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              padding: '1.5rem',
+              background: '#ffffff',
+              borderRadius: '16px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.25rem', fontWeight: '800', color: '#0f172a' }}>
+                কিতাবের তথ্য ও সারসংক্ষেপ এডিট করুন
+              </h3>
+              <button
+                onClick={() => setEditingKitab(null)}
+                style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b' }}
+              >
+                ×
+              </button>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
+              কিতাবের নাম, লেখক, পরীক্ষার মানবণ্টন ও সারসংক্ষেপ সম্পাদনা করুন
+            </p>
+
+            <form onSubmit={handleUpdateKitab} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                  কিতাবের নাম (বাংলায়) *
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={editingKitab.name}
+                  onChange={(e) => setEditingKitab({ ...editingKitab, name: e.target.value })}
+                  required
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                  মূল আরবি / ইংরেজি নাম
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={editingKitab.originalName || ''}
+                  onChange={(e) => setEditingKitab({ ...editingKitab, originalName: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem', direction: 'rtl' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    মুসান্নিফ / লেখক / বোর্ড
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={editingKitab.author}
+                    onChange={(e) => setEditingKitab({ ...editingKitab, author: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    শাস্ত্র / বিষয়
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={editingKitab.category}
+                    onChange={(e) => setEditingKitab({ ...editingKitab, category: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    মোট পৃষ্ঠা সংখ্যা
+                  </label>
+                  <input
+                    type="number"
+                    className="input-field"
+                    value={editingKitab.totalPages || 100}
+                    onChange={(e) => setEditingKitab({ ...editingKitab, totalPages: Number(e.target.value) })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    পরীক্ষার পূর্ণমান
+                  </label>
+                  <input
+                    type="number"
+                    className="input-field"
+                    value={editingKitab.fullMarks || 100}
+                    onChange={(e) => setEditingKitab({ ...editingKitab, fullMarks: Number(e.target.value) })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                  বইটির বিস্তারিত সারসংক্ষেপ (Summary) *
+                </label>
+                <textarea
+                  className="input-field"
+                  rows={3}
+                  value={editingKitab.summary}
+                  onChange={(e) => setEditingKitab({ ...editingKitab, summary: e.target.value })}
+                  required
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                  শিক্ষার্থী অর্জিত ফলাফল (আউটকাম)
+                </label>
+                <textarea
+                  className="input-field"
+                  rows={2}
+                  value={editingKitab.learningOutcomes || ''}
+                  onChange={(e) => setEditingKitab({ ...editingKitab, learningOutcomes: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingKitab(null)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                >
+                  বাতিল
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                  আপডেট সংরক্ষণ করুন
                 </button>
               </div>
             </form>
@@ -1611,6 +1899,140 @@ export default function DynamicSyllabusPage() {
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
                   শ্রেণি এন্ট্রি সম্পন্ন করুন
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* POPUP MODAL: EDIT EXISTING CLASS                         */}
+      {/* ======================================================== */}
+      {editingClass && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(15, 23, 42, 0.65)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 160,
+            padding: '1rem',
+          }}
+          onClick={() => setEditingClass(null)}
+        >
+          <div
+            className="card"
+            style={{
+              width: '100%',
+              maxWidth: '30rem',
+              padding: '1.5rem',
+              background: '#ffffff',
+              borderRadius: '16px',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.25rem', fontWeight: '800', color: '#0f172a' }}>
+                শ্রেণির তথ্য এডিট করুন
+              </h3>
+              <button
+                onClick={() => setEditingClass(null)}
+                style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b' }}
+              >
+                ×
+              </button>
+            </div>
+            <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
+              শ্রেণির নাম, কারিকুলাম, শাখা ও শিক্ষক তথ্য পরিবর্তন করুন
+            </p>
+
+            <form onSubmit={handleUpdateClass} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                  শ্রেণি বা জামাতের নাম *
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={editingClass.name}
+                  onChange={(e) => setEditingClass({ ...editingClass, name: e.target.value })}
+                  required
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    কারিকুলাম:
+                  </label>
+                  <select
+                    className="input-field"
+                    value={editingClass.curriculumType}
+                    onChange={(e) => setEditingClass({ ...editingClass, curriculumType: e.target.value as any })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  >
+                    <option value="qawmi">কওমি নেজামী</option>
+                    <option value="alia">আলিয়া মাদরাসা</option>
+                    <option value="general">জেনারেল স্কুল</option>
+                    <option value="hifz">হিফজুল কুরআন</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                    শাখা (Section)
+                  </label>
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={editingClass.section || ''}
+                    onChange={(e) => setEditingClass({ ...editingClass, section: e.target.value })}
+                    style={{ width: '100%', padding: '0.5rem' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                  দায়িত্বপ্রাপ্ত শিক্ষক / শ্রেণি উস্তাদ
+                </label>
+                <input
+                  type="text"
+                  className="input-field"
+                  value={editingClass.classTeacher || ''}
+                  onChange={(e) => setEditingClass({ ...editingClass, classTeacher: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
+                  শ্রেণির উদ্দেশ্য বা সংক্ষিপ্ত বিবরণ
+                </label>
+                <textarea
+                  className="input-field"
+                  rows={2}
+                  value={editingClass.description}
+                  onChange={(e) => setEditingClass({ ...editingClass, description: e.target.value })}
+                  style={{ width: '100%', padding: '0.5rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingClass(null)}
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                >
+                  বাতিল
+                </button>
+                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
+                  আপডেট সংরক্ষণ করুন
                 </button>
               </div>
             </form>
