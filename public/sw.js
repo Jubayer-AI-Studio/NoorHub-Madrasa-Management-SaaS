@@ -2,9 +2,19 @@ const CACHE_NAME = 'noorhub-v3';
 const STATIC_CACHE = 'noorhub-static-v3';
 const DYNAMIC_CACHE = 'noorhub-dynamic-v3';
 
-// Install — skip waiting immediately
+// Install — pre-cache core offline assets & skip waiting
 self.addEventListener('install', (event) => {
   self.skipWaiting();
+  event.waitUntil(
+    caches.open(STATIC_CACHE).then((cache) => {
+      return cache.addAll([
+        '/offline.html',
+        '/manifest.json',
+        '/icons/icon-192x192.png',
+        '/icons/icon-512x512.png',
+      ]).catch((err) => console.warn('[NoorHub SW] Pre-cache skipped:', err));
+    })
+  );
 });
 
 // Activate — immediately delete ALL previous caches

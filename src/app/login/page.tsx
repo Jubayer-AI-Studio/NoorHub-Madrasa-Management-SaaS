@@ -3,68 +3,72 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-
-const ROLES = {
-  principal: {
-    label: 'মুহতামিম / প্রধান শিক্ষক',
-    shortLabel: 'মুহতামিম',
-    color: '#16a34a',
-    bg: '#f0fdf4',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
-  },
-  teacher: {
-    label: 'শিক্ষক / উস্তাদ',
-    shortLabel: 'শিক্ষক',
-    color: '#2563eb',
-    bg: '#eff6ff',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
-        <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
-      </svg>
-    ),
-  },
-  student: {
-    label: 'ছাত্র / শিক্ষার্থী',
-    shortLabel: 'ছাত্র',
-    color: '#7c3aed',
-    bg: '#f5f3ff',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-        <path d="M6 12v5c3 3 9 3 12 0v-5" />
-      </svg>
-    ),
-  },
-  parent: {
-    label: 'অভিভাবক',
-    shortLabel: 'অভিভাবক',
-    color: '#ea580c',
-    bg: '#fff7ed',
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-        <circle cx="12" cy="7" r="4" />
-      </svg>
-    ),
-  },
-} as const;
-
-type Role = keyof typeof ROLES;
+import NoorHubLogo from '@/components/brand/NoorHubLogo';
+import { useLanguage } from '@/lib/language-store';
+import LanguageToggle from '@/components/layout/LanguageToggle';
 
 function LoginForm() {
+  const { lang, t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const roleParam = (searchParams.get('role') as Role) || 'principal';
+  const roleParam = searchParams.get('role') || 'principal';
 
-  const [role, setRole] = useState<Role>(roleParam in ROLES ? roleParam : 'principal');
+  const ROLES = {
+    principal: {
+      label: t('role_principal_card'),
+      shortLabel: lang === 'en' ? 'Principal' : 'মুহতামিম',
+      color: '#16a34a',
+      bg: '#f0fdf4',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+      ),
+    },
+    teacher: {
+      label: t('role_teacher_card'),
+      shortLabel: lang === 'en' ? 'Teacher' : 'শিক্ষক',
+      color: '#2563eb',
+      bg: '#eff6ff',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+          <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+        </svg>
+      ),
+    },
+    student: {
+      label: t('role_student_card'),
+      shortLabel: lang === 'en' ? 'Student' : 'ছাত্র',
+      color: '#7c3aed',
+      bg: '#f5f3ff',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+          <path d="M6 12v5c3 3 9 3 12 0v-5" />
+        </svg>
+      ),
+    },
+    parent: {
+      label: t('role_parent_card'),
+      shortLabel: lang === 'en' ? 'Parent' : 'অভিভাবক',
+      color: '#ea580c',
+      bg: '#fff7ed',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
+        </svg>
+      ),
+    },
+  } as const;
+
+  type Role = keyof typeof ROLES;
+
+  const [role, setRole] = useState<Role>(roleParam in ROLES ? (roleParam as Role) : 'principal');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -77,7 +81,7 @@ function LoginForm() {
     setError('');
 
     if (!phone.trim()) {
-      setError('মোবাইল নম্বর দিন');
+      setError(lang === 'en' ? 'Please enter mobile number or roll number' : 'মোবাইল নম্বর বা রোল নম্বর দিন');
       return;
     }
 
@@ -97,6 +101,7 @@ function LoginForm() {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1.5rem',
+        position: 'relative',
       }}
     >
       {/* Back Button */}
@@ -112,7 +117,7 @@ function LoginForm() {
           color: '#64748b',
           textDecoration: 'none',
           fontSize: '0.9rem',
-          fontFamily: 'Hind Siliguri, sans-serif',
+          fontFamily: "'Hind Siliguri', 'Inter', sans-serif",
           fontWeight: '600',
           padding: '0.5rem 0.75rem',
           borderRadius: '0.625rem',
@@ -123,8 +128,20 @@ function LoginForm() {
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <polyline points="15 18 9 12 15 6" />
         </svg>
-        ফিরে যান
+        {t('login_back')}
       </Link>
+
+      {/* Top Language Toggle */}
+      <div style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', zIndex: 10 }}>
+        <LanguageToggle variant="pill" />
+      </div>
+
+      {/* Logo */}
+      <div style={{ marginBottom: '1.25rem' }}>
+        <Link href="/" style={{ textDecoration: 'none' }}>
+          <NoorHubLogo variant="horizontal" size="sm" theme="light" showTagline={true} />
+        </Link>
+      </div>
 
       {/* Card */}
       <div
@@ -151,17 +168,17 @@ function LoginForm() {
           </div>
           <h1
             style={{
-              fontFamily: 'Hind Siliguri, sans-serif',
+              fontFamily: "'Hind Siliguri', 'Inter', sans-serif",
               fontSize: '1.25rem',
               fontWeight: '700',
               color: '#0f172a',
               marginBottom: '0.2rem',
             }}
           >
-            স্বাগতম!
+            {t('login_welcome')}
           </h1>
-          <p style={{ color: '#64748b', fontSize: '0.85rem', fontFamily: 'Hind Siliguri, sans-serif' }}>
-            {currentRole.label} প্যানেল
+          <p style={{ color: '#64748b', fontSize: '0.85rem', fontFamily: "'Hind Siliguri', 'Inter', sans-serif" }}>
+            {currentRole.label} {t('login_panel')}
           </p>
         </div>
 
@@ -188,7 +205,7 @@ function LoginForm() {
                 border: 'none',
                 cursor: 'pointer',
                 fontSize: '0.725rem',
-                fontFamily: 'Hind Siliguri, sans-serif',
+                fontFamily: "'Hind Siliguri', 'Inter', sans-serif",
                 fontWeight: '600',
                 transition: 'all 150ms ease',
                 background: role === r ? '#ffffff' : 'transparent',
@@ -205,11 +222,11 @@ function LoginForm() {
         {/* Login Form */}
         <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div>
-            <label className="label">মোবাইল নম্বর বা রোল নম্বর</label>
+            <label className="label">{t('login_user_label')}</label>
             <input
               className="input"
               type="text"
-              placeholder="01XXXXXXXXX বা রোল নম্বর"
+              placeholder={t('login_user_placeholder')}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               autoComplete="username"
@@ -217,11 +234,11 @@ function LoginForm() {
           </div>
 
           <div>
-            <label className="label">পাসওয়ার্ড</label>
+            <label className="label">{t('login_pass_label')}</label>
             <input
               className="input"
               type="password"
-              placeholder="পাসওয়ার্ড দিন"
+              placeholder={t('login_pass_placeholder')}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
@@ -236,7 +253,7 @@ function LoginForm() {
                 gap: '0.5rem',
                 color: '#dc2626',
                 fontSize: '0.85rem',
-                fontFamily: 'Hind Siliguri, sans-serif',
+                fontFamily: "'Hind Siliguri', 'Inter', sans-serif",
                 background: '#fee2e2',
                 padding: '0.625rem 0.875rem',
                 borderRadius: '0.5rem',
@@ -261,11 +278,11 @@ function LoginForm() {
             {loading ? (
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span className="spinner" style={{ width: '1rem', height: '1rem', borderColor: 'rgba(255,255,255,0.3)', borderTopColor: '#fff' }} />
-                প্রবেশ করা হচ্ছে...
+                {t('login_submitting')}
               </span>
             ) : (
               <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                প্রবেশ করুন
+                {t('login_submit')}
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="5" y1="12" x2="19" y2="12" />
                   <polyline points="12 5 19 12 12 19" />
@@ -275,6 +292,36 @@ function LoginForm() {
           </button>
         </form>
 
+        {/* Register Madrasa Link */}
+        <div
+          style={{
+            marginTop: '1.25rem',
+            padding: '12px 14px',
+            borderRadius: '12px',
+            backgroundColor: '#f0fdf4',
+            border: '1.5px solid #bbf7d0',
+            textAlign: 'center',
+          }}
+        >
+          <span style={{ fontSize: '0.85rem', color: '#166534', fontWeight: '600', fontFamily: "'Hind Siliguri', 'Inter', sans-serif" }}>
+            {t('login_need_madrasa')}{' '}
+          </span>
+          <Link
+            href="/register"
+            style={{
+              fontSize: '0.875rem',
+              fontWeight: '800',
+              color: '#15803d',
+              textDecoration: 'underline',
+              display: 'inline-block',
+              marginTop: '4px',
+              fontFamily: "'Hind Siliguri', 'Inter', sans-serif",
+            }}
+          >
+            {t('login_register_now')}
+          </Link>
+        </div>
+
         {/* Support Link */}
         <p
           style={{
@@ -282,12 +329,12 @@ function LoginForm() {
             marginTop: '1.25rem',
             color: '#94a3b8',
             fontSize: '0.8rem',
-            fontFamily: 'Hind Siliguri, sans-serif',
+            fontFamily: "'Hind Siliguri', 'Inter', sans-serif",
           }}
         >
-          সহায়তা প্রয়োজন?{' '}
+          {t('login_help')}{' '}
           <Link href="/dashboard" style={{ color: '#16a34a', fontWeight: '600', textDecoration: 'none' }}>
-            নূর এআই গাইড
+            {t('login_guide')}
           </Link>
         </p>
       </div>

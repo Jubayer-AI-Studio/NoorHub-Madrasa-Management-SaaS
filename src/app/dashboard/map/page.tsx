@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import {
@@ -11,57 +11,70 @@ import {
   Upazila,
   OfficialMadrasa,
 } from '@/lib/geo-data';
+import { getCombinedMapMadrasas } from '@/lib/madrasa-store';
 import {
   MapPin,
-  Compass,
   Search,
   CheckCircle,
   Phone,
   MessageCircle,
-  Award,
   Layers,
-  Sparkles,
-  ArrowRight,
-  ExternalLink,
   ChevronRight,
-  Navigation,
-  BookOpen,
-  Filter,
-  RotateCcw,
-  Trophy,
-  Star,
-  Users,
+  ArrowLeft,
+  Building,
+  Home,
   X,
-  ListFilter,
+  ExternalLink,
 } from 'lucide-react';
 
 import BangladeshVectorMap from '@/components/map/BangladeshVectorMap';
+import { useLanguage } from '@/lib/language-store';
+import LanguageToggle from '@/components/layout/LanguageToggle';
 
 // Dynamically load the Leaflet GIS Map with SSR disabled
 const OfficialGISMap = dynamic(() => import('@/components/map/OfficialGISMap'), {
   ssr: false,
   loading: () => (
-    <div className="flex h-[340px] md:h-[540px] w-full flex-col items-center justify-center rounded-2xl border border-slate-700/80 bg-slate-900 text-slate-400 shadow-xl">
-      <div className="h-8 w-8 animate-spin rounded-full border-3 border-emerald-500 border-t-transparent mb-2" />
-      <span className="text-xs md:text-sm font-semibold text-slate-200">বাংলাদেশের অফিশিয়াল মানচিত্র লোড হচ্ছে...</span>
-      <span className="text-[11px] text-slate-400 mt-0.5">ওপেনস্ট্রিটম্যাপ ও স্যাটেলাইট সংযোগ সম্পন্ন হচ্ছে</span>
+    <div className="flex h-full w-full flex-col items-center justify-center bg-slate-950 text-slate-400">
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent mb-3" />
+      <span className="text-sm font-bold text-slate-200">Loading Satellite GIS...</span>
     </div>
   ),
 });
 
 export default function BangladeshMapPage() {
-  // Multi-Level Navigation State
+  const { lang, t } = useLanguage();
+  const isEn = lang === 'en';
+
+  // Navigation State
   const [selectedDivisionId, setSelectedDivisionId] = useState<string | null>(null);
   const [selectedDistrictId, setSelectedDistrictId] = useState<string | null>(null);
   const [selectedUpazilaId, setSelectedUpazilaId] = useState<string | null>(null);
   const [selectedMadrasa, setSelectedMadrasa] = useState<OfficialMadrasa | null>(null);
 
-  // Mobile View Tab: 'map' | 'rankings' | 'madrasas'
-  const [activeTab, setActiveTab] = useState<'map' | 'rankings' | 'madrasas'>('map');
+  // Drawer / List Toggle: When true, opens the madrasa list drawer
+  const [isMadrasaListOpen, setIsMadrasaListOpen] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<'all' | 'qawmi' | 'alia' | 'hifz'>('all');
   const [isSatellite, setIsSatellite] = useState(false);
+
+  // Dynamic madrasas loaded from both BBS official geo-data and user registrations
+  const [allMadrasas, setAllMadrasas] = useState<OfficialMadrasa[]>(() => {
+    if (typeof window !== 'undefined') {
+      return getCombinedMapMadrasas();
+    }
+    return OFFICIAL_MADRASAS;
+  });
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setAllMadrasas(getCombinedMapMadrasas());
+    };
+    handleUpdate();
+    window.addEventListener('noorhub_madrasa_changed', handleUpdate);
+    return () => window.removeEventListener('noorhub_madrasa_changed', handleUpdate);
+  }, []);
 
   // Compute Current Objects
   const selectedDivision: Division | null = useMemo(() => {
@@ -87,14 +100,21 @@ export default function BangladeshMapPage() {
     return 'bangladesh';
   }, [selectedDivisionId, selectedDistrictId, selectedUpazilaId]);
 
-  // Filtered Madrasas
-  const activeMadrasas = useMemo(() => {
-    return OFFICIAL_MADRASAS.filter((m) => {
+  // Filtered Madrasas for the current selected region
+  const currentRegionMadrasas = useMemo(() => {
+    return allMadrasas.filter((m) => {
       if (selectedDivisionId && m.divisionId !== selectedDivisionId) return false;
       if (selectedDistrictId && m.districtId !== selectedDistrictId) return false;
       if (selectedUpazila && !m.upazila.includes(selectedUpazila.nameBn) && !selectedUpazila.nameBn.includes(m.upazila)) {
         return false;
       }
+      return true;
+    });
+  }, [allMadrasas, selectedDivisionId, selectedDistrictId, selectedUpazila]);
+
+  // Filtered for search & type inside the drawer
+  const drawerMadrasas = useMemo(() => {
+    return currentRegionMadrasas.filter((m) => {
       if (typeFilter !== 'all' && m.type !== typeFilter) return false;
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase();
@@ -107,7 +127,7 @@ export default function BangladeshMapPage() {
       }
       return true;
     });
-  }, [selectedDivisionId, selectedDistrictId, selectedUpazila, typeFilter, searchQuery]);
+  }, [currentRegionMadrasas, typeFilter, searchQuery]);
 
   // Navigation Handlers
   const handleSelectDivision = (divId: string) => {
@@ -115,19 +135,21 @@ export default function BangladeshMapPage() {
     setSelectedDistrictId(null);
     setSelectedUpazilaId(null);
     setSelectedMadrasa(null);
+    setIsMadrasaListOpen(false);
   };
 
   const handleSelectDistrict = (distId: string) => {
     setSelectedDistrictId(distId);
     setSelectedUpazilaId(null);
     setSelectedMadrasa(null);
+    setIsMadrasaListOpen(false);
   };
 
   const handleSelectUpazila = (upId: string) => {
     setSelectedUpazilaId(upId);
     const upazila = selectedDistrict?.upazilas.find((u) => u.id === upId);
     if (upazila) {
-      const match = OFFICIAL_MADRASAS.find(
+      const match = allMadrasas.find(
         (m) =>
           m.districtId === selectedDistrictId &&
           (m.upazila.includes(upazila.nameBn) || upazila.nameBn.includes(m.upazila))
@@ -137,504 +159,966 @@ export default function BangladeshMapPage() {
     }
   };
 
+  const handleGoBackOneStep = () => {
+    if (selectedUpazilaId) {
+      setSelectedUpazilaId(null);
+      setSelectedMadrasa(null);
+    } else if (selectedDistrictId) {
+      setSelectedDistrictId(null);
+    } else if (selectedDivisionId) {
+      setSelectedDivisionId(null);
+    }
+    setIsMadrasaListOpen(false);
+  };
+
   const handleResetToBangladesh = () => {
     setSelectedDivisionId(null);
     setSelectedDistrictId(null);
     setSelectedUpazilaId(null);
     setSelectedMadrasa(null);
+    setIsMadrasaListOpen(false);
     setSearchQuery('');
   };
 
+  // Location Title & Subtitle for current level
+  const locationMeta = useMemo(() => {
+    if (selectedUpazila && selectedDistrict) {
+      return {
+        title: isEn
+          ? `🕌 ${selectedUpazila.name} Upazila`
+          : `🕌 ${selectedUpazila.nameBn} উপজেলা`,
+        sub: isEn
+          ? `${selectedDistrict.name} District, ${selectedDivision?.name} Division`
+          : `${selectedDistrict.nameBn} জেলা, ${selectedDivision?.nameBn} বিভাগ`,
+        count: currentRegionMadrasas.length,
+        nextLabel: isEn ? 'Madrasa Details' : 'মাদরাসা তথ্য',
+      };
+    }
+    if (selectedDistrict && selectedDivision) {
+      return {
+        title: isEn
+          ? `📍 ${selectedDistrict.name} District`
+          : `📍 ${selectedDistrict.nameBn} জেলা`,
+        sub: isEn
+          ? `${selectedDivision.name} Division • ${selectedDistrict.upazilas.length} Upazilas`
+          : `${selectedDivision.nameBn} বিভাগ • ${selectedDistrict.upazilas.length}টি উপজেলা`,
+        count: currentRegionMadrasas.length,
+        nextLabel: isEn ? 'Select Upazila' : 'উপজেলা নির্বাচন',
+      };
+    }
+    if (selectedDivision) {
+      return {
+        title: isEn
+          ? `🏛️ ${selectedDivision.name} Division`
+          : `🏛️ ${selectedDivision.nameBn} বিভাগ`,
+        sub: isEn
+          ? `${selectedDivision.districts.length} Districts • National Rating ★${selectedDivision.rating}`
+          : `${selectedDivision.districts.length}টি জেলা • জাতীয় রেটিং ★${selectedDivision.rating}`,
+        count: currentRegionMadrasas.length,
+        nextLabel: isEn ? 'Select District' : 'জেলা নির্বাচন',
+      };
+    }
+    return {
+      title: isEn ? '🇧🇩 All Bangladesh' : '🇧🇩 সমগ্র বাংলাদেশ',
+      sub: isEn
+        ? '8 Divisions • 64 Districts • 495 Upazilas'
+        : '৮টি বিভাগ • ৬৪টি জেলা • ৪৯৫টি উপজেলা',
+      count: allMadrasas.length,
+      nextLabel: isEn ? 'Select Division' : 'বিভাগ নির্বাচন',
+    };
+  }, [selectedDivision, selectedDistrict, selectedUpazila, currentRegionMadrasas, allMadrasas, isEn]);
+
   return (
-    <div className="min-h-screen bg-slate-50/70 pb-20">
-      {/* Top Header — Mobile Compact */}
-      <div className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2.5 sm:py-3.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
-              <h1 className="text-sm sm:text-lg md:text-xl font-black text-slate-900 flex items-center gap-1.5 truncate">
-                <span className="flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm">
-                  <Compass className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                </span>
-                <span className="truncate">ইসলামিক শিক্ষা মানচিত্র (GIS Map)</span>
-              </h1>
-            </div>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 50,
+        width: '100vw',
+        height: '100vh',
+        overflow: 'hidden',
+        backgroundColor: '#01140d',
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: "'Hind Siliguri', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+      }}
+    >
+      {/* =========================================================
+          FLOATING TOP GLASS BAR (BREADCRUMBS & CONTROLS)
+         ========================================================= */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '16px',
+          left: '16px',
+          right: '16px',
+          zIndex: 35,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px',
+          pointerEvents: 'none',
+        }}
+      >
+        {/* Left Pill: Home + Breadcrumbs */}
+        <div
+          style={{
+            pointerEvents: 'auto',
+            background: 'rgba(2, 44, 27, 0.95)',
+            backdropFilter: 'blur(12px)',
+            border: '1.5px solid rgba(16, 185, 129, 0.4)',
+            borderRadius: '16px',
+            padding: '8px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '10px',
+            color: 'white',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.45)',
+            maxWidth: 'calc(100vw - 160px)',
+            overflowX: 'auto',
+          }}
+          className="no-scrollbar"
+        >
+          <Link
+            href="/dashboard"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '6px 12px',
+              borderRadius: '10px',
+              background: 'rgba(255, 255, 255, 0.12)',
+              color: '#a7f3d0',
+              fontSize: '13px',
+              fontWeight: '700',
+              textDecoration: 'none',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Home style={{ width: '15px', height: '15px' }} />
+            <span>{isEn ? 'Dashboard' : 'ড্যাশবোর্ড'}</span>
+          </Link>
 
-            {/* Mobile View Switching Tabs */}
-            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl shrink-0">
+          <span style={{ color: 'rgba(255, 255, 255, 0.4)', fontSize: '14px' }}>|</span>
+
+          <button
+            type="button"
+            onClick={handleResetToBangladesh}
+            style={{
+              background: currentLevel === 'bangladesh' ? '#059669' : 'transparent',
+              border: 'none',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: currentLevel === 'bangladesh' ? '800' : '600',
+              padding: '6px 12px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {isEn ? '🇧🇩 Bangladesh' : '🇧🇩 বাংলাদেশ'}
+          </button>
+
+          {selectedDivision && (
+            <>
+              <ChevronRight style={{ width: '14px', height: '14px', color: 'rgba(255, 255, 255, 0.5)', flexShrink: 0 }} />
               <button
                 type="button"
-                onClick={() => setActiveTab('map')}
-                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
-                  activeTab === 'map'
-                    ? 'bg-white text-emerald-800 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                onClick={() => handleSelectDivision(selectedDivision.id)}
+                style={{
+                  background: currentLevel === 'division' ? '#059669' : 'transparent',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: currentLevel === 'division' ? '800' : '600',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
               >
-                🗺️ ম্যাপ
+                🏛️ {isEn ? selectedDivision.name : selectedDivision.nameBn}
               </button>
+            </>
+          )}
+
+          {selectedDistrict && (
+            <>
+              <ChevronRight style={{ width: '14px', height: '14px', color: 'rgba(255, 255, 255, 0.5)', flexShrink: 0 }} />
               <button
                 type="button"
-                onClick={() => setActiveTab('rankings')}
-                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
-                  activeTab === 'rankings'
-                    ? 'bg-white text-emerald-800 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+                onClick={() => handleSelectDistrict(selectedDistrict.id)}
+                style={{
+                  background: currentLevel === 'district' ? '#059669' : 'transparent',
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: currentLevel === 'district' ? '800' : '600',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
               >
-                🏆 র‍্যাংকিং
+                📍 {isEn ? selectedDistrict.name : selectedDistrict.nameBn}
               </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('madrasas')}
-                className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all ${
-                  activeTab === 'madrasas'
-                    ? 'bg-white text-emerald-800 shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
+            </>
+          )}
+
+          {selectedUpazila && (
+            <>
+              <ChevronRight style={{ width: '14px', height: '14px', color: 'rgba(255, 255, 255, 0.5)', flexShrink: 0 }} />
+              <span
+                style={{
+                  background: '#f59e0b',
+                  color: '#1e293b',
+                  fontSize: '14px',
+                  fontWeight: '900',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  whiteSpace: 'nowrap',
+                }}
               >
-                🏢 প্রতিষ্ঠান ({activeMadrasas.length})
-              </button>
-            </div>
-          </div>
+                🕌 {isEn ? selectedUpazila.name : selectedUpazila.nameBn}
+              </span>
+            </>
+          )}
+        </div>
 
-          {/* Horizontal Scrollable Breadcrumbs — Thumb Friendly */}
-          <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1 text-[11px] sm:text-xs font-bold text-slate-700 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
-              <button
-                type="button"
-                onClick={handleResetToBangladesh}
-                className={`shrink-0 px-2 py-0.5 rounded-md transition-all ${
-                  currentLevel === 'bangladesh'
-                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                    : 'text-emerald-700 hover:bg-emerald-50'
-                }`}
-              >
-                🇧🇩 বাংলাদেশ
-              </button>
+        {/* Right Actions: Back 1 Step & Satellite Toggle & Language Toggle */}
+        <div style={{ pointerEvents: 'auto', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <LanguageToggle variant="compact" />
 
-              {selectedDivision && (
-                <>
-                  <ChevronRight className="h-3 w-3 text-slate-400 shrink-0" />
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDivision(selectedDivision.id)}
-                    className={`shrink-0 px-2 py-0.5 rounded-md transition-all ${
-                      currentLevel === 'division'
-                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                        : 'text-emerald-700 hover:bg-emerald-50'
-                    }`}
-                  >
-                    🏛️ {selectedDivision.nameBn}
-                  </button>
-                </>
-              )}
+          {currentLevel !== 'bangladesh' && (
+            <button
+              type="button"
+              onClick={handleGoBackOneStep}
+              style={{
+                background: 'rgba(2, 44, 27, 0.95)',
+                backdropFilter: 'blur(12px)',
+                border: '1.5px solid rgba(16, 185, 129, 0.4)',
+                borderRadius: '14px',
+                padding: '10px 16px',
+                color: 'white',
+                fontSize: '14px',
+                fontWeight: '700',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                cursor: 'pointer',
+                boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+              }}
+            >
+              <ArrowLeft style={{ width: '16px', height: '16px' }} />
+              <span>{isEn ? 'Back' : 'পেছনে যান'}</span>
+            </button>
+          )}
 
-              {selectedDistrict && (
-                <>
-                  <ChevronRight className="h-3 w-3 text-slate-400 shrink-0" />
-                  <button
-                    type="button"
-                    onClick={() => handleSelectDistrict(selectedDistrict.id)}
-                    className={`shrink-0 px-2 py-0.5 rounded-md transition-all ${
-                      currentLevel === 'district'
-                        ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                        : 'text-emerald-700 hover:bg-emerald-50'
-                    }`}
-                  >
-                    📍 {selectedDistrict.nameBn}
-                  </button>
-                </>
-              )}
-
-              {selectedUpazila && (
-                <>
-                  <ChevronRight className="h-3 w-3 text-slate-400 shrink-0" />
-                  <span className="shrink-0 px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 font-extrabold">
-                    🕌 {selectedUpazila.nameBn}
-                  </span>
-                </>
-              )}
-            </div>
-
-            {currentLevel !== 'bangladesh' && (
-              <button
-                type="button"
-                onClick={handleResetToBangladesh}
-                className="shrink-0 inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-emerald-700"
-              >
-                <RotateCcw className="h-3 w-3" />
-                <span className="hidden sm:inline">রিসেট</span>
-              </button>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => setIsSatellite(!isSatellite)}
+            style={{
+              background: isSatellite ? '#0f172a' : 'rgba(2, 44, 27, 0.95)',
+              backdropFilter: 'blur(12px)',
+              border: '1.5px solid rgba(16, 185, 129, 0.4)',
+              borderRadius: '14px',
+              padding: '10px 16px',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: '700',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+            }}
+          >
+            <Layers style={{ width: '16px', height: '16px' }} />
+            <span>{isEn ? (isSatellite ? 'Vector Map' : 'Satellite') : (isSatellite ? 'ভেক্টর ম্যাপ' : 'স্যাটেলাইট')}</span>
+          </button>
         </div>
       </div>
 
-      {/* Main Container */}
-      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 mt-2.5 sm:mt-4 space-y-3 sm:space-y-4">
-        {/* TAB 1: MAP VIEW */}
-        {activeTab === 'map' && (
-          <div className="space-y-2.5">
-            {/* Quick Mobile Horizontal Swipeable Chips (Level Based) */}
-            <div className="bg-white rounded-xl p-2 shadow-xs border border-slate-200">
-              <div className="flex items-center justify-between px-1 mb-1.5">
-                <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
-                  {currentLevel === 'bangladesh' && '👉 বিভাগে ট্যাপ করে মানচিত্রে ঢুকুন:'}
-                  {currentLevel === 'division' && `👉 ${selectedDivision?.nameBn}র জেলায় ট্যাপ করুন:`}
-                  {(currentLevel === 'district' || currentLevel === 'upazila') && `👉 ${selectedDistrict?.nameBn}র উপজেলায় ট্যাপ করুন:`}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setIsSatellite(!isSatellite)}
-                  className="text-[11px] font-bold text-emerald-700 hover:underline flex items-center gap-0.5"
-                >
-                  <Layers className="h-3 w-3" />
-                  {isSatellite ? 'জিআইএস ম্যাপ' : 'স্যাটেলাইট'}
-                </button>
-              </div>
-
-              {/* Horizontal Scrollable Chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-                {/* Level 1: Divisions */}
-                {currentLevel === 'bangladesh' &&
-                  BANGLADESH_DIVISIONS.map((div) => (
-                    <button
-                      key={div.id}
-                      type="button"
-                      onClick={() => handleSelectDivision(div.id)}
-                      className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-emerald-50 hover:border-emerald-300 border border-slate-200 text-xs font-bold text-slate-800 transition-all active:scale-95"
-                    >
-                      <span>🏛️ {div.nameBn}</span>
-                      <span className="text-[10px] text-amber-600 bg-amber-50 px-1 py-0.2 rounded font-extrabold">
-                        ★ {div.rating}
-                      </span>
-                    </button>
-                  ))}
-
-                {/* Level 2: Districts of Division */}
-                {currentLevel === 'division' &&
-                  selectedDivision?.districts.map((dist) => (
-                    <button
-                      key={dist.id}
-                      type="button"
-                      onClick={() => handleSelectDistrict(dist.id)}
-                      className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-sky-50 hover:bg-sky-100 border border-sky-200 text-xs font-bold text-sky-950 transition-all active:scale-95"
-                    >
-                      <span>📍 {dist.nameBn}</span>
-                      <span className="text-[10px] text-sky-700 bg-white/80 px-1 py-0.2 rounded font-extrabold">
-                        {dist.upazilas.length}টি উপজেলা
-                      </span>
-                    </button>
-                  ))}
-
-                {/* Level 3: Upazilas of District */}
-                {(currentLevel === 'district' || currentLevel === 'upazila') &&
-                  selectedDistrict?.upazilas.map((up) => {
-                    const isSelected = selectedUpazila?.id === up.id;
-                    return (
-                      <button
-                        key={up.id}
-                        type="button"
-                        onClick={() => handleSelectUpazila(up.id)}
-                        className={`shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold transition-all active:scale-95 border ${
-                          isSelected
-                            ? 'bg-amber-600 text-white border-amber-600 shadow-xs ring-2 ring-amber-400/50'
-                            : 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-950'
-                        }`}
-                      >
-                        <span>🕌 {up.nameBn}</span>
-                        <span className={`text-[10px] px-1 py-0.2 rounded font-black ${isSelected ? 'bg-white/25 text-white' : 'text-amber-700 bg-white/80'}`}>
-                          ★ {up.rating}
-                        </span>
-                      </button>
-                    );
-                  })}
-              </div>
-            </div>
-
-            {/* Standalone Pure Bangladesh Map (No World Tiles, 100% Bangladesh Geography) */}
-            {!isSatellite ? (
-              <BangladeshVectorMap
-                currentLevel={currentLevel}
-                divisions={BANGLADESH_DIVISIONS}
-                selectedDivision={selectedDivision}
-                selectedDistrict={selectedDistrict}
-                selectedUpazila={selectedUpazila}
-                selectedMadrasa={selectedMadrasa}
-                onSelectDivision={handleSelectDivision}
-                onSelectDistrict={handleSelectDistrict}
-                onSelectUpazila={handleSelectUpazila}
-                onSelectMadrasa={(m) => setSelectedMadrasa(m)}
-                onResetView={handleResetToBangladesh}
-              />
-            ) : (
-              <div className="relative rounded-2xl overflow-hidden shadow-md border border-slate-300 bg-slate-900">
-                <OfficialGISMap
-                  currentLevel={currentLevel}
-                  divisions={BANGLADESH_DIVISIONS}
-                  selectedDivision={selectedDivision}
-                  selectedDistrict={selectedDistrict}
-                  selectedUpazila={selectedUpazila}
-                  madrasas={activeMadrasas}
-                  selectedMadrasa={selectedMadrasa}
-                  onSelectDivision={handleSelectDivision}
-                  onSelectDistrict={handleSelectDistrict}
-                  onSelectUpazila={handleSelectUpazila}
-                  onSelectMadrasa={(m) => setSelectedMadrasa(m)}
-                  isSatellite={true}
-                  onToggleSatellite={() => setIsSatellite(false)}
-                  onResetView={handleResetToBangladesh}
-                />
-              </div>
-            )}
-
-            {/* Floating Slide-Up Institution or Upazila Card on Selection */}
-            {selectedMadrasa && (
-              <div className="bg-white rounded-2xl p-4 shadow-lg border border-emerald-300 relative animate-fadeIn">
-                <button
-                  type="button"
-                  onClick={() => setSelectedMadrasa(null)}
-                  className="absolute top-3 right-3 h-7 w-7 flex items-center justify-center rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span
-                    className={`rounded-full px-2.5 py-0.5 text-[10px] font-extrabold ${
-                      selectedMadrasa.type === 'qawmi'
-                        ? 'bg-emerald-100 text-emerald-800'
-                        : selectedMadrasa.type === 'hifz'
-                        ? 'bg-amber-100 text-amber-800'
-                        : 'bg-blue-100 text-blue-800'
-                    }`}
-                  >
-                    {selectedMadrasa.typeLabel}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full">
-                    <CheckCircle className="h-3 w-3 text-sky-600" />
-                    ভেরিফাইড
-                  </span>
-                </div>
-
-                <h3 className="text-sm sm:text-base font-black text-slate-900 pr-8">
-                  {selectedMadrasa.name}
-                </h3>
-                <p className="text-[11px] text-slate-600 mt-0.5">
-                  📍 {selectedMadrasa.upazila}, {selectedMadrasa.district} | প্রধান: {selectedMadrasa.principal}
-                </p>
-
-                {/* Stat pills */}
-                <div className="grid grid-cols-3 gap-1.5 my-2.5 p-2 bg-slate-50 rounded-xl text-center">
-                  <div>
-                    <div className="text-[9px] text-slate-400 font-bold uppercase">শিক্ষার্থী</div>
-                    <div className="text-xs sm:text-sm font-black text-slate-800">{selectedMadrasa.students} জন</div>
-                  </div>
-                  <div>
-                    <div className="text-[9px] text-slate-400 font-bold uppercase">পাসের হার</div>
-                    <div className="text-xs sm:text-sm font-black text-emerald-600">{selectedMadrasa.passRate}%</div>
-                  </div>
-                  <div>
-                    <div className="text-[9px] text-slate-400 font-bold uppercase">রেটিং</div>
-                    <div className="text-xs sm:text-sm font-black text-amber-500">{selectedMadrasa.rating} ★</div>
-                  </div>
-                </div>
-
-                {/* 3 Thumb-Friendly Action Buttons */}
-                <div className="grid grid-cols-3 gap-1.5 pt-1">
-                  <a
-                    href={`https://wa.me/${selectedMadrasa.whatsapp}?text=${encodeURIComponent(
-                      `আসসালামু আলাইকুম, আমি নূরহাব (NoorHub) প্ল্যাটফর্ম থেকে ${selectedMadrasa.name} সম্পর্কে বিস্তারিত তথ্য ও ভর্তির বিষয়ে জানতে যোগাযোগ করছি।`
-                    )}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1 rounded-xl bg-emerald-600 px-2 py-2 text-[11px] font-bold text-white shadow-xs hover:bg-emerald-700 text-center"
-                  >
-                    <MessageCircle className="h-3.5 w-3.5 shrink-0" />
-                    <span>হোয়াটসঅ্যাপ</span>
-                  </a>
-                  <a
-                    href={`tel:${selectedMadrasa.phone}`}
-                    className="flex items-center justify-center gap-1 rounded-xl bg-slate-900 px-2 py-2 text-[11px] font-bold text-white hover:bg-slate-800 text-center"
-                  >
-                    <Phone className="h-3.5 w-3.5 shrink-0" />
-                    <span>কল করুন</span>
-                  </a>
-                  <a
-                    href={`https://www.google.com/maps/dir/?api=1&destination=${selectedMadrasa.lat},${selectedMadrasa.lng}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-1 rounded-xl bg-slate-100 px-2 py-2 text-[11px] font-bold text-slate-700 hover:bg-slate-200 text-center border border-slate-200"
-                  >
-                    <Navigation className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                    <span>ডিরেকশন</span>
-                  </a>
-                </div>
-              </div>
-            )}
+      {/* =========================================================
+          FULL-SCREEN MAP CANVAS (ZERO PAGE SCROLL)
+         ========================================================= */}
+      <div
+        style={{
+          position: 'relative',
+          width: '100vw',
+          height: '100vh',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {!isSatellite ? (
+          <BangladeshVectorMap
+            currentLevel={currentLevel}
+            divisions={BANGLADESH_DIVISIONS}
+            selectedDivision={selectedDivision}
+            selectedDistrict={selectedDistrict}
+            selectedUpazila={selectedUpazila}
+            selectedMadrasa={selectedMadrasa}
+            onSelectDivision={handleSelectDivision}
+            onSelectDistrict={handleSelectDistrict}
+            onSelectUpazila={handleSelectUpazila}
+            onSelectMadrasa={(m) => setSelectedMadrasa(m)}
+            onResetView={handleResetToBangladesh}
+          />
+        ) : (
+          <div style={{ width: '100%', height: '100%' }}>
+            <OfficialGISMap
+              currentLevel={currentLevel}
+              divisions={BANGLADESH_DIVISIONS}
+              selectedDivision={selectedDivision}
+              selectedDistrict={selectedDistrict}
+              selectedUpazila={selectedUpazila}
+              madrasas={currentRegionMadrasas}
+              selectedMadrasa={selectedMadrasa}
+              onSelectDivision={handleSelectDivision}
+              onSelectDistrict={handleSelectDistrict}
+              onSelectUpazila={handleSelectUpazila}
+              onSelectMadrasa={(m) => setSelectedMadrasa(m)}
+              isSatellite={true}
+              onToggleSatellite={() => setIsSatellite(false)}
+              onResetView={handleResetToBangladesh}
+            />
           </div>
         )}
 
-        {/* TAB 2: RANKINGS & HEALTHY COMPETITION */}
-        {activeTab === 'rankings' && (
-          <div className="space-y-3 animate-fadeIn">
-            {/* Bangladesh Division Rankings */}
-            <div className="bg-white rounded-2xl p-3.5 sm:p-5 shadow-sm border border-slate-200">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-xs sm:text-sm font-black text-slate-900 flex items-center gap-1.5">
-                  <Trophy className="h-4 w-4 text-amber-500" />
-                  <span>জাতীয় বিভাগীয় সুস্থ প্রতিযোগিতা ও র‍্যাংকিং:</span>
-                </h2>
-                <span className="text-[11px] font-bold text-slate-400">৮টি বিভাগ</span>
-              </div>
+        {/* =========================================================
+            DESKTOP 2-OPTION CONTROL CARD
+            Exact 2 options requested by user:
+            Option 1: "মাদরাসার তালিকা দেখুন" (Blue Button -> opens list drawer)
+            Option 2: "ভিতরে প্রবেশ করুন" (Green Section -> drill-down)
+           ========================================================= */}
+        <div
+          style={{
+            position: 'absolute',
+            right: '20px',
+            bottom: '20px',
+            top: '80px',
+            width: '400px',
+            maxWidth: 'calc(100vw - 32px)',
+            background: 'rgba(2, 36, 22, 0.94)',
+            backdropFilter: 'blur(20px)',
+            border: '1.5px solid rgba(16, 185, 129, 0.45)',
+            borderRadius: '24px',
+            padding: '22px',
+            display: 'flex',
+            flexDirection: 'column',
+            zIndex: 25,
+            color: 'white',
+            boxShadow: '0 20px 50px rgba(0, 0, 0, 0.6)',
+          }}
+        >
+          {/* Header of Card */}
+          <div style={{ paddingBottom: '14px', borderBottom: '1px solid rgba(255, 255, 255, 0.15)' }}>
+            <span style={{ fontSize: '12px', fontWeight: '800', textTransform: 'uppercase', color: '#6ee7b7', letterSpacing: '0.06em' }}>
+              {isEn ? 'Current Location' : 'বর্তমান অবস্থান'}
+            </span>
+            <h3 style={{ fontSize: '22px', fontWeight: '900', margin: '4px 0 0 0', color: 'white', lineHeight: '1.3' }}>
+              {locationMeta.title}
+            </h3>
+            <p style={{ fontSize: '13px', color: '#a7f3d0', margin: '4px 0 0 0', fontWeight: '500' }}>
+              {locationMeta.sub}
+            </p>
+          </div>
 
-              <div className="space-y-2">
-                {BANGLADESH_DIVISIONS.map((div, idx) => (
+          {/* =======================================================
+              OPTION 1: "মাদরাসার পূর্ণ তালিকা দেখুন"
+             ======================================================= */}
+          <div style={{ marginTop: '16px' }}>
+            <button
+              type="button"
+              onClick={() => setIsMadrasaListOpen(true)}
+              style={{
+                width: '100%',
+                background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+                border: '1.5px solid #38bdf8',
+                borderRadius: '16px',
+                padding: '14px 18px',
+                color: 'white',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                boxShadow: '0 6px 20px rgba(2, 132, 199, 0.4)',
+                transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div
+                  style={{
+                    width: '42px',
+                    height: '42px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.2)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <Building style={{ width: '22px', height: '22px', color: 'white' }} />
+                </div>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '800', color: 'white' }}>
+                    {isEn ? '📋 View Full Madrasa Directory' : '📋 মাদরাসার পূর্ণ তালিকা দেখুন'}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#e0f2fe', marginTop: '2px' }}>
+                    {isEn ? `Total ${locationMeta.count} Madrasas Registered` : `মোট ${locationMeta.count}টি মাদরাসা নিবন্ধিত`}
+                  </div>
+                </div>
+              </div>
+              <ChevronRight style={{ width: '20px', height: '20px', color: '#bae6fd' }} />
+            </button>
+          </div>
+
+          {/* =======================================================
+              OPTION 2: "ভিতরে প্রবেশ করুন" (CHILD NAVIGATION)
+             ======================================================= */}
+          <div style={{ marginTop: '18px', flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <span style={{ fontSize: '14px', fontWeight: '800', color: '#6ee7b7', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <Search style={{ width: '15px', height: '15px' }} />
+                <span>{isEn ? `🔍 Explore Inside (${locationMeta.nextLabel}):` : `🔍 ভিতরে প্রবেশ করুন (${locationMeta.nextLabel}):`}</span>
+              </span>
+              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>
+                {isEn ? 'Click' : 'ক্লিক করুন'}
+              </span>
+            </div>
+
+            {/* Scrollable Children List */}
+            <div
+              style={{
+                flex: 1,
+                overflowY: 'auto',
+                paddingRight: '6px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+              }}
+              className="no-scrollbar"
+            >
+              {/* LEVEL 1: BANGLADESH -> 8 Divisions */}
+              {currentLevel === 'bangladesh' &&
+                BANGLADESH_DIVISIONS.map((div) => (
                   <button
                     key={div.id}
                     type="button"
-                    onClick={() => {
-                      handleSelectDivision(div.id);
-                      setActiveTab('map');
+                    onClick={() => handleSelectDivision(div.id)}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '12px 14px',
+                      borderRadius: '14px',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.14)',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s ease',
                     }}
-                    className="w-full text-left p-2.5 sm:p-3 rounded-xl border border-slate-100 bg-slate-50/70 hover:bg-emerald-50 hover:border-emerald-300 transition-all flex items-center justify-between gap-2"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-xs font-black ${
-                          idx === 0
-                            ? 'bg-amber-500 text-white'
-                            : idx === 1
-                            ? 'bg-slate-400 text-white'
-                            : idx === 2
-                            ? 'bg-amber-700 text-white'
-                            : 'bg-slate-200 text-slate-700'
-                        }`}
-                      >
-                        {idx + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <div className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-                          {div.nameBn} বিভাগ
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '18px' }}>🏛️</span>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: '800', color: 'white' }}>
+                          {isEn ? `${div.name} Division` : `${div.nameBn} বিভাগ`}
                         </div>
-                        <div className="text-[10px] text-slate-500">
-                          {div.districts.length}টি জেলা • {div.totalMadrasas}টি মাদরাসা
+                        <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.65)', marginTop: '1px' }}>
+                          {isEn ? `${div.districts.length} Districts • Rating ★${div.rating}` : `${div.districts.length}টি জেলা • রেটিং ★${div.rating}`}
                         </div>
                       </div>
                     </div>
-
-                    <div className="text-right shrink-0">
-                      <div className="text-xs font-black text-amber-600">★ {div.rating}</div>
-                      <div className="text-[10px] font-bold text-emerald-700">{div.passRate}% পাস</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span
+                        style={{
+                          fontSize: '12px',
+                          fontWeight: '800',
+                          background: 'rgba(16, 185, 129, 0.3)',
+                          color: '#6ee7b7',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(16, 185, 129, 0.4)',
+                        }}
+                      >
+                        {isEn ? `${div.totalMadrasas}` : `${div.totalMadrasas}টি`}
+                      </span>
+                      <ChevronRight style={{ width: '16px', height: '16px', color: 'rgba(255,255,255,0.5)' }} />
                     </div>
                   </button>
                 ))}
-              </div>
-            </div>
 
-            {/* If a District is Selected -> Show Upazila Rankings */}
-            {selectedDistrict && (
-              <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-white rounded-2xl p-3.5 sm:p-5 shadow-sm border border-emerald-200">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-xs sm:text-sm font-black text-emerald-950 flex items-center gap-1.5">
-                    <Award className="h-4 w-4 text-emerald-600" />
-                    <span>{selectedDistrict.nameBn} জেলার উপজেলা র‍্যাংকিং:</span>
-                  </h3>
-                  <span className="text-[11px] font-bold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                    {selectedDistrict.upazilas.length}টি উপজেলা
-                  </span>
-                </div>
+              {/* LEVEL 2: DIVISION -> Districts */}
+              {currentLevel === 'division' &&
+                selectedDivision?.districts.map((dist) => (
+                  <button
+                    key={dist.id}
+                    type="button"
+                    onClick={() => handleSelectDistrict(dist.id)}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '12px 14px',
+                      borderRadius: '14px',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.14)',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '18px' }}>📍</span>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: '800', color: 'white' }}>
+                          {isEn ? `${dist.name} District` : `${dist.nameBn} জেলা`}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.65)', marginTop: '1px' }}>
+                          {isEn ? `${dist.upazilas.length} Upazilas` : `${dist.upazilas.length}টি উপজেলা`}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span
+                        style={{
+                          fontSize: '12px',
+                          fontWeight: '800',
+                          background: 'rgba(56, 189, 248, 0.25)',
+                          color: '#7dd3fc',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(56, 189, 248, 0.4)',
+                        }}
+                      >
+                        {isEn ? 'Explore' : 'প্রবেশ'}
+                      </span>
+                      <ChevronRight style={{ width: '16px', height: '16px', color: 'rgba(255,255,255,0.5)' }} />
+                    </div>
+                  </button>
+                ))}
 
-                <div className="space-y-2">
-                  {selectedDistrict.upazilas.map((up, idx) => (
-                    <button
-                      key={up.id}
-                      type="button"
-                      onClick={() => {
-                        handleSelectUpazila(up.id);
-                        setActiveTab('map');
+              {/* LEVEL 3: DISTRICT -> Upazilas */}
+              {currentLevel === 'district' &&
+                selectedDistrict?.upazilas.map((up) => (
+                  <button
+                    key={up.id}
+                    type="button"
+                    onClick={() => handleSelectUpazila(up.id)}
+                    style={{
+                      width: '100%',
+                      textAlign: 'left',
+                      padding: '12px 14px',
+                      borderRadius: '14px',
+                      background: 'rgba(255, 255, 255, 0.08)',
+                      border: '1px solid rgba(255, 255, 255, 0.14)',
+                      color: 'white',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      cursor: 'pointer',
+                      transition: 'background 0.15s ease',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '18px' }}>🕌</span>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: '800', color: 'white' }}>
+                          {isEn ? `${up.name} Upazila` : `${up.nameBn} উপজেলা`}
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'rgba(255, 255, 255, 0.65)', marginTop: '1px' }}>
+                          {isEn ? `Top: ${up.topMadrasa}` : `শীর্ষ: ${up.topMadrasa}`}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span
+                        style={{
+                          fontSize: '12px',
+                          fontWeight: '800',
+                          background: 'rgba(245, 158, 11, 0.25)',
+                          color: '#fde68a',
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          border: '1px solid rgba(245, 158, 11, 0.4)',
+                        }}
+                      >
+                        ★ {up.rating}
+                      </span>
+                      <ChevronRight style={{ width: '16px', height: '16px', color: 'rgba(255,255,255,0.5)' }} />
+                    </div>
+                  </button>
+                ))}
+
+              {/* LEVEL 4: UPAZILA -> Selected Madrasa Dossier */}
+              {currentLevel === 'upazila' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {selectedMadrasa ? (
+                    <div
+                      style={{
+                        background: 'rgba(16, 185, 129, 0.18)',
+                        border: '1.5px solid rgba(16, 185, 129, 0.5)',
+                        borderRadius: '16px',
+                        padding: '16px',
                       }}
-                      className="w-full text-left p-2.5 sm:p-3 rounded-xl border border-emerald-200 bg-white hover:bg-emerald-100/60 transition-all flex items-center justify-between gap-2 shadow-xs"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white text-[11px] font-black">
-                          {idx + 1}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                        <span
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: '800',
+                            background: '#059669',
+                            color: 'white',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                            textTransform: 'uppercase',
+                          }}
+                        >
+                          {isEn ? (selectedMadrasa.type === 'qawmi' ? 'Qawmi' : selectedMadrasa.type === 'alia' ? 'Alia' : 'Hifz') : selectedMadrasa.typeLabel}
                         </span>
-                        <div className="min-w-0">
-                          <div className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-                            🕌 {up.nameBn} উপজেলা
+                        <span style={{ fontSize: '13px', fontWeight: '700', color: '#38bdf8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <CheckCircle style={{ width: '14px', height: '14px' }} />
+                          {isEn ? 'Verified' : 'ভেরিফাইড'}
+                        </span>
+                      </div>
+
+                      <h4 style={{ fontSize: '16px', fontWeight: '900', margin: '0 0 6px 0', color: 'white', lineHeight: '1.3' }}>
+                        {selectedMadrasa.name}
+                      </h4>
+                      <p style={{ fontSize: '13px', color: '#cbd5e1', margin: '0 0 10px 0' }}>
+                        📍 {selectedMadrasa.upazila}, {selectedMadrasa.district}
+                      </p>
+
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(3, 1fr)',
+                          gap: '6px',
+                          background: 'rgba(0,0,0,0.3)',
+                          padding: '10px 8px',
+                          borderRadius: '10px',
+                          textAlign: 'center',
+                          marginBottom: '14px',
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase' }}>
+                            {isEn ? 'Students' : 'ছাত্র'}
                           </div>
-                          <div className="text-[10px] text-slate-500 truncate">
-                            শীর্ষ: {up.topMadrasa}
+                          <div style={{ fontSize: '15px', fontWeight: '900', color: 'white', marginTop: '2px' }}>{selectedMadrasa.students}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase' }}>
+                            {isEn ? 'Pass' : 'পাস'}
                           </div>
+                          <div style={{ fontSize: '15px', fontWeight: '900', color: '#34d399', marginTop: '2px' }}>{selectedMadrasa.passRate}%</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase' }}>
+                            {isEn ? 'Rating' : 'রেটিং'}
+                          </div>
+                          <div style={{ fontSize: '15px', fontWeight: '900', color: '#f59e0b', marginTop: '2px' }}>★ {selectedMadrasa.rating}</div>
                         </div>
                       </div>
 
-                      <div className="text-right shrink-0">
-                        <div className="text-xs font-black text-amber-600">★ {up.rating}</div>
-                        <div className="text-[10px] font-bold text-emerald-700">{up.passRate}% পাস</div>
+                      {/* WhatsApp & Call Buttons */}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                        <a
+                          href={`https://wa.me/${selectedMadrasa.whatsapp}?text=${encodeURIComponent(
+                            `আসসালামু আলাইকুম, আমি নূরহাব (NoorHub) থেকে ${selectedMadrasa.name} সম্পর্কে জানতে যোগাযোগ করছি।`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            background: '#16a34a',
+                            borderRadius: '10px',
+                            padding: '10px 12px',
+                            color: 'white',
+                            fontSize: '13px',
+                            fontWeight: '800',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <MessageCircle style={{ width: '16px', height: '16px' }} />
+                          <span>WhatsApp</span>
+                        </a>
+
+                        <a
+                          href={`tel:${selectedMadrasa.phone}`}
+                          style={{
+                            background: '#0f172a',
+                            border: '1px solid rgba(255,255,255,0.25)',
+                            borderRadius: '10px',
+                            padding: '10px 12px',
+                            color: 'white',
+                            fontSize: '13px',
+                            fontWeight: '800',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <Phone style={{ width: '16px', height: '16px' }} />
+                          <span>{isEn ? 'Call' : 'কল দিন'}</span>
+                        </a>
                       </div>
+                    </div>
+                  ) : (
+                    <div style={{ textAlign: 'center', padding: '24px 16px', color: 'rgba(255,255,255,0.6)', fontSize: '13px' }}>
+                      {isEn ? 'Click the blue button above to view all madrasas in this area.' : 'এই উপজেলার সকল মাদরাসা দেখতে উপরের নীল বোতামে ক্লিক করুন।'}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* =======================================================
+            SLIDE-OVER DRAWER: MADRASAS LIST (OPENS ONLY ON DEMAND)
+           ======================================================= */}
+        {isMadrasaListOpen && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              background: 'rgba(0, 0, 0, 0.7)',
+              backdropFilter: 'blur(8px)',
+              zIndex: 60,
+              display: 'flex',
+              justifyContent: 'flex-end',
+            }}
+            onClick={() => setIsMadrasaListOpen(false)}
+          >
+            <div
+              style={{
+                width: '100%',
+                maxWidth: '480px',
+                height: '100%',
+                background: '#ffffff',
+                color: '#0f172a',
+                display: 'flex',
+                flexDirection: 'column',
+                boxShadow: '-10px 0 40px rgba(0, 0, 0, 0.5)',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Drawer Header */}
+              <div
+                style={{
+                  padding: '20px',
+                  background: '#064e3b',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                }}
+              >
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '900', margin: 0, color: 'white' }}>
+                    {isEn ? `📋 Madrasas in ${locationMeta.title}` : `📋 ${locationMeta.title}-এর মাদরাসাসমূহ`}
+                  </h3>
+                  <p style={{ fontSize: '13px', color: '#a7f3d0', margin: '4px 0 0 0' }}>
+                    {isEn ? `Total ${drawerMadrasas.length} Institutions` : `মোট ${drawerMadrasas.length}টি প্রতিষ্ঠান`}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsMadrasaListOpen(false)}
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: 'rgba(255, 255, 255, 0.18)',
+                    border: 'none',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                  title={isEn ? "Close" : "বন্ধ করুন"}
+                >
+                  <X style={{ width: '20px', height: '20px' }} />
+                </button>
+              </div>
+
+              {/* Search & Filter */}
+              <div style={{ padding: '16px', borderBottom: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ position: 'relative' }}>
+                  <Search style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: '#94a3b8' }} />
+                  <input
+                    type="text"
+                    placeholder={isEn ? "Search madrasa by name..." : "মাদরাসার নাম দিয়ে খুঁজুন..."}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                      width: '100%',
+                      paddingLeft: '38px',
+                      paddingRight: '14px',
+                      paddingTop: '10px',
+                      paddingBottom: '10px',
+                      fontSize: '14px',
+                      borderRadius: '10px',
+                      border: '1.5px solid #cbd5e1',
+                      outline: 'none',
+                      background: 'white',
+                      fontFamily: "'Hind Siliguri', 'Inter', sans-serif",
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {[
+                    { id: 'all', label: isEn ? 'All' : 'সকল' },
+                    { id: 'qawmi', label: isEn ? 'Qawmi' : 'কওমি' },
+                    { id: 'alia', label: isEn ? 'Alia' : 'আলিয়া' },
+                    { id: 'hifz', label: isEn ? 'Hifz' : 'হিফজ' },
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setTypeFilter(t.id as any)}
+                      style={{
+                        flex: 1,
+                        padding: '8px 0',
+                        fontSize: '13px',
+                        fontWeight: '700',
+                        borderRadius: '8px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: typeFilter === t.id ? '#047857' : '#e2e8f0',
+                        color: typeFilter === t.id ? 'white' : '#475569',
+                        fontFamily: "'Hind Siliguri', 'Inter', sans-serif",
+                      }}
+                    >
+                      {t.label}
                     </button>
                   ))}
                 </div>
               </div>
-            )}
-          </div>
-        )}
 
-        {/* TAB 3: MADRASAS LIST */}
-        {activeTab === 'madrasas' && (
-          <div className="space-y-3 animate-fadeIn">
-            {/* Search Input */}
-            <div className="relative">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="মাদ্রাসা, জেলা বা উপজেলা খুঁজুন..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white shadow-xs"
-              />
-            </div>
-
-            {/* List Cards */}
-            <div className="space-y-2">
-              {activeMadrasas.map((m) => (
-                <div
-                  key={m.id}
-                  onClick={() => {
-                    setSelectedMadrasa(m);
-                    setActiveTab('map');
-                  }}
-                  className="cursor-pointer p-3 rounded-xl border border-slate-200 bg-white hover:border-emerald-400 hover:shadow-sm transition-all"
-                >
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span
-                      className={`rounded-full px-2 py-0.2 text-[10px] font-extrabold ${
-                        m.type === 'qawmi'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : m.type === 'hifz'
-                          ? 'bg-amber-100 text-amber-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }`}
+              {/* Scrollable Madrasas List */}
+              <div style={{ flex: 1, overflowY: 'auto', padding: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {drawerMadrasas.length > 0 ? (
+                  drawerMadrasas.map((m) => (
+                    <div
+                      key={m.id}
+                      style={{
+                        padding: '16px',
+                        borderRadius: '14px',
+                        border: '1.5px solid #e2e8f0',
+                        background: '#ffffff',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.04)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                      }}
                     >
-                      {m.typeLabel}
-                    </span>
-                    <span className="text-xs font-black text-amber-500">★ {m.rating}</span>
-                  </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <span
+                          style={{
+                            fontSize: '12px',
+                            fontWeight: '800',
+                            background: m.type === 'qawmi' ? '#dcfce7' : '#dbeafe',
+                            color: m.type === 'qawmi' ? '#166534' : '#1e40af',
+                            padding: '3px 8px',
+                            borderRadius: '6px',
+                          }}
+                        >
+                          {isEn ? (m.type === 'qawmi' ? 'Qawmi' : m.type === 'alia' ? 'Alia' : 'Hifz') : m.typeLabel}
+                        </span>
+                        <span style={{ fontSize: '13px', fontWeight: '900', color: '#d97706' }}>★ {m.rating}</span>
+                      </div>
 
-                  <h3 className="text-xs sm:text-sm font-black text-slate-900">{m.name}</h3>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    📍 {m.upazila}, {m.district} | প্রধান: {m.principal}
-                  </p>
+                      <h4 style={{ fontSize: '16px', fontWeight: '800', margin: 0, color: '#0f172a', lineHeight: '1.3' }}>
+                        {m.name}
+                      </h4>
+                      <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
+                        📍 {m.upazila}, {m.district} • {m.students} {isEn ? 'Students' : 'জন ছাত্র'}
+                      </p>
+                      <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0 }}>
+                        {isEn ? 'Principal: ' : 'প্রধান: '}{m.principal} • {isEn ? 'Pass Rate: ' : 'পাসের হার: '}{m.passRate}%
+                      </p>
 
-                  <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 text-[11px] font-bold text-emerald-700">
-                    <span>ম্যাপে অবস্থান দেখুন</span>
-                    <ArrowRight className="h-3.5 w-3.5" />
+                      <div style={{ display: 'flex', gap: '8px', paddingTop: '8px', borderTop: '1px solid #f1f5f9' }}>
+                        <a
+                          href={`https://wa.me/${m.whatsapp}?text=${encodeURIComponent(
+                            `আসসালামু আলাইকুম, আমি নূরহাব (NoorHub) থেকে ${m.name} সম্পর্কে জানতে যোগাযোগ করছি।`
+                          )}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            flex: 1,
+                            background: '#16a34a',
+                            color: 'white',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            fontWeight: '700',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <MessageCircle style={{ width: '15px', height: '15px' }} />
+                          <span>WhatsApp</span>
+                        </a>
+
+                        <a
+                          href={`tel:${m.phone}`}
+                          style={{
+                            flex: 1,
+                            background: '#0f172a',
+                            color: 'white',
+                            padding: '8px 12px',
+                            borderRadius: '8px',
+                            fontSize: '13px',
+                            fontWeight: '700',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '6px',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          <Phone style={{ width: '15px', height: '15px' }} />
+                          <span>{isEn ? 'Call' : 'কল দিন'}</span>
+                        </a>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '40px 20px', color: '#64748b' }}>
+                    <Building style={{ width: '40px', height: '40px', color: '#cbd5e1', margin: '0 auto 12px auto' }} />
+                    <p style={{ fontSize: '15px', fontWeight: '700', margin: 0 }}>
+                      {isEn ? 'No madrasas found' : 'কোনো মাদরাসা পাওয়া যায়নি'}
+                    </p>
+                    <p style={{ fontSize: '13px', color: '#94a3b8', margin: '4px 0 0 0' }}>
+                      {isEn ? 'Try adjusting your search criteria' : 'অনুসন্ধান পরিবর্তন করে চেষ্টা করুন'}
+                    </p>
                   </div>
-                </div>
-              ))}
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/language-store';
+import { formatNumberByLang } from '@/lib/useCountUp';
 
 export interface KitabItem {
   id: string;
@@ -147,6 +149,8 @@ const qawmiPresets: Array<{ name: string; desc: string }> = [
 ];
 
 export default function DynamicSyllabusPage() {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   const [classes, setClasses] = useState<ClassItem[]>(defaultClasses);
   const [kitabs, setKitabs] = useState<KitabItem[]>(defaultKitabs);
   const [activeCurriculum, setActiveCurriculum] = useState<'all' | 'qawmi' | 'alia' | 'general' | 'hifz'>('all');
@@ -315,15 +319,15 @@ export default function DynamicSyllabusPage() {
     if (newItems.length > 0) {
       const updated = [...classes, ...newItems];
       saveClasses(updated);
-      alert(`${newItems.length}টি কওমি জামাত সফলভাবে যুক্ত হয়েছে!`);
+      alert(isEn ? `${formatNumberByLang(newItems.length, lang)} Qawmi classes added successfully!` : `${formatNumberByLang(newItems.length, lang)}টি কওমি জামাত সফলভাবে যুক্ত হয়েছে!`);
     } else {
-      alert('সকল কওমি জামাত ইতিমধ্যে যুক্ত রয়েছে।');
+      alert(isEn ? 'All Qawmi classes are already added.' : 'সকল কওমি জামাত ইতিমধ্যে যুক্ত রয়েছে।');
     }
   };
 
   // Delete Kitab
   const handleDeleteKitab = (id: string) => {
-    if (confirm('আপনি কি নিশ্চিতভাবে এই কিতাবটি সিলেবাস থেকে মুছে ফেলতে চান?')) {
+    if (confirm(isEn ? 'Are you sure you want to remove this book from the syllabus?' : 'আপনি কি নিশ্চিতভাবে এই কিতাবটি সিলেবাস থেকে মুছে ফেলতে চান?')) {
       const updated = kitabs.filter((k) => k.id !== id);
       saveKitabs(updated);
       if (viewingKitab?.id === id) setViewingKitab(null);
@@ -332,7 +336,7 @@ export default function DynamicSyllabusPage() {
 
   // Delete Class
   const handleDeleteClass = (classId: string, className: string) => {
-    if (confirm(`আপনি কি "${className}" শ্রেণিটি এবং এর সকল কিতাব মুছে ফেলতে চান?`)) {
+    if (confirm(isEn ? `Are you sure you want to delete class "${className}" and all its books?` : `আপনি কি "${className}" শ্রেণিটি এবং এর সকল কিতাব মুছে ফেলতে চান?`)) {
       const updatedClasses = classes.filter((c) => c.id !== classId);
       const updatedKitabs = kitabs.filter((k) => k.classId !== classId);
       saveClasses(updatedClasses);
@@ -348,15 +352,21 @@ export default function DynamicSyllabusPage() {
     return (
       <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', background: '#ffffff', color: '#0f172a', fontFamily: 'Hind Siliguri, sans-serif' }}>
         <div style={{ textAlign: 'center', borderBottom: '2px solid #0f172a', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
-          <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 0.25rem' }}>দারুল উলুম নূরানী ও কওমি মাদরাসা</h1>
-          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 0.5rem' }}>অফিশিয়াল পাঠ্যক্রম ও কিতাবের তালিকা (Booklist) | শিক্ষাবর্ষ: ২০২৬-২০২৭</p>
+          <h1 style={{ fontSize: '1.75rem', fontWeight: '800', margin: '0 0 0.25rem' }}>
+            {isEn ? 'Darul Uloom Noorani & Qawmi Madrasa' : 'দারুল উলুম নূরানী ও কওমি মাদরাসা'}
+          </h1>
+          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0 0 0.5rem' }}>
+            {isEn ? 'Official Curriculum & Booklist | Academic Year: 2026-2027' : 'অফিশিয়াল পাঠ্যক্রম ও কিতাবের তালিকা (Booklist) | শিক্ষাবর্ষ: ২০২৬-২০২৭'}
+          </p>
           <div style={{ display: 'inline-block', background: '#f1f5f9', padding: '0.3rem 0.85rem', borderRadius: '4px', fontWeight: '700', fontSize: '1.05rem', border: '1px solid #cbd5e1' }}>
-            {currentClass.name} — সিলেবাস ও বইয়ের বিবরণ
+            {currentClass.name} — {isEn ? 'Syllabus & Book Details' : 'সিলেবাস ও বইয়ের বিবরণ'}
           </div>
         </div>
 
         {currentKitabs.length === 0 ? (
-          <p style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>এই শ্রেণিতে এখনো কোনো কিতাব যুক্ত করা হয়নি।</p>
+          <p style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+            {isEn ? 'No books have been added to this class yet.' : 'এই শ্রেণিতে এখনো কোনো কিতাব যুক্ত করা হয়নি।'}
+          </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2rem' }}>
             {currentKitabs.map((k, idx) => (
@@ -364,29 +374,33 @@ export default function DynamicSyllabusPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '0.5rem' }}>
                   <div>
                     <span style={{ fontWeight: '800', fontSize: '1rem' }}>
-                      {idx + 1}. {k.name}
+                      {formatNumberByLang(idx + 1, lang)}. {k.name}
                     </span>
                     {k.originalName && k.originalName !== k.name && (
                       <span style={{ marginLeft: '0.5rem', color: '#2563eb', fontWeight: '600' }}>({k.originalName})</span>
                     )}
                     <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.15rem' }}>
-                      মুসান্নিফ/লেখক: <strong>{k.author}</strong> | শাস্ত্র: <strong>{k.category}</strong>
+                      {isEn ? 'Author:' : 'মুসান্নিফ/লেখক:'} <strong>{k.author}</strong> | {isEn ? 'Subject:' : 'শাস্ত্র:'} <strong>{k.category}</strong>
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', fontSize: '0.8rem' }}>
-                    <div>পূর্ণমান: <strong>{k.fullMarks} নম্বর</strong></div>
-                    <div style={{ color: '#64748b' }}>মোট পৃষ্ঠা: {k.totalPages}</div>
+                    <div>{isEn ? 'Full Marks:' : 'পূর্ণমান:'} <strong>{formatNumberByLang(k.fullMarks ?? 100, lang)} {isEn ? 'Marks' : 'নম্বর'}</strong></div>
+                    <div style={{ color: '#64748b' }}>{isEn ? 'Total Pages:' : 'মোট পৃষ্ঠা:'} {formatNumberByLang(k.totalPages ?? 0, lang)}</div>
                   </div>
                 </div>
 
                 <div>
-                  <strong style={{ fontSize: '0.825rem', color: '#0f172a' }}>বইয়ের সারসংক্ষেপ ও কেন পড়ানো হয়:</strong>
+                  <strong style={{ fontSize: '0.825rem', color: '#0f172a' }}>
+                    {isEn ? 'Book Summary & Purpose:' : 'বইয়ের সারসংক্ষেপ ও কেন পড়ানো হয়:'}
+                  </strong>
                   <p style={{ fontSize: '0.825rem', color: '#334155', lineHeight: '1.5', marginTop: '0.2rem' }}>{k.summary}</p>
                 </div>
 
                 {k.learningOutcomes && (
                   <div style={{ marginTop: '0.4rem' }}>
-                    <strong style={{ fontSize: '0.8rem', color: '#16a34a' }}>শিক্ষার্থীর অর্জিত যোগ্যতা:</strong>
+                    <strong style={{ fontSize: '0.8rem', color: '#16a34a' }}>
+                      {isEn ? 'Learning Outcomes:' : 'শিক্ষার্থীর অর্জিত যোগ্যতা:'}
+                    </strong>
                     <div style={{ fontSize: '0.8rem', color: '#475569', whiteSpace: 'pre-line', marginTop: '0.15rem' }}>
                       {k.learningOutcomes}
                     </div>
@@ -399,10 +413,10 @@ export default function DynamicSyllabusPage() {
 
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid #e2e8f0' }}>
           <div style={{ textAlign: 'center', width: '160px', borderTop: '1px solid #000', paddingTop: '0.4rem', fontSize: '0.8rem' }}>
-            শিক্ষা সচিব
+            {isEn ? 'Academic Secretary' : 'শিক্ষা সচিব'}
           </div>
           <div style={{ textAlign: 'center', width: '160px', borderTop: '1px solid #000', paddingTop: '0.4rem', fontSize: '0.8rem' }}>
-            মুহতামিম / প্রধান শিক্ষক
+            {isEn ? 'Principal / Headmaster' : 'মুহতামিম / প্রধান শিক্ষক'}
           </div>
         </div>
 
@@ -411,13 +425,13 @@ export default function DynamicSyllabusPage() {
             onClick={() => window.print()}
             style={{ background: '#16a34a', color: '#fff', padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: '700', border: 'none', cursor: 'pointer', marginRight: '0.5rem' }}
           >
-            প্রিন্ট করুন (Print / PDF)
+            {isEn ? 'Print / Save PDF' : 'প্রিন্ট করুন (Print / PDF)'}
           </button>
           <button
             onClick={() => setPrintMode(false)}
             style={{ background: '#e2e8f0', color: '#0f172a', padding: '0.5rem 1.25rem', borderRadius: '8px', fontWeight: '700', border: 'none', cursor: 'pointer' }}
           >
-            ফিরে যান
+            {isEn ? 'Go Back' : 'ফিরে যান'}
           </button>
         </div>
       </div>
@@ -431,16 +445,20 @@ export default function DynamicSyllabusPage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
             <Link href="/dashboard" style={{ color: '#64748b', textDecoration: 'none', fontSize: '0.825rem' }}>
-              ড্যাশবোর্ড
+              {isEn ? 'Dashboard' : 'ড্যাশবোর্ড'}
             </Link>
             <span style={{ color: '#cbd5e1' }}>/</span>
-            <span style={{ color: '#16a34a', fontWeight: '700', fontSize: '0.825rem' }}>সিলেবাস ও কিতাব সারসংক্ষেপ</span>
+            <span style={{ color: '#16a34a', fontWeight: '700', fontSize: '0.825rem' }}>
+              {isEn ? 'Syllabus & Kitab Hub' : 'সিলেবাস ও কিতাব সারসংক্ষেপ'}
+            </span>
           </div>
           <h1 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.375rem', fontWeight: '800', color: '#0f172a' }}>
-            শ্রেণি, সিলেবাস ও কিতাব হাব
+            {isEn ? 'Class, Syllabus & Kitab Hub' : 'শ্রেণি, সিলেবাস ও কিতাব হাব'}
           </h1>
           <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.825rem', color: '#64748b' }}>
-            কোনো কিছুই ফিক্সড নয়—যে কোনো জামাত ও কিতাব এডিট করুন, নতুন যোগ করুন এবং যেকোনো পরিবর্তন সাথে সাথে সংরক্ষণ করুন
+            {isEn
+              ? 'Fully customizable — edit, add, or manage any class, curriculum, or book with real-time saving'
+              : 'কোনো কিছুই ফিক্সড নয়—যে কোনো জামাত ও কিতাব এডিট করুন, নতুন যোগ করুন এবং যেকোনো পরিবর্তন সাথে সাথে সংরক্ষণ করুন'}
           </p>
         </div>
 
@@ -470,7 +488,7 @@ export default function DynamicSyllabusPage() {
               <line x1="12" y1="11" x2="12" y2="17" />
               <line x1="9" y1="14" x2="15" y2="14" />
             </svg>
-            + নতুন শ্রেণি / জামাত
+            {isEn ? '+ New Class / Jamat' : '+ নতুন শ্রেণি / জামাত'}
           </button>
 
           {/* Add Kitab Button */}
@@ -485,7 +503,7 @@ export default function DynamicSyllabusPage() {
               <line x1="12" y1="8" x2="12" y2="14" />
               <line x1="9" y1="11" x2="15" y2="11" />
             </svg>
-            + কিতাব / বই যোগ করুন
+            {isEn ? '+ Add Kitab / Book' : '+ কিতাব / বই যোগ করুন'}
           </button>
 
           {/* Print Button */}
@@ -499,7 +517,7 @@ export default function DynamicSyllabusPage() {
               <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
               <rect x="6" y="14" width="12" height="8" />
             </svg>
-            সিলেবাস প্রিন্ট
+            {isEn ? 'Print Syllabus' : 'সিলেবাস প্রিন্ট'}
           </button>
         </div>
       </div>
@@ -527,7 +545,7 @@ export default function DynamicSyllabusPage() {
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
           </svg>
-          পাঠ্য কিতাব ও সারসংক্ষেপ ভিউ
+          {isEn ? 'Textbooks & Summaries View' : 'পাঠ্য কিতাব ও সারসংক্ষেপ ভিউ'}
         </button>
 
         <button
@@ -550,7 +568,9 @@ export default function DynamicSyllabusPage() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
           </svg>
-          সকল শ্রেণি ও জামাত ব্যবস্থাপনা ({classes.length}টি শ্রেণি)
+          {isEn
+            ? `All Classes & Jamats Management (${formatNumberByLang(classes.length, lang)} Classes)`
+            : `সকল শ্রেণি ও জামাত ব্যবস্থাপনা (${formatNumberByLang(classes.length, lang)}টি শ্রেণি)`}
         </button>
       </div>
 
@@ -591,18 +611,21 @@ export default function DynamicSyllabusPage() {
               </svg>
             </div>
             <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.825rem', color: '#1e40af', lineHeight: '1.5', margin: 0 }}>
-              <strong>১০০% কাস্টমাইজেশন ও এডিট সুবিধা:</strong> যে কোনো কিতাবের নাম, মুসান্নিফ, সারসংক্ষেপ ও মানবণ্টন এডিট বোতাম চেপে আপনার মাদরাসার চাহিদা অনুযায়ী পরিবর্তন করতে পারেন।
+              <strong>{isEn ? '100% Customizable & Editable:' : '১০০% কাস্টমাইজেশন ও এডিট সুবিধা:'}</strong>{' '}
+              {isEn
+                ? 'Easily customize book titles, authors, summaries, and marks according to your institution requirements.'
+                : 'যে কোনো কিতাবের নাম, মুসান্নিফ, সারসংক্ষেপ ও মানবণ্টন এডিট বোতাম চেপে আপনার মাদরাসার চাহিদা অনুযায়ী পরিবর্তন করতে পারেন।'}
             </p>
           </div>
 
           {/* Curriculum Filter Pills */}
           <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.4rem', marginBottom: '1rem' }}>
             {[
-              { id: 'all', label: 'সকল কারিকুলাম' },
-              { id: 'qawmi', label: 'কওমি নেজামী' },
-              { id: 'alia', label: 'আলিয়া মাদরাসা' },
-              { id: 'general', label: 'জেনারেল স্কুল' },
-              { id: 'hifz', label: 'হিফজুল কুরআন' },
+              { id: 'all', label: isEn ? 'All Curricula' : 'সকল কারিকুলাম' },
+              { id: 'qawmi', label: isEn ? 'Qawmi Nezami' : 'কওমি নেজামী' },
+              { id: 'alia', label: isEn ? 'Alia Madrasa' : 'আলিয়া মাদরাসা' },
+              { id: 'general', label: isEn ? 'General School' : 'জেনারেল স্কুল' },
+              { id: 'hifz', label: isEn ? 'Hifzul Quran' : 'হিফজুল কুরআন' },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -629,7 +652,9 @@ export default function DynamicSyllabusPage() {
           <div className="card" style={{ padding: '0.85rem', marginBottom: '1.25rem', background: '#f8fafc' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase' }}>
-                শ্রেণি বা জামাত সিলেক্ট করুন ({filteredClasses.length}টি শ্রেণি উপলব্ধ):
+                {isEn
+                  ? `Select Class or Jamat (${formatNumberByLang(filteredClasses.length, lang)} available):`
+                  : `শ্রেণি বা জামাত সিলেক্ট করুন (${formatNumberByLang(filteredClasses.length, lang)}টি শ্রেণি উপলব্ধ):`}
               </span>
 
               <button
@@ -653,7 +678,7 @@ export default function DynamicSyllabusPage() {
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                + নতুন শ্রেণি এন্ট্রি করুন
+                {isEn ? '+ Add New Class' : '+ নতুন শ্রেণি এন্ট্রি করুন'}
               </button>
             </div>
 
@@ -681,7 +706,7 @@ export default function DynamicSyllabusPage() {
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                + নতুন জামাত/শ্রেণি
+                {isEn ? '+ New Jamat/Class' : '+ নতুন জামাত/শ্রেণি'}
               </button>
 
               {filteredClasses.map((c) => {
@@ -719,7 +744,7 @@ export default function DynamicSyllabusPage() {
                         fontWeight: '700',
                       }}
                     >
-                      {count} বই
+                      {formatNumberByLang(count, lang)} {isEn ? (count === 1 ? 'Book' : 'Books') : 'বই'}
                     </span>
                   </button>
                 );
@@ -750,16 +775,16 @@ export default function DynamicSyllabusPage() {
                   </h2>
                   <span style={{ fontSize: '0.7rem', fontWeight: '700', padding: '0.15rem 0.5rem', borderRadius: '999px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
                     {currentClass.curriculumType === 'qawmi'
-                      ? 'কওমি'
+                      ? (isEn ? 'Qawmi' : 'কওমি')
                       : currentClass.curriculumType === 'alia'
-                      ? 'আলিয়া'
+                      ? (isEn ? 'Alia' : 'আলিয়া')
                       : currentClass.curriculumType === 'general'
-                      ? 'জেনারেল'
-                      : 'হিফজ'}
+                      ? (isEn ? 'General' : 'জেনারেল')
+                      : (isEn ? 'Hifz' : 'হিফজ')}
                   </span>
                   {currentClass.section && (
                     <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', borderRadius: '4px', background: '#f1f5f9', color: '#475569' }}>
-                      শাখা: {currentClass.section}
+                      {isEn ? 'Section: ' : 'শাখা: '}{currentClass.section}
                     </span>
                   )}
                 </div>
@@ -789,7 +814,7 @@ export default function DynamicSyllabusPage() {
                     <path d="M12 20h9" />
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
-                  শ্রেণি এডিট করুন
+                  {isEn ? 'Edit Class' : 'শ্রেণি এডিট করুন'}
                 </button>
 
                 <button
@@ -797,7 +822,7 @@ export default function DynamicSyllabusPage() {
                   className="btn btn-primary"
                   style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
                 >
-                  + এই শ্রেণিতে কিতাব যোগ করুন
+                  {isEn ? '+ Add Kitab to Class' : '+ এই শ্রেণিতে কিতাব যোগ করুন'}
                 </button>
               </div>
             </div>
@@ -807,24 +832,28 @@ export default function DynamicSyllabusPage() {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
               <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.95rem', fontWeight: '700', color: '#0f172a' }}>
-                নির্ধারিত পাঠ্য কিতাব ও বিষয়সমূহ ({currentKitabs.length}টি)
+                {isEn
+                  ? `Assigned Books & Subjects (${formatNumberByLang(currentKitabs.length, lang)})`
+                  : `নির্ধারিত পাঠ্য কিতাব ও বিষয়সমূহ (${formatNumberByLang(currentKitabs.length, lang)}টি)`}
               </h3>
               <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                যেকোনো কিতাবে ট্যাপ করে পূর্ণাঙ্গ সারসংক্ষেপ পড়ুন বা এডিট করুন
+                {isEn ? 'Click on any book to read full summary or edit' : 'যেকোনো কিতাবে ট্যাপ করে পূর্ণাঙ্গ সারসংক্ষেপ পড়ুন বা এডিট করুন'}
               </span>
             </div>
 
             {currentKitabs.length === 0 ? (
               <div className="card" style={{ padding: '2.5rem', textAlign: 'center', background: '#ffffff' }}>
                 <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.95rem', color: '#64748b', marginBottom: '1rem' }}>
-                  এই শ্রেণিতে এখনও কোনো কিতাব যুক্ত করা হয়নি। আপনি আপনার মাদরাসার কিতাবের নাম ও সামারি দিয়ে যোগ করতে পারেন।
+                  {isEn
+                    ? 'No books have been added to this class yet. You can add your institution books with custom summaries.'
+                    : 'এই শ্রেণিতে এখনও কোনো কিতাব যুক্ত করা হয়নি। আপনি আপনার মাদরাসার কিতাবের নাম ও সামারি দিয়ে যোগ করতে পারেন।'}
                 </p>
                 <button
                   onClick={() => setShowAddKitabModal(true)}
                   className="btn btn-primary"
                   style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
                 >
-                  + প্রথম কিতাব যুক্ত করুন
+                  {isEn ? '+ Add First Kitab' : '+ প্রথম কিতাব যুক্ত করুন'}
                 </button>
               </div>
             ) : (
@@ -850,7 +879,7 @@ export default function DynamicSyllabusPage() {
                           {kitab.category}
                         </span>
                         <span style={{ fontSize: '0.725rem', fontWeight: '700', color: '#16a34a', background: '#f0fdf4', padding: '0.15rem 0.45rem', borderRadius: '4px' }}>
-                          {kitab.fullMarks} নম্বর
+                          {formatNumberByLang(kitab.fullMarks ?? 100, lang)} {isEn ? 'Marks' : 'নম্বর'}
                         </span>
                       </div>
 
@@ -864,7 +893,7 @@ export default function DynamicSyllabusPage() {
                       )}
 
                       <p style={{ fontSize: '0.775rem', color: '#64748b', marginBottom: '0.6rem' }}>
-                        মুসান্নিফ/লেখক: <strong>{kitab.author}</strong>
+                        {isEn ? 'Author:' : 'মুসান্নিফ/লেখক:'} <strong>{kitab.author}</strong>
                       </p>
 
                       <p
@@ -908,7 +937,7 @@ export default function DynamicSyllabusPage() {
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                             <circle cx="12" cy="12" r="3" />
                           </svg>
-                          সারসংক্ষেপ
+                          {isEn ? 'Summary' : 'সারসংক্ষেপ'}
                         </button>
 
                         {/* EDIT KITAB BUTTON */}
@@ -935,7 +964,7 @@ export default function DynamicSyllabusPage() {
                             <path d="M12 20h9" />
                             <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                           </svg>
-                          এডিট
+                          {isEn ? 'Edit' : 'এডিট'}
                         </button>
                       </div>
 
@@ -952,7 +981,7 @@ export default function DynamicSyllabusPage() {
                           cursor: 'pointer',
                           padding: '0.35rem',
                         }}
-                        title="মুছে ফেলুন"
+                        title={isEn ? 'Delete' : 'মুছে ফেলুন'}
                       >
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polyline points="3 6 5 6 21 6" />
@@ -990,10 +1019,12 @@ export default function DynamicSyllabusPage() {
           >
             <div>
               <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.05rem', fontWeight: '800', color: '#0f172a' }}>
-                দ্রুত শ্রেণি ও জামাত লোডার
+                {isEn ? 'Quick Class & Jamat Loader' : 'দ্রুত শ্রেণি ও জামাত লোডার'}
               </h3>
               <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                এক ক্লিকে সকল কওমি জামাত (নূরানী হতে দাওরায়ে হাদিস) সিস্টেমে যুক্ত করে নিতে পারেন
+                {isEn
+                  ? 'Load standard Qawmi curriculum classes (Noorani to Dawrah-e Hadith) in 1-click'
+                  : 'এক ক্লিকে সকল কওমি জামাত (নূরানী হতে দাওরায়ে হাদিস) সিস্টেমে যুক্ত করে নিতে পারেন'}
               </p>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1019,7 +1050,7 @@ export default function DynamicSyllabusPage() {
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
-                কওমির সকল জামাত একসাথে আনুন
+                {isEn ? 'Load All Qawmi Jamats' : 'কওমির সকল জামাত একসাথে আনুন'}
               </button>
 
               <button
@@ -1027,7 +1058,7 @@ export default function DynamicSyllabusPage() {
                 className="btn btn-primary"
                 style={{ fontSize: '0.825rem', padding: '0.5rem 0.85rem' }}
               >
-                + ম্যানুয়াল নতুন শ্রেণি তৈরি
+                {isEn ? '+ Create Custom Class' : '+ ম্যানুয়াল নতুন শ্রেণি তৈরি'}
               </button>
             </div>
           </div>
@@ -1035,21 +1066,23 @@ export default function DynamicSyllabusPage() {
           {/* Inline Add Class Form Card */}
           <div className="card" style={{ padding: '1.25rem', marginBottom: '1.5rem', background: '#ffffff', borderLeft: '4px solid #2563eb' }}>
             <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.1rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.25rem' }}>
-              নতুন শ্রেণি / জামাত এন্ট্রি ফর্ম
+              {isEn ? 'New Class / Jamat Entry Form' : 'নতুন শ্রেণি / জামাত এন্ট্রি ফর্ম'}
             </h3>
             <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
-              মাদরাসা বা স্কুলের যেকোনো নতুন শ্রেণি নিচের তথ্য পূরণ করে তাৎক্ষণিক যুক্ত করুন
+              {isEn
+                ? 'Quickly add any new class for madrasa or school by filling in the details below'
+                : 'মাদরাসা বা স্কুলের যেকোনো নতুন শ্রেণি নিচের তথ্য পূরণ করে তাৎক্ষণিক যুক্ত করুন'}
             </p>
 
             <form onSubmit={handleCreateClass} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem', alignItems: 'flex-end' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                  শ্রেণি / জামাতের নাম *
+                  {isEn ? 'Class / Jamat Name *' : 'শ্রেণি / জামাতের নাম *'}
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="যেমন: কাফিয়া জামাত / দাখিল ৯ম"
+                  placeholder={isEn ? 'e.g., Kafiya Jamat / Class 9' : 'যেমন: কাফিয়া জামাত / দাখিল ৯ম'}
                   value={newClass.name}
                   onChange={(e) => setNewClass({ ...newClass, name: e.target.value })}
                   required
@@ -1059,7 +1092,7 @@ export default function DynamicSyllabusPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                  কারিকুলাম ধরণ
+                  {isEn ? 'Curriculum Type' : 'কারিকুলাম ধরণ'}
                 </label>
                 <select
                   className="input-field"
@@ -1067,21 +1100,21 @@ export default function DynamicSyllabusPage() {
                   onChange={(e) => setNewClass({ ...newClass, curriculumType: e.target.value as any })}
                   style={{ width: '100%', padding: '0.5rem' }}
                 >
-                  <option value="qawmi">কওমি নেজামী</option>
-                  <option value="alia">আলিয়া মাদরাসা</option>
-                  <option value="general">জেনারেল স্কুল</option>
-                  <option value="hifz">হিফজুল কুরআন</option>
+                  <option value="qawmi">{isEn ? 'Qawmi Nezami' : 'কওমি নেজামী'}</option>
+                  <option value="alia">{isEn ? 'Alia Madrasa' : 'আলিয়া মাদরাসা'}</option>
+                  <option value="general">{isEn ? 'General School' : 'জেনারেল স্কুল'}</option>
+                  <option value="hifz">{isEn ? 'Hifzul Quran' : 'হিফজুল কুরআন'}</option>
                 </select>
               </div>
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                  শাখা (Section)
+                  {isEn ? 'Section' : 'শাখা (Section)'}
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="যেমন: ক শাখা / বালক শাখা"
+                  placeholder={isEn ? 'e.g., Section A / Boys' : 'যেমন: ক শাখা / বালক শাখা'}
                   value={newClass.section}
                   onChange={(e) => setNewClass({ ...newClass, section: e.target.value })}
                   style={{ width: '100%', padding: '0.5rem' }}
@@ -1090,12 +1123,12 @@ export default function DynamicSyllabusPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                  দায়িত্বপ্রাপ্ত শিক্ষক / উস্তাদ
+                  {isEn ? 'Assigned Teacher / Ustad' : 'দায়িত্বপ্রাপ্ত শিক্ষক / উস্তাদ'}
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="যেমন: মাওলানা আতিকুর রহমান"
+                  placeholder={isEn ? 'e.g., Mawlana Atiqur Rahman' : 'যেমন: মাওলানা আতিকুর রহমান'}
                   value={newClass.classTeacher}
                   onChange={(e) => setNewClass({ ...newClass, classTeacher: e.target.value })}
                   style={{ width: '100%', padding: '0.5rem' }}
@@ -1104,12 +1137,12 @@ export default function DynamicSyllabusPage() {
 
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                  শ্রেণির উদ্দেশ্য বা সংক্ষিপ্ত বিবরণ
+                  {isEn ? 'Class Description / Objectives' : 'শ্রেণির উদ্দেশ্য বা সংক্ষিপ্ত বিবরণ'}
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="যেমন: শিক্ষার্থীদের আরবি ব্যাকরণ ও হাদিসের প্রামাণ্য জ্ঞান অর্জন..."
+                  placeholder={isEn ? 'e.g., Students gain foundational knowledge of Arabic grammar and Hadith...' : 'যেমন: শিক্ষার্থীদের আরবি ব্যাকরণ ও হাদিসের প্রামাণ্য জ্ঞান অর্জন...'}
                   value={newClass.description}
                   onChange={(e) => setNewClass({ ...newClass, description: e.target.value })}
                   style={{ width: '100%', padding: '0.5rem' }}
@@ -1126,7 +1159,7 @@ export default function DynamicSyllabusPage() {
                     <line x1="12" y1="5" x2="12" y2="19" />
                     <line x1="5" y1="12" x2="19" y2="12" />
                   </svg>
-                  শ্রেণি সেভ করুন
+                  {isEn ? 'Save Class' : 'শ্রেণি সেভ করুন'}
                 </button>
               </div>
             </form>
@@ -1135,19 +1168,21 @@ export default function DynamicSyllabusPage() {
           {/* All Classes List Table with EDIT and DELETE */}
           <div className="card" style={{ padding: '1.25rem' }}>
             <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.75rem' }}>
-              বর্তমান সকল শ্রেণি ও জামাত তালিকা ({classes.length}টি)
+              {isEn
+                ? `Current Class & Jamat Directory (${formatNumberByLang(classes.length, lang)})`
+                : `বর্তমান সকল শ্রেণি ও জামাত তালিকা (${formatNumberByLang(classes.length, lang)}টি)`}
             </h3>
 
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ background: '#f8fafc', borderBottom: '1.5px solid #cbd5e1', textAlign: 'left' }}>
-                    <th style={{ padding: '0.6rem', color: '#64748b' }}>শ্রেণি / জামাত</th>
-                    <th style={{ padding: '0.6rem', color: '#64748b' }}>কারিকুলাম</th>
-                    <th style={{ padding: '0.6rem', color: '#64748b' }}>শাখা</th>
-                    <th style={{ padding: '0.6rem', color: '#64748b' }}>দায়িত্বপ্রাপ্ত শিক্ষক</th>
-                    <th style={{ padding: '0.6rem', textAlign: 'center', color: '#64748b' }}>কিতাব সংখ্যা</th>
-                    <th style={{ padding: '0.6rem', textAlign: 'center', color: '#64748b' }}>অ্যাকশন</th>
+                    <th style={{ padding: '0.6rem', color: '#64748b' }}>{isEn ? 'Class / Jamat' : 'শ্রেণি / জামাত'}</th>
+                    <th style={{ padding: '0.6rem', color: '#64748b' }}>{isEn ? 'Curriculum' : 'কারিকুলাম'}</th>
+                    <th style={{ padding: '0.6rem', color: '#64748b' }}>{isEn ? 'Section' : 'শাখা'}</th>
+                    <th style={{ padding: '0.6rem', color: '#64748b' }}>{isEn ? 'Assigned Teacher' : 'দায়িত্বপ্রাপ্ত শিক্ষক'}</th>
+                    <th style={{ padding: '0.6rem', textAlign: 'center', color: '#64748b' }}>{isEn ? 'Books Count' : 'কিতাব সংখ্যা'}</th>
+                    <th style={{ padding: '0.6rem', textAlign: 'center', color: '#64748b' }}>{isEn ? 'Actions' : 'অ্যাকশন'}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1164,12 +1199,12 @@ export default function DynamicSyllabusPage() {
                         <td style={{ padding: '0.65rem' }}>
                           <span style={{ fontSize: '0.75rem', padding: '0.15rem 0.45rem', borderRadius: '4px', background: '#f0fdf4', color: '#16a34a', fontWeight: '700', border: '1px solid #bbf7d0' }}>
                             {cls.curriculumType === 'qawmi'
-                              ? 'কওমি'
+                              ? (isEn ? 'Qawmi' : 'কওমি')
                               : cls.curriculumType === 'alia'
-                              ? 'আলিয়া'
+                              ? (isEn ? 'Alia' : 'আলিয়া')
                               : cls.curriculumType === 'general'
-                              ? 'জেনারেল'
-                              : 'হিফজ'}
+                              ? (isEn ? 'General' : 'জেনারেল')
+                              : (isEn ? 'Hifz' : 'হিফজ')}
                           </span>
                         </td>
                         <td style={{ padding: '0.65rem', color: '#475569' }}>{cls.section || '—'}</td>
@@ -1177,7 +1212,7 @@ export default function DynamicSyllabusPage() {
                           {cls.classTeacher || '—'}
                         </td>
                         <td style={{ padding: '0.65rem', textAlign: 'center', fontWeight: '700', color: '#0f172a' }}>
-                          {kCount}টি কিতাব
+                          {formatNumberByLang(kCount, lang)} {isEn ? (kCount === 1 ? 'Book' : 'Books') : 'টি কিতাব'}
                         </td>
                         <td style={{ padding: '0.65rem', textAlign: 'center' }}>
                           <div style={{ display: 'inline-flex', gap: '0.4rem' }}>
@@ -1197,7 +1232,7 @@ export default function DynamicSyllabusPage() {
                                 cursor: 'pointer',
                               }}
                             >
-                              বই দেখুন
+                              {isEn ? 'View Books' : 'বই দেখুন'}
                             </button>
 
                             {/* EDIT CLASS BUTTON IN TABLE */}
@@ -1214,7 +1249,7 @@ export default function DynamicSyllabusPage() {
                                 cursor: 'pointer',
                               }}
                             >
-                              এডিট
+                              {isEn ? 'Edit' : 'এডিট'}
                             </button>
 
                             <button
@@ -1230,7 +1265,7 @@ export default function DynamicSyllabusPage() {
                                 cursor: 'pointer',
                               }}
                             >
-                              মুছুন
+                              {isEn ? 'Delete' : 'মুছুন'}
                             </button>
                           </div>
                         </td>
@@ -1316,16 +1351,20 @@ export default function DynamicSyllabusPage() {
             {/* Book Meta Details */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', marginBottom: '1.25rem', textAlign: 'center' }}>
               <div>
-                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>মুসান্নিফ / লেখক</div>
+                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{isEn ? 'Author / Scholar' : 'মুসান্নিফ / লেখক'}</div>
                 <div style={{ fontSize: '0.825rem', fontWeight: '700', color: '#0f172a' }}>{viewingKitab.author}</div>
               </div>
               <div>
-                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>মোট পৃষ্ঠা</div>
-                <div style={{ fontSize: '0.825rem', fontWeight: '700', color: '#2563eb' }}>{viewingKitab.totalPages || '—'} পৃষ্ঠা</div>
+                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{isEn ? 'Total Pages' : 'মোট পৃষ্ঠা'}</div>
+                <div style={{ fontSize: '0.825rem', fontWeight: '700', color: '#2563eb' }}>
+                  {viewingKitab.totalPages ? `${formatNumberByLang(viewingKitab.totalPages, lang)} ${isEn ? 'Pages' : 'পৃষ্ঠা'}` : '—'}
+                </div>
               </div>
               <div>
-                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>পূর্ণমান</div>
-                <div style={{ fontSize: '0.825rem', fontWeight: '700', color: '#16a34a' }}>{viewingKitab.fullMarks || 100} নম্বর</div>
+                <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{isEn ? 'Full Marks' : 'পূর্ণমান'}</div>
+                <div style={{ fontSize: '0.825rem', fontWeight: '700', color: '#16a34a' }}>
+                  {formatNumberByLang(viewingKitab.fullMarks || 100, lang)} {isEn ? 'Marks' : 'নম্বর'}
+                </div>
               </div>
             </div>
 
@@ -1336,7 +1375,7 @@ export default function DynamicSyllabusPage() {
                   <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                 </svg>
-                বইটির বিস্তারিত সারসংক্ষেপ ও উদ্দেশ্য:
+                {isEn ? 'Detailed Book Summary & Purpose:' : 'বইটির বিস্তারিত সারসংক্ষেপ ও উদ্দেশ্য:'}
               </h4>
               <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.875rem', color: '#334155', lineHeight: '1.7', whiteSpace: 'pre-line', background: '#fafafa', padding: '0.85rem', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
                 {viewingKitab.summary}
@@ -1351,7 +1390,7 @@ export default function DynamicSyllabusPage() {
                     <polyline points="9 11 12 14 22 4" />
                     <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
                   </svg>
-                  এই কিতাব থেকে শিক্ষার্থীরা কী শিখবে?
+                  {isEn ? 'What will students learn from this book?' : 'এই কিতাব থেকে শিক্ষার্থীরা কী শিখবে?'}
                 </h4>
                 <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.85rem', color: '#475569', lineHeight: '1.6', whiteSpace: 'pre-line', background: '#eff6ff', padding: '0.85rem', borderRadius: '8px', border: '1px solid #dbeafe' }}>
                   {viewingKitab.learningOutcomes}
@@ -1386,7 +1425,7 @@ export default function DynamicSyllabusPage() {
                     <path d="M12 20h9" />
                     <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
                   </svg>
-                  তথ্য ও সারসংক্ষেপ এডিট করুন
+                  {isEn ? 'Edit Info & Summary' : 'তথ্য ও সারসংক্ষেপ এডিট করুন'}
                 </button>
 
                 <button
@@ -1402,7 +1441,7 @@ export default function DynamicSyllabusPage() {
                     cursor: 'pointer',
                   }}
                 >
-                  মুছে ফেলুন
+                  {isEn ? 'Delete' : 'মুছে ফেলুন'}
                 </button>
               </div>
 
@@ -1411,7 +1450,7 @@ export default function DynamicSyllabusPage() {
                 className="btn btn-secondary"
                 style={{ fontSize: '0.825rem', padding: '0.5rem 1.25rem' }}
               >
-                বন্ধ করুন
+                {isEn ? 'Close' : 'বন্ধ করুন'}
               </button>
             </div>
           </div>
@@ -1450,7 +1489,7 @@ export default function DynamicSyllabusPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.2rem', fontWeight: '800', color: '#0f172a' }}>
-                নতুন কিতাব / পাঠ্যবই যোগ করুন
+                {isEn ? 'Add New Kitab / Textbook' : 'নতুন কিতাব / পাঠ্যবই যোগ করুন'}
               </h3>
               <button
                 onClick={() => setShowAddKitabModal(false)}
@@ -1460,18 +1499,18 @@ export default function DynamicSyllabusPage() {
               </button>
             </div>
             <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
-              শ্রেণি: <strong>{currentClass?.name}</strong>
+              {isEn ? 'Class: ' : 'শ্রেণি: '}<strong>{currentClass?.name}</strong>
             </p>
 
             <form onSubmit={handleCreateKitab} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  কিতাব / বইয়ের নাম (বাংলায়) *
+                  {isEn ? 'Kitab / Book Name *' : 'কিতাব / বইয়ের নাম (বাংলায়) *'}
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="যেমন: নাহবেমীর / গণিত / শরহে বেকায়া"
+                  placeholder={isEn ? 'e.g., Nahbemeer / Math / Sharh-e Waqayah' : 'যেমন: নাহবেমীর / গণিত / শরহে বেকায়া'}
                   value={newKitab.name}
                   onChange={(e) => setNewKitab({ ...newKitab, name: e.target.value })}
                   required
@@ -1481,12 +1520,12 @@ export default function DynamicSyllabusPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  মূল আরবি / ইংরেজি নাম (ঐচ্ছিক)
+                  {isEn ? 'Original Arabic / English Name (Optional)' : 'মূল আরবি / ইংরেজি নাম (ঐচ্ছিক)'}
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="যেমন: نحو مير"
+                  placeholder={isEn ? 'e.g., نحو مير' : 'যেমন: نحو مير'}
                   value={newKitab.originalName}
                   onChange={(e) => setNewKitab({ ...newKitab, originalName: e.target.value })}
                   style={{ width: '100%', padding: '0.5rem', direction: 'rtl' }}
@@ -1496,12 +1535,12 @@ export default function DynamicSyllabusPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    মুসান্নিফ / লেখক / বোর্ড
+                    {isEn ? 'Author / Scholar / Board' : 'মুসান্নিফ / লেখক / বোর্ড'}
                   </label>
                   <input
                     type="text"
                     className="input-field"
-                    placeholder="যেমন: মীর সাইয়্যেদ শরীফ রহ."
+                    placeholder={isEn ? 'e.g., Meer Sayyid Shareef (RA)' : 'যেমন: মীর সাইয়্যেদ শরীফ রহ.'}
                     value={newKitab.author}
                     onChange={(e) => setNewKitab({ ...newKitab, author: e.target.value })}
                     style={{ width: '100%', padding: '0.5rem' }}
@@ -1509,12 +1548,12 @@ export default function DynamicSyllabusPage() {
                 </div>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    শাস্ত্র / বিষয়
+                    {isEn ? 'Discipline / Subject' : 'শাস্ত্র / বিষয়'}
                   </label>
                   <input
                     type="text"
                     className="input-field"
-                    placeholder="যেমন: ইলমুন নাহু / ফিকহ"
+                    placeholder={isEn ? 'e.g., Ilm an-Nahw / Fiqh' : 'যেমন: ইলমুন নাহু / ফিকহ'}
                     value={newKitab.category}
                     onChange={(e) => setNewKitab({ ...newKitab, category: e.target.value })}
                     style={{ width: '100%', padding: '0.5rem' }}
@@ -1525,7 +1564,7 @@ export default function DynamicSyllabusPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    মোট পৃষ্ঠা সংখ্যা
+                    {isEn ? 'Total Pages' : 'মোট পৃষ্ঠা সংখ্যা'}
                   </label>
                   <input
                     type="number"
@@ -1537,7 +1576,7 @@ export default function DynamicSyllabusPage() {
                 </div>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    পরীক্ষার পূর্ণমান
+                    {isEn ? 'Exam Full Marks' : 'পরীক্ষার পূর্ণমান'}
                   </label>
                   <input
                     type="number"
@@ -1551,12 +1590,12 @@ export default function DynamicSyllabusPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  বইটির বিস্তারিত সারসংক্ষেপ (Summary) *
+                  {isEn ? 'Detailed Book Summary *' : 'বইটির বিস্তারিত সারসংক্ষেপ (Summary) *'}
                 </label>
                 <textarea
                   className="input-field"
                   rows={3}
-                  placeholder="এই কিতাবে কী পড়ানো হয়? কেন পড়ানো হয়? এর বিষয়বস্তু কী..."
+                  placeholder={isEn ? 'What is taught in this book? Why is it taught? Describe syllabus scope...' : 'এই কিতাবে কী পড়ানো হয়? কেন পড়ানো হয়? এর বিষয়বস্তু কী...'}
                   value={newKitab.summary}
                   onChange={(e) => setNewKitab({ ...newKitab, summary: e.target.value })}
                   required
@@ -1566,12 +1605,12 @@ export default function DynamicSyllabusPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  এই কিতাব থেকে শিক্ষার্থীরা কী শিখবে? (আউটকাম)
+                  {isEn ? 'Learning Outcomes (What students will gain)' : 'এই কিতাব থেকে শিক্ষার্থীরা কী শিখবে? (আউটকাম)'}
                 </label>
                 <textarea
                   className="input-field"
                   rows={2}
-                  placeholder="১. বাক্য বিশ্লেষণের নিয়ম...&#10;২. শব্দ ব্যবহারের যোগ্যতা..."
+                  placeholder={isEn ? '1. Sentence analysis skills...\n2. Vocabulary proficiency...' : '১. বাক্য বিশ্লেষণের নিয়ম...\n২. শব্দ ব্যবহারের যোগ্যতা...'}
                   value={newKitab.learningOutcomes}
                   onChange={(e) => setNewKitab({ ...newKitab, learningOutcomes: e.target.value })}
                   style={{ width: '100%', padding: '0.5rem' }}
@@ -1585,10 +1624,10 @@ export default function DynamicSyllabusPage() {
                   className="btn btn-secondary"
                   style={{ flex: 1 }}
                 >
-                  বাতিল
+                  {isEn ? 'Cancel' : 'বাতিল'}
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
-                  সংরক্ষণ করুন
+                  {isEn ? 'Save Kitab' : 'সংরক্ষণ করুন'}
                 </button>
               </div>
             </form>
@@ -1628,7 +1667,7 @@ export default function DynamicSyllabusPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.25rem', fontWeight: '800', color: '#0f172a' }}>
-                কিতাবের তথ্য ও সারসংক্ষেপ এডিট করুন
+                {isEn ? 'Edit Book Details & Summary' : 'কিতাবের তথ্য ও সারসংক্ষেপ এডিট করুন'}
               </h3>
               <button
                 onClick={() => setEditingKitab(null)}
@@ -1638,13 +1677,13 @@ export default function DynamicSyllabusPage() {
               </button>
             </div>
             <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
-              কিতাবের নাম, লেখক, পরীক্ষার মানবণ্টন ও সারসংক্ষেপ সম্পাদনা করুন
+              {isEn ? 'Edit book title, author, mark distribution, and summary' : 'কিতাবের নাম, লেখক, পরীক্ষার মানবণ্টন ও সারসংক্ষেপ সম্পাদনা করুন'}
             </p>
 
             <form onSubmit={handleUpdateKitab} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  কিতাবের নাম (বাংলায়) *
+                  {isEn ? 'Kitab / Book Name *' : 'কিতাবের নাম (বাংলায়) *'}
                 </label>
                 <input
                   type="text"
@@ -1658,7 +1697,7 @@ export default function DynamicSyllabusPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  মূল আরবি / ইংরেজি নাম
+                  {isEn ? 'Original Arabic / English Name' : 'মূল আরবি / ইংরেজি নাম'}
                 </label>
                 <input
                   type="text"
@@ -1672,7 +1711,7 @@ export default function DynamicSyllabusPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    মুসান্নিফ / লেখক / বোর্ড
+                    {isEn ? 'Author / Scholar / Board' : 'মুসান্নিফ / লেখক / বোর্ড'}
                   </label>
                   <input
                     type="text"
@@ -1684,7 +1723,7 @@ export default function DynamicSyllabusPage() {
                 </div>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    শাস্ত্র / বিষয়
+                    {isEn ? 'Discipline / Subject' : 'শাস্ত্র / বিষয়'}
                   </label>
                   <input
                     type="text"
@@ -1699,7 +1738,7 @@ export default function DynamicSyllabusPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    মোট পৃষ্ঠা সংখ্যা
+                    {isEn ? 'Total Pages' : 'মোট পৃষ্ঠা সংখ্যা'}
                   </label>
                   <input
                     type="number"
@@ -1711,7 +1750,7 @@ export default function DynamicSyllabusPage() {
                 </div>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    পরীক্ষার পূর্ণমান
+                    {isEn ? 'Exam Full Marks' : 'পরীক্ষার পূর্ণমান'}
                   </label>
                   <input
                     type="number"
@@ -1725,7 +1764,7 @@ export default function DynamicSyllabusPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  বইটির বিস্তারিত সারসংক্ষেপ (Summary) *
+                  {isEn ? 'Detailed Book Summary *' : 'বইটির বিস্তারিত সারসংক্ষেপ (Summary) *'}
                 </label>
                 <textarea
                   className="input-field"
@@ -1739,7 +1778,7 @@ export default function DynamicSyllabusPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  শিক্ষার্থী অর্জিত ফলাফল (আউটকাম)
+                  {isEn ? 'Learning Outcomes (What students will gain)' : 'শিক্ষার্থী অর্জিত ফলাফল (আউটকাম)'}
                 </label>
                 <textarea
                   className="input-field"
@@ -1757,10 +1796,10 @@ export default function DynamicSyllabusPage() {
                   className="btn btn-secondary"
                   style={{ flex: 1 }}
                 >
-                  বাতিল
+                  {isEn ? 'Cancel' : 'বাতিল'}
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
-                  আপডেট সংরক্ষণ করুন
+                  {isEn ? 'Save Changes' : 'আপডেট সংরক্ষণ করুন'}
                 </button>
               </div>
             </form>
@@ -1798,7 +1837,7 @@ export default function DynamicSyllabusPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.25rem', fontWeight: '800', color: '#0f172a' }}>
-                নতুন শ্রেণি / জামাত এন্ট্রি
+                {isEn ? 'Add New Class / Jamat' : 'নতুন শ্রেণি / জামাত এন্ট্রি'}
               </h3>
               <button
                 onClick={() => setShowAddClassModal(false)}
@@ -1808,18 +1847,18 @@ export default function DynamicSyllabusPage() {
               </button>
             </div>
             <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
-              কওমি, আলিয়া, হিফজ বা স্কুলের জন্য যেকোনো নতুন শ্রেণি তৈরি করুন
+              {isEn ? 'Create any new class for Qawmi, Alia, Hifz, or General School' : 'কওমি, আলিয়া, হিফজ বা স্কুলের জন্য যেকোনো নতুন শ্রেণি তৈরি করুন'}
             </p>
 
             <form onSubmit={handleCreateClass} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  শ্রেণি বা জামাতের নাম *
+                  {isEn ? 'Class or Jamat Name *' : 'শ্রেণি বা জামাতের নাম *'}
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="যেমন: কাফিয়া জামাত / ৭ম শ্রেণি / হিফজ ১ম বিভাগ"
+                  placeholder={isEn ? 'e.g., Kafiya Jamat / Class 7 / Hifz Div 1' : 'যেমন: কাফিয়া জামাত / ৭ম শ্রেণি / হিফজ ১ম বিভাগ'}
                   value={newClass.name}
                   onChange={(e) => setNewClass({ ...newClass, name: e.target.value })}
                   required
@@ -1830,7 +1869,7 @@ export default function DynamicSyllabusPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    কারিকুলাম সিলেক্ট করুন:
+                    {isEn ? 'Select Curriculum:' : 'কারিকুলাম সিলেক্ট করুন:'}
                   </label>
                   <select
                     className="input-field"
@@ -1838,21 +1877,21 @@ export default function DynamicSyllabusPage() {
                     onChange={(e) => setNewClass({ ...newClass, curriculumType: e.target.value as any })}
                     style={{ width: '100%', padding: '0.5rem' }}
                   >
-                    <option value="qawmi">কওমি নেজামী</option>
-                    <option value="alia">আলিয়া মাদরাসা</option>
-                    <option value="general">জেনারেল স্কুল</option>
-                    <option value="hifz">হিফজুল কুরআন</option>
+                    <option value="qawmi">{isEn ? 'Qawmi Nezami' : 'কওমি নেজামী'}</option>
+                    <option value="alia">{isEn ? 'Alia Madrasa' : 'আলিয়া মাদরাসা'}</option>
+                    <option value="general">{isEn ? 'General School' : 'জেনারেল স্কুল'}</option>
+                    <option value="hifz">{isEn ? 'Hifzul Quran' : 'হিফজুল কুরআন'}</option>
                   </select>
                 </div>
 
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    শাখা (Section)
+                    {isEn ? 'Section' : 'শাখা (Section)'}
                   </label>
                   <input
                     type="text"
                     className="input-field"
-                    placeholder="যেমন: ক শাখা / বালক শাখা"
+                    placeholder={isEn ? 'e.g., Section A / Boys' : 'যেমন: ক শাখা / বালক শাখা'}
                     value={newClass.section}
                     onChange={(e) => setNewClass({ ...newClass, section: e.target.value })}
                     style={{ width: '100%', padding: '0.5rem' }}
@@ -1862,12 +1901,12 @@ export default function DynamicSyllabusPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  দায়িত্বপ্রাপ্ত শিক্ষক / শ্রেণি উস্তাদ
+                  {isEn ? 'Class Teacher / Assigned Ustad' : 'দায়িত্বপ্রাপ্ত শিক্ষক / শ্রেণি উস্তাদ'}
                 </label>
                 <input
                   type="text"
                   className="input-field"
-                  placeholder="যেমন: মাওলানা মাহমুদ হাসান"
+                  placeholder={isEn ? 'e.g., Mawlana Mahmud Hasan' : 'যেমন: মাওলানা মাহমুদ হাসান'}
                   value={newClass.classTeacher}
                   onChange={(e) => setNewClass({ ...newClass, classTeacher: e.target.value })}
                   style={{ width: '100%', padding: '0.5rem' }}
@@ -1876,12 +1915,12 @@ export default function DynamicSyllabusPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  শ্রেণির উদ্দেশ্য বা সংক্ষিপ্ত বিবরণ
+                  {isEn ? 'Class Objectives / Description' : 'শ্রেণির উদ্দেশ্য বা সংক্ষিপ্ত বিবরণ'}
                 </label>
                 <textarea
                   className="input-field"
                   rows={2}
-                  placeholder="এই শ্রেণির শিক্ষার্থীদের লক্ষ্য ও পাঠ্যক্রমের সংক্ষিপ্ত বিবরণ..."
+                  placeholder={isEn ? 'Brief overview of learning goals and curriculum...' : 'এই শ্রেণির শিক্ষার্থীদের লক্ষ্য ও পাঠ্যক্রমের সংক্ষিপ্ত বিবরণ...'}
                   value={newClass.description}
                   onChange={(e) => setNewClass({ ...newClass, description: e.target.value })}
                   style={{ width: '100%', padding: '0.5rem' }}
@@ -1895,10 +1934,10 @@ export default function DynamicSyllabusPage() {
                   className="btn btn-secondary"
                   style={{ flex: 1 }}
                 >
-                  বাতিল
+                  {isEn ? 'Cancel' : 'বাতিল'}
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
-                  শ্রেণি এন্ট্রি সম্পন্ন করুন
+                  {isEn ? 'Complete Class Entry' : 'শ্রেণি এন্ট্রি সম্পন্ন করুন'}
                 </button>
               </div>
             </form>
@@ -1936,7 +1975,7 @@ export default function DynamicSyllabusPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
               <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.25rem', fontWeight: '800', color: '#0f172a' }}>
-                শ্রেণির তথ্য এডিট করুন
+                {isEn ? 'Edit Class Details' : 'শ্রেণির তথ্য এডিট করুন'}
               </h3>
               <button
                 onClick={() => setEditingClass(null)}
@@ -1946,13 +1985,13 @@ export default function DynamicSyllabusPage() {
               </button>
             </div>
             <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
-              শ্রেণির নাম, কারিকুলাম, শাখা ও শিক্ষক তথ্য পরিবর্তন করুন
+              {isEn ? 'Update class name, curriculum, section, and teacher info' : 'শ্রেণির নাম, কারিকুলাম, শাখা ও শিক্ষক তথ্য পরিবর্তন করুন'}
             </p>
 
             <form onSubmit={handleUpdateClass} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  শ্রেণি বা জামাতের নাম *
+                  {isEn ? 'Class or Jamat Name *' : 'শ্রেণি বা জামাতের নাম *'}
                 </label>
                 <input
                   type="text"
@@ -1967,7 +2006,7 @@ export default function DynamicSyllabusPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    কারিকুলাম:
+                    {isEn ? 'Curriculum:' : 'কারিকুলাম:'}
                   </label>
                   <select
                     className="input-field"
@@ -1975,16 +2014,16 @@ export default function DynamicSyllabusPage() {
                     onChange={(e) => setEditingClass({ ...editingClass, curriculumType: e.target.value as any })}
                     style={{ width: '100%', padding: '0.5rem' }}
                   >
-                    <option value="qawmi">কওমি নেজামী</option>
-                    <option value="alia">আলিয়া মাদরাসা</option>
-                    <option value="general">জেনারেল স্কুল</option>
-                    <option value="hifz">হিফজুল কুরআন</option>
+                    <option value="qawmi">{isEn ? 'Qawmi Nezami' : 'কওমি নেজামী'}</option>
+                    <option value="alia">{isEn ? 'Alia Madrasa' : 'আলিয়া মাদরাসা'}</option>
+                    <option value="general">{isEn ? 'General School' : 'জেনারেল স্কুল'}</option>
+                    <option value="hifz">{isEn ? 'Hifzul Quran' : 'হিফজুল কুরআন'}</option>
                   </select>
                 </div>
 
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    শাখা (Section)
+                    {isEn ? 'Section' : 'শাখা (Section)'}
                   </label>
                   <input
                     type="text"
@@ -1998,7 +2037,7 @@ export default function DynamicSyllabusPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  দায়িত্বপ্রাপ্ত শিক্ষক / শ্রেণি উস্তাদ
+                  {isEn ? 'Class Teacher / Assigned Ustad' : 'দায়িত্বপ্রাপ্ত শিক্ষক / শ্রেণি উস্তাদ'}
                 </label>
                 <input
                   type="text"
@@ -2011,7 +2050,7 @@ export default function DynamicSyllabusPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  শ্রেণির উদ্দেশ্য বা সংক্ষিপ্ত বিবরণ
+                  {isEn ? 'Class Objectives / Description' : 'শ্রেণির উদ্দেশ্য বা সংক্ষিপ্ত বিবরণ'}
                 </label>
                 <textarea
                   className="input-field"
@@ -2029,10 +2068,10 @@ export default function DynamicSyllabusPage() {
                   className="btn btn-secondary"
                   style={{ flex: 1 }}
                 >
-                  বাতিল
+                  {isEn ? 'Cancel' : 'বাতিল'}
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>
-                  আপডেট সংরক্ষণ করুন
+                  {isEn ? 'Save Updates' : 'আপডেট সংরক্ষণ করুন'}
                 </button>
               </div>
             </form>

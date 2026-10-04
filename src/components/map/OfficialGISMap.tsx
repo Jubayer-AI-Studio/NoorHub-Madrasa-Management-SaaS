@@ -11,6 +11,8 @@ import {
   BANGLADESH_DEFAULT_ZOOM,
 } from '@/lib/geo-data';
 import { Layers, Maximize2, Minimize2, Navigation, RotateCcw } from 'lucide-react';
+import { useLanguage } from '@/lib/language-store';
+import { formatNumberByLang } from '@/lib/useCountUp';
 
 interface OfficialGISMapProps {
   currentLevel: 'bangladesh' | 'division' | 'district' | 'upazila';
@@ -45,6 +47,8 @@ export default function OfficialGISMap({
   onToggleSatellite,
   onResetView,
 }: OfficialGISMapProps) {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<LeafletMap | null>(null);
   const markersGroupRef = useRef<LayerGroup | null>(null);
@@ -346,22 +350,26 @@ export default function OfficialGISMap({
                 <span style="font-size: 10px; font-weight: 700; background: #ecfdf5; color: ${iconColor}; padding: 1px 6px; border-radius: 9999px;">
                   ${m.typeLabel}
                 </span>
-                <span style="font-size: 11px; font-weight: 700; color: #f59e0b;">★ ${m.rating}</span>
+                <span style="font-size: 11px; font-weight: 700; color: #f59e0b;">★ ${formatNumberByLang(m.rating, lang)}</span>
               </div>
               <h4 style="font-size: 13px; font-weight: 800; margin: 0 0 2px 0; color: #0f172a;">${m.name}</h4>
               <p style="font-size: 11px; color: #64748b; margin: 0 0 6px 0;">📍 ${m.upazila}, ${m.district}</p>
               
               <div style="display: flex; justify-content: space-between; background: #f8fafc; padding: 4px 8px; border-radius: 6px; margin-bottom: 8px; font-size: 11px;">
-                <div>শিক্ষার্থী: <strong>${m.students} জন</strong></div>
-                <div>পাসের হার: <strong style="color: #059669;">${m.passRate}%</strong></div>
+                <div>${isEn ? 'Students: ' : 'শিক্ষার্থী: '}<strong>${formatNumberByLang(m.students, lang)} ${isEn ? '' : 'জন'}</strong></div>
+                <div>${isEn ? 'Pass Rate: ' : 'পাসের হার: '}<strong style="color: #059669;">${formatNumberByLang(m.passRate, lang)}%</strong></div>
               </div>
 
               <div style="display: flex; gap: 4px;">
-                <a href="https://wa.me/${m.whatsapp}?text=${encodeURIComponent('আসসালামু আলাইকুম, আমি নূরহাব প্ল্যাটফর্ম থেকে ' + m.name + ' সম্পর্কে জানতে যোগাযোগ করছি।')}" target="_blank" style="flex: 1; text-align: center; background: #16a34a; color: white; padding: 5px 6px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none;">
-                  হোয়াটসঅ্যাপ
+                <a href="https://wa.me/${m.whatsapp}?text=${encodeURIComponent(
+                  isEn
+                    ? 'Assalamu Alaikum, I am inquiring about ' + m.name + ' via NoorHub.'
+                    : 'আসসালামু আলাইকুম, আমি নূরহাব প্ল্যাটফর্ম থেকে ' + m.name + ' সম্পর্কে জানতে যোগাযোগ করছি।'
+                )}" target="_blank" style="flex: 1; text-align: center; background: #16a34a; color: white; padding: 5px 6px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none;">
+                  ${isEn ? 'WhatsApp' : 'হোয়াটসঅ্যাপ'}
                 </a>
                 <a href="tel:${m.phone}" style="flex: 1; text-align: center; background: #0f172a; color: white; padding: 5px 6px; border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none;">
-                  কল
+                  ${isEn ? 'Call' : 'কল'}
                 </a>
               </div>
             </div>
@@ -424,10 +432,10 @@ export default function OfficialGISMap({
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
           </span>
           <span>
-            {currentLevel === 'bangladesh' && '🇧🇩 বাংলাদেশ মানচিত্র (বিভাগে ট্যাপ করুন)'}
-            {currentLevel === 'division' && `🏛️ ${selectedDivision?.nameBn} (জেলায় ট্যাপ করুন)`}
-            {currentLevel === 'district' && `📍 ${selectedDistrict?.nameBn} (উপজেলায় ট্যাপ করুন)`}
-            {currentLevel === 'upazila' && `🕌 ${selectedUpazila?.nameBn}`}
+            {currentLevel === 'bangladesh' && (isEn ? '🇧🇩 Bangladesh Map (Tap Division)' : '🇧🇩 বাংলাদেশ মানচিত্র (বিভাগে ট্যাপ করুন)')}
+            {currentLevel === 'division' && (isEn ? `🏛️ ${selectedDivision?.name || selectedDivision?.nameBn} (Tap District)` : `🏛️ ${selectedDivision?.nameBn} (জেলায় ট্যাপ করুন)`)}
+            {currentLevel === 'district' && (isEn ? `📍 ${selectedDistrict?.name || selectedDistrict?.nameBn} (Tap Upazila)` : `📍 ${selectedDistrict?.nameBn} (উপজেলায় ট্যাপ করুন)`)}
+            {currentLevel === 'upazila' && (isEn ? `🕌 ${selectedUpazila?.name || selectedUpazila?.nameBn}` : `🕌 ${selectedUpazila?.nameBn}`)}
           </span>
         </div>
 
@@ -438,7 +446,7 @@ export default function OfficialGISMap({
             className="pointer-events-auto w-fit rounded-md bg-emerald-600 px-2 py-0.5 text-[10px] font-extrabold text-white shadow-sm hover:bg-emerald-700 flex items-center gap-1 transition-all"
           >
             <RotateCcw className="h-2.5 w-2.5" />
-            বাংলাদেশ ভিউ
+            {isEn ? 'Bangladesh View' : 'বাংলাদেশ ভিউ'}
           </button>
         )}
       </div>
@@ -450,7 +458,7 @@ export default function OfficialGISMap({
           <button
             type="button"
             onClick={onToggleSatellite}
-            title={isSatellite ? 'জিআইএস ম্যাপে ফিরুন' : 'স্যাটেলাইট ভিউ দেখুন'}
+            title={isEn ? (isSatellite ? 'Return to GIS Map' : 'Satellite View') : (isSatellite ? 'জিআইএস ম্যাপে ফিরুন' : 'স্যাটেলাইট ভিউ দেখুন')}
             className={`flex h-8 w-8 items-center justify-center rounded-lg shadow-md backdrop-blur-md border transition-all ${
               isSatellite
                 ? 'bg-emerald-600 text-white border-emerald-400'
@@ -465,7 +473,7 @@ export default function OfficialGISMap({
         <button
           type="button"
           onClick={toggleFullscreen}
-          title={isFullscreen ? 'ফুলস্ক্রিন বন্ধ' : 'ফুলস্ক্রিন ভিউ'}
+          title={isEn ? (isFullscreen ? 'Exit Fullscreen' : 'Fullscreen View') : (isFullscreen ? 'ফুলস্ক্রিন বন্ধ' : 'ফুলস্ক্রিন ভিউ')}
           className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/95 text-slate-700 shadow-md backdrop-blur-md border border-slate-300 hover:bg-slate-100"
         >
           {isFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
@@ -493,7 +501,7 @@ export default function OfficialGISMap({
       {/* Compass Indicator Bottom Left */}
       <div className="pointer-events-none absolute bottom-2 left-2 z-[1000] flex items-center gap-1 rounded bg-white/90 px-2 py-0.5 text-[10px] font-bold text-slate-700 shadow-xs border border-slate-200">
         <Navigation className="h-3 w-3 text-red-500 rotate-[-45deg]" />
-        <span>উত্তর (North)</span>
+        <span>{isEn ? 'North' : 'উত্তর (North)'}</span>
       </div>
     </div>
   );

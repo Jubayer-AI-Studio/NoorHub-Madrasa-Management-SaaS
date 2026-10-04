@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/language-store';
+import { formatNumberByLang } from '@/lib/useCountUp';
 
 interface AbsentStudent {
   id: string;
@@ -189,6 +191,8 @@ const DEFAULT_BOT_RESPONSES: BotResponse[] = [
 ];
 
 export default function AutomationHubPage() {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   const [activeTab, setActiveTab] = useState<'absence' | 'results' | 'fees' | 'bot' | 'notice'>('absence');
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -350,23 +354,25 @@ export default function AutomationHubPage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
             <Link href="/dashboard" style={{ color: '#64748b', textDecoration: 'none', fontSize: '0.825rem' }}>
-              ড্যাশবোর্ড
+              {isEn ? 'Dashboard' : 'ড্যাশবোর্ড'}
             </Link>
             <span style={{ color: '#cbd5e1' }}>/</span>
-            <span style={{ color: '#16a34a', fontWeight: '700', fontSize: '0.825rem' }}>অভিভাবক ও ক্লায়েন্ট হাব</span>
+            <span style={{ color: '#16a34a', fontWeight: '700', fontSize: '0.825rem' }}>{isEn ? 'Parent & Client Hub' : 'অভিভাবক ও ক্লায়েন্ট হাব'}</span>
           </div>
           <h1 style={{ fontSize: '1.45rem', fontWeight: '800', color: '#0f172a' }}>
-            হোয়াটসঅ্যাপ ও মেসেঞ্জার অভিভাবক হাব
+            {isEn ? 'WhatsApp & Messenger Parent Hub' : 'হোয়াটসঅ্যাপ ও মেসেঞ্জার অভিভাবক হাব'}
           </h1>
           <p style={{ fontSize: '0.825rem', color: '#64748b' }}>
-            গ্রাহক ও অভিভাবকদের সাথে সরাসরি যোগাযোগ — অনুপস্থিতি সতর্কতা, পরীক্ষার ফলাফল, বকেয়া ফি ও স্বয়ংক্রিয় এআই উত্তর
+            {isEn ? 'Direct communication — absence alerts, results, fees & automated AI replies' : 'গ্রাহক ও অভিভাবকদের সাথে সরাসরি যোগাযোগ — অনুপস্থিতি সতর্কতা, পরীক্ষার ফলাফল, বকেয়া ফি ও স্বয়ংক্রিয় এআই উত্তর'}
           </p>
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           <div style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', padding: '0.4rem 0.8rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#16a34a', display: 'inline-block' }}></span>
-            <span style={{ fontSize: '0.775rem', fontWeight: '700', color: '#166534' }}>হোয়াটসঅ্যাপ গেটওয়ে সচল</span>
+            <span style={{ fontSize: '0.775rem', fontWeight: '700', color: '#166534' }}>
+              {isEn ? 'WhatsApp Gateway Active' : 'হোয়াটসঅ্যাপ গেটওয়ে সচল'}
+            </span>
           </div>
         </div>
       </div>
@@ -391,7 +397,9 @@ export default function AutomationHubPage() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <polyline points="20 6 9 17 4 12" />
           </svg>
-          আপনার সেটিংস ও টেমপ্লেটের যাবতীয় পরিবর্তন সফলভাবে সংরক্ষিত হয়েছে!
+          {isEn
+            ? 'Your settings and template changes have been saved successfully!'
+            : 'আপনার সেটিংস ও টেমপ্লেটের যাবতীয় পরিবর্তন সফলভাবে সংরক্ষিত হয়েছে!'}
         </div>
       )}
 
@@ -427,7 +435,7 @@ export default function AutomationHubPage() {
             <circle cx="12" cy="12" r="10" />
             <polyline points="12 6 12 12 16 14" />
           </svg>
-          অনুপস্থিতি অ্যালার্ট ({DEFAULT_ABSENT_STUDENTS.length})
+          {isEn ? `Absence Alerts (${DEFAULT_ABSENT_STUDENTS.length})` : `অনুপস্থিতি অ্যালার্ট (${DEFAULT_ABSENT_STUDENTS.length})`}
         </button>
 
         <button
@@ -453,7 +461,7 @@ export default function AutomationHubPage() {
             <line x1="16" y1="13" x2="8" y2="13" />
             <line x1="16" y1="17" x2="8" y2="17" />
           </svg>
-          পরীক্ষার ফলাফল প্রেরণ
+          {isEn ? 'Exam Results Broadcast' : 'পরীক্ষার ফলাফল প্রেরণ'}
         </button>
 
         <button
@@ -477,7 +485,7 @@ export default function AutomationHubPage() {
             <line x1="12" y1="1" x2="12" y2="23" />
             <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
           </svg>
-          বকেয়া ফি রিমাইন্ডার ({DEFAULT_FEE_STUDENTS.length})
+          {isEn ? `Due Fee Reminders (${DEFAULT_FEE_STUDENTS.length})` : `বকেয়া ফি রিমাইন্ডার (${DEFAULT_FEE_STUDENTS.length})`}
         </button>
 
         <button
@@ -500,7 +508,7 @@ export default function AutomationHubPage() {
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
           </svg>
-          হোয়াটসঅ্যাপ ও মেসেঞ্জার অটো-বট ({botResponses.length})
+          {isEn ? `WhatsApp & Messenger Auto-Bot (${botResponses.length})` : `হোয়াটসঅ্যাপ ও মেসেঞ্জার অটো-বট (${botResponses.length})`}
         </button>
 
         <button
@@ -524,7 +532,7 @@ export default function AutomationHubPage() {
             <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07" />
           </svg>
-          সাধারণ নোটিশ ব্রডকাস্ট
+          {isEn ? 'General Notice Broadcast' : 'সাধারণ নোটিশ ব্রডকাস্ট'}
         </button>
       </div>
 
@@ -538,10 +546,10 @@ export default function AutomationHubPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  স্বয়ংক্রিয় অনুপস্থিতি বার্তা টেমপ্লেট
+                  {isEn ? 'Automated Absence Message Template' : 'স্বয়ংক্রিয় অনুপস্থিতি বার্তা টেমপ্লেট'}
                 </h3>
                 <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                  সকাল {alertTriggerTime}-এ অনুপস্থিত ছাত্রদের তালিকা তৈরি করে অভিভাবকদের পাঠানো হয়
+                  {isEn ? `Absent list prepared at ${alertTriggerTime} and sent to parents` : `সকাল ${alertTriggerTime}-এ অনুপস্থিত ছাত্রদের তালিকা তৈরি করে অভিভাবকদের পাঠানো হয়`}
                 </span>
               </div>
 
@@ -555,9 +563,9 @@ export default function AutomationHubPage() {
                   className="input-field"
                   style={{ padding: '0.3rem 0.5rem', fontSize: '0.775rem' }}
                 >
-                  <option value="09:30 AM">সকাল ০৯:৩০</option>
-                  <option value="10:00 AM">সকাল ১০:০০ (স্ট্যান্ডার্ড)</option>
-                  <option value="10:30 AM">সকাল ১০:৩০</option>
+                  <option value="09:30 AM">{isEn ? '09:30 AM' : 'সকাল ০৯:৩০'}</option>
+                  <option value="10:00 AM">{isEn ? '10:00 AM (Standard)' : 'সকাল ১০:০০ (স্ট্যান্ডার্ড)'}</option>
+                  <option value="10:30 AM">{isEn ? '10:30 AM' : 'সকাল ১০:৩০'}</option>
                 </select>
 
                 <button
@@ -580,13 +588,13 @@ export default function AutomationHubPage() {
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                   </svg>
-                  টেমপ্লেট এডিট করুন
+                  {isEn ? 'Edit Template' : 'টেমপ্লেট এডিট করুন'}
                 </button>
               </div>
             </div>
 
             <div style={{ background: '#fff7ed', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #ffedd5', fontSize: '0.825rem', color: '#9a3412', lineHeight: '1.5' }}>
-              <strong>বর্তমান সক্রিয় টেমপ্লেট:</strong> "{absenceTemplate}"
+              <strong>{isEn ? 'Active Template:' : 'বর্তমান সক্রিয় টেমপ্লেট:'}</strong> "{absenceTemplate}"
             </div>
           </div>
 
@@ -595,16 +603,20 @@ export default function AutomationHubPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  আজকের অনুপস্থিত শিক্ষার্থী ({DEFAULT_ABSENT_STUDENTS.length} জন)
+                  {isEn ? `Today's Absent Students (${DEFAULT_ABSENT_STUDENTS.length})` : `আজকের অনুপস্থিত শিক্ষার্থী (${DEFAULT_ABSENT_STUDENTS.length} জন)`}
                 </h3>
                 <p style={{ fontSize: '0.775rem', color: '#64748b', margin: 0 }}>
-                  ১-ক্লিকে অভিভাবকের হোয়াটসঅ্যাপ সরাসরি ওপেন হবে ও প্রস্তুত বার্তা চলে যাবে
+                  {isEn ? '1-click opens parent WhatsApp with a pre-filled message ready to send' : '১-ক্লিকে অভিভাবকের হোয়াটসঅ্যাপ সরাসরি ওপেন হবে ও প্রস্তুত বার্তা চলে যাবে'}
                 </p>
               </div>
 
               <button
                 onClick={() => {
-                  alert('সকল অনুপস্থিত অভিভাবকের হোয়াটসঅ্যাপ বার্তা সারিতে সাজানো হয়েছে। নিচে প্রতিটি ছাত্রের "হোয়াটসঅ্যাপে পাঠান" বাটনে ক্লিক করে এক ট্যাপে সেন্ড করুন।');
+                  alert(
+                    isEn
+                      ? 'All absent parent WhatsApp messages are queued. Click each student\'s "Send on WhatsApp" button to send in 1 tap.'
+                      : 'সকল অনুপস্থিত অভিভাবকের হোয়াটসঅ্যাপ বার্তা সারিতে সাজানো হয়েছে। নিচে প্রতিটি ছাত্রের "হোয়াটসঅ্যাপে পাঠান" বাটনে ক্লিক করে এক ট্যাপে সেন্ড করুন।'
+                  );
                 }}
                 className="btn btn-primary"
                 style={{ background: '#ea580c', border: 'none', fontSize: '0.8rem', padding: '0.45rem 0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
@@ -613,7 +625,7 @@ export default function AutomationHubPage() {
                   <path d="M22 2L11 13" />
                   <polygon points="22 2 15 22 11 13 2 9 22 2" />
                 </svg>
-                একসাথে ব্যাচ অ্যালার্ট প্রস্তুত করুন
+                {isEn ? 'Prepare Batch Alerts' : 'একসাথে ব্যাচ অ্যালার্ট প্রস্তুত করুন'}
               </button>
             </div>
 
@@ -640,17 +652,17 @@ export default function AutomationHubPage() {
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
                         <span style={{ fontSize: '0.7rem', fontWeight: '700', padding: '0.15rem 0.4rem', borderRadius: '4px', background: '#ea580c', color: '#ffffff' }}>
-                          অনুপস্থিত
+                          {isEn ? 'Absent' : 'অনুপস্থিত'}
                         </span>
                         <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
                           {st.name}
                         </h4>
                         <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          (রোল: {st.roll})
+                          ({isEn ? 'Roll' : 'রোল'}: {st.roll})
                         </span>
                       </div>
                       <div style={{ fontSize: '0.775rem', color: '#475569' }}>
-                        জামাত: <strong>{st.className}</strong> | অভিভাবক: <strong>{st.parentName}</strong> ({st.phone})
+                        {isEn ? 'Class' : 'জামাত'}: <strong>{st.className}</strong> | {isEn ? 'Guardian' : 'অভিভাবক'}: <strong>{st.parentName}</strong> ({st.phone})
                       </div>
                     </div>
 
@@ -668,7 +680,7 @@ export default function AutomationHubPage() {
                           cursor: 'pointer',
                         }}
                       >
-                        {copiedId === st.id ? '✓ কপি হয়েছে' : 'বার্তা কপি'}
+                        {copiedId === st.id ? (isEn ? '✓ Copied' : '✓ কপি হয়েছে') : (isEn ? 'Copy Message' : 'বার্তা কপি')}
                       </button>
 
                       <a
@@ -692,7 +704,7 @@ export default function AutomationHubPage() {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                         </svg>
-                        হোয়াটসঅ্যাপে পাঠান
+                        {isEn ? 'Send on WhatsApp' : 'হোয়াটসঅ্যাপে পাঠান'}
                       </a>
                     </div>
                   </div>
@@ -713,10 +725,10 @@ export default function AutomationHubPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  পরীক্ষার ফলাফল ও মার্কশিট বার্তা টেমপ্লেট
+                  {isEn ? 'Exam Results & Marksheet Message Template' : 'পরীক্ষার ফলাফল ও মার্কশিট বার্তা টেমপ্লেট'}
                 </h3>
                 <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                  প্রতিটি ছাত্রের প্রাপ্ত নম্বর, গ্রেড ও মেধা অবস্থান স্বয়ংক্রিয়ভাবে সাজানো হয়
+                  {isEn ? 'Marks, grade and merit position are auto-formatted' : 'প্রতিটি ছাত্রের প্রাপ্ত নম্বর, গ্রেড ও মেধা অবস্থান স্বয়ংক্রিয়ভাবে সাজানো হয়'}
                 </span>
               </div>
 
@@ -740,19 +752,19 @@ export default function AutomationHubPage() {
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
-                টেমপ্লেট এডিট করুন
+                {isEn ? 'Edit Template' : 'টেমপ্লেট এডিট করুন'}
               </button>
             </div>
 
             <div style={{ background: '#eff6ff', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #dbeafe', fontSize: '0.825rem', color: '#1e40af', lineHeight: '1.5' }}>
-              <strong>বর্তমান সক্রিয় টেমপ্লেট:</strong> "{resultTemplate}"
+              <strong>{isEn ? 'Active Template:' : 'বর্তমান সক্রিয় টেমপ্লেট:'}</strong> "{resultTemplate}"
             </div>
           </div>
 
           {/* Results List */}
           <div className="card" style={{ padding: '1.25rem', background: '#ffffff' }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.75rem' }}>
-              ফলাফল প্রাপ্ত ছাত্রদের তালিকা
+              {isEn ? 'Students with Published Results' : 'ফলাফল প্রাপ্ত ছাত্রদের তালিকা'}
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -781,14 +793,14 @@ export default function AutomationHubPage() {
                           {st.name}
                         </h4>
                         <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          (রোল: {st.roll})
+                          ({isEn ? 'Roll' : 'রোল'}: {st.roll})
                         </span>
                         <span style={{ fontSize: '0.7rem', fontWeight: '700', padding: '0.15rem 0.45rem', borderRadius: '4px', background: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0' }}>
                           {st.position}
                         </span>
                       </div>
                       <div style={{ fontSize: '0.775rem', color: '#475569' }}>
-                        জামাত: <strong>{st.className}</strong> | নম্বর: <strong>{st.marksObtained}/{st.totalMarks}</strong> ({st.percentage}%) | গ্রেড: <strong>{st.grade}</strong>
+                        {isEn ? 'Class' : 'জামাত'}: <strong>{st.className}</strong> | {isEn ? 'Marks' : 'নম্বর'}: <strong>{st.marksObtained}/{st.totalMarks}</strong> ({st.percentage}%) | {isEn ? 'Grade' : 'গ্রেড'}: <strong>{st.grade}</strong>
                       </div>
                     </div>
 
@@ -806,7 +818,7 @@ export default function AutomationHubPage() {
                           cursor: 'pointer',
                         }}
                       >
-                        {copiedId === st.id ? '✓ কপি হয়েছে' : 'মেসেজ কপি'}
+                        {copiedId === st.id ? (isEn ? '✓ Copied' : '✓ কপি হয়েছে') : (isEn ? 'Copy Message' : 'মেসেজ কপি')}
                       </button>
 
                       <a
@@ -830,7 +842,7 @@ export default function AutomationHubPage() {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                         </svg>
-                        হোয়াটসঅ্যাপে মার্কশিট পাঠান
+                        {isEn ? 'Send Marksheet on WhatsApp' : 'হোয়াটসঅ্যাপে মার্কশিট পাঠান'}
                       </a>
                     </div>
                   </div>
@@ -851,10 +863,10 @@ export default function AutomationHubPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div>
                 <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  মাসিক বেতন ও বকেয়া ফি রিমাইন্ডার টেমপ্লেট
+                  {isEn ? 'Monthly Fee & Due Amount Reminder Template' : 'মাসিক বেতন ও বকেয়া ফি রিমাইন্ডার টেমপ্লেট'}
                 </h3>
                 <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                  বিকাশ/নগদ মার্চেন্ট নম্বর ও টাকার পরিমাণ সহ স্বয়ংক্রিয় রিমাইন্ডার
+                  {isEn ? 'Auto reminder with bKash/Nagad merchant number and due amount' : 'বিকাশ/নগদ মার্চেন্ট নম্বর ও টাকার পরিমাণ সহ স্বয়ংক্রিয় রিমাইন্ডার'}
                 </span>
               </div>
 
@@ -878,19 +890,19 @@ export default function AutomationHubPage() {
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                 </svg>
-                টেমপ্লেট এডিট করুন
+                {isEn ? 'Edit Template' : 'টেমপ্লেট এডিট করুন'}
               </button>
             </div>
 
             <div style={{ background: '#f0fdf4', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #dcfce7', fontSize: '0.825rem', color: '#166534', lineHeight: '1.5' }}>
-              <strong>বর্তমান সক্রিয় টেমপ্লেট:</strong> "{feeTemplate}"
+              <strong>{isEn ? 'Active Template:' : 'বর্তমান সক্রিয় টেমপ্লেট:'}</strong> "{feeTemplate}"
             </div>
           </div>
 
           {/* Fee Students List */}
           <div className="card" style={{ padding: '1.25rem', background: '#ffffff' }}>
             <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.75rem' }}>
-              বকেয়া ফি তালিকা ({DEFAULT_FEE_STUDENTS.length} জন)
+              {isEn ? `Due Fee List (${DEFAULT_FEE_STUDENTS.length})` : `বকেয়া ফি তালিকা (${DEFAULT_FEE_STUDENTS.length} জন)`}
             </h3>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -919,14 +931,14 @@ export default function AutomationHubPage() {
                           {st.name}
                         </h4>
                         <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                          (রোল: {st.roll})
+                          ({isEn ? 'Roll' : 'রোল'}: {st.roll})
                         </span>
                         <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#dc2626', background: '#fef2f2', padding: '0.15rem 0.45rem', borderRadius: '4px', border: '1px solid #fecaca' }}>
-                          বকেয়া: {st.dueAmount} ৳
+                          {isEn ? `Due: ${st.dueAmount} BDT` : `বকেয়া: ${st.dueAmount} ৳`}
                         </span>
                       </div>
                       <div style={{ fontSize: '0.775rem', color: '#475569' }}>
-                        জামাত: <strong>{st.className}</strong> | মাস: <strong>{st.month}</strong>
+                        {isEn ? 'Class' : 'জামাত'}: <strong>{st.className}</strong> | {isEn ? 'Month' : 'মাস'}: <strong>{st.month}</strong>
                       </div>
                     </div>
 
@@ -944,7 +956,7 @@ export default function AutomationHubPage() {
                           cursor: 'pointer',
                         }}
                       >
-                        {copiedId === st.id ? '✓ কপি হয়েছে' : 'মেসেজ কপি'}
+                        {copiedId === st.id ? (isEn ? '✓ Copied' : '✓ কপি হয়েছে') : (isEn ? 'Copy Message' : 'মেসেজ কপি')}
                       </button>
 
                       <a
@@ -968,7 +980,7 @@ export default function AutomationHubPage() {
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                           <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                         </svg>
-                        হোয়াটসঅ্যাপে রিমাইন্ডার পাঠান
+                        {isEn ? 'Send Reminder on WhatsApp' : 'হোয়াটসঅ্যাপে রিমাইন্ডার পাঠান'}
                       </a>
                     </div>
                   </div>
@@ -988,10 +1000,10 @@ export default function AutomationHubPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  মেসেঞ্জার ও হোয়াটসঅ্যাপ স্বয়ংক্রিয় উত্তর (AI Auto-Reply)
+                  {isEn ? 'Messenger & WhatsApp Auto-Reply (AI)' : 'মেসেঞ্জার ও হোয়াটসঅ্যাপ স্বয়ংক্রিয় উত্তর (AI Auto-Reply)'}
                 </h3>
                 <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>
-                  গ্রাহক বা অভিভাবক মেসেজ দিলে এই নির্দিষ্ট কি-ওয়ার্ডের ভিত্তিতে চ্যাটবট তাৎক্ষণিক রিপ্লাই দিবে। প্রতিটি উত্তর সম্পূর্ণ এডিট করা সম্ভব।
+                  {isEn ? 'When a parent messages with matching keywords, the chatbot replies instantly. All replies are fully editable.' : 'গ্রাহক বা অভিভাবক মেসেজ দিলে এই নির্দিষ্ট কি-ওয়ার্ডের ভিত্তিতে চ্যাটবট তাৎক্ষণিক রিপ্লাই দিবে। প্রতিটি উত্তর সম্পূর্ণ এডিট করা সম্ভব।'}
                 </p>
               </div>
             </div>
@@ -1013,14 +1025,14 @@ export default function AutomationHubPage() {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                       <span style={{ fontSize: '0.7rem', fontWeight: '700', padding: '0.15rem 0.45rem', borderRadius: '4px', background: bot.isActive ? '#f5f3ff' : '#f1f5f9', color: bot.isActive ? '#7c3aed' : '#64748b' }}>
-                        {bot.isActive ? 'সক্রিয়' : 'নিষ্ক্রিয়'}
+                        {bot.isActive ? (isEn ? 'Active' : 'সক্রিয়') : (isEn ? 'Inactive' : 'নিষ্ক্রিয়')}
                       </span>
                       <h4 style={{ fontSize: '1rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
                         {bot.queryLabel}
                       </h4>
                     </div>
                     <div style={{ fontSize: '0.775rem', color: '#64748b', marginTop: '0.2rem' }}>
-                      ট্রিগার কি-ওয়ার্ডসমূহ: <code>{bot.triggerKeywords}</code>
+                      {isEn ? 'Trigger Keywords:' : 'ট্রিগার কি-ওয়ার্ডসমূহ:'} <code>{bot.triggerKeywords}</code>
                     </div>
                   </div>
 
@@ -1045,14 +1057,14 @@ export default function AutomationHubPage() {
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
-                      উত্তর এডিট করুন
+                      {isEn ? 'Edit Reply' : 'উত্তর এডিট করুন'}
                     </button>
                   </div>
                 </div>
 
                 <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.825rem', color: '#334155', lineHeight: '1.5' }}>
                   <span style={{ fontSize: '0.7rem', color: '#7c3aed', fontWeight: '800', display: 'block', marginBottom: '0.2rem' }}>
-                    স্বয়ংক্রিয় রিপ্লাই টেক্সট:
+                    {isEn ? 'Auto-Reply Text:' : 'স্বয়ংক্রিয় রিপ্লাই টেক্সট:'}
                   </span>
                   {bot.replyText}
                 </div>
@@ -1063,16 +1075,16 @@ export default function AutomationHubPage() {
       )}
 
       {/* ======================================================== */}
-      {/* TAB 5: CUSTOM ANNOUNCEMENT (সাধারণ নোটিশ ব্রডকাস্ট)           */}
+      {/* TAB 5: CUSTOM ANNOUNCEMENT ({isEn ? 'General Notice Broadcast' : 'সাধারণ নোটিশ ব্রডকাস্ট'})           */}
       {/* ======================================================== */}
       {activeTab === 'notice' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div className="card" style={{ padding: '1.25rem', background: '#ffffff', borderLeft: '4px solid #0f172a' }}>
             <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.35rem' }}>
-              জরুরি সাধারণ বিজ্ঞপ্তি ব্রডকাস্ট
+              {isEn ? 'Emergency General Notice Broadcast' : 'জরুরি সাধারণ বিজ্ঞপ্তি ব্রডকাস্ট'}
             </h3>
             <p style={{ fontSize: '0.8rem', color: '#64748b', margin: 0 }}>
-              আকস্মিক ছুটি, মাহফিল বা অভিভাবক সমাবেশের নোটিশ লিখে এক ক্লিকে সকল অভিভাবকের কাছে পৌঁছে দিন
+              {isEn ? 'Write a notice for sudden holidays, events or parent meetings and reach all guardians in one click' : 'আকস্মিক ছুটি, মাহফিল বা অভিভাবক সমাবেশের নোটিশ লিখে এক ক্লিকে সকল অভিভাবকের কাছে পৌঁছে দিন'}
             </p>
           </div>
 
@@ -1080,7 +1092,7 @@ export default function AutomationHubPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label style={{ fontSize: '0.825rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                  বিজ্ঞপ্তির শিরোনাম *
+                  {isEn ? 'Notice Title *' : 'বিজ্ঞপ্তির শিরোনাম *'}
                 </label>
                 <input
                   type="text"
@@ -1093,7 +1105,7 @@ export default function AutomationHubPage() {
 
               <div>
                 <label style={{ fontSize: '0.825rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                  বিজ্ঞপ্তির বিস্তারিত বিবরণ (হোয়াটসঅ্যাপে পাঠানো হবে) *
+                  {isEn ? 'Notice Details (will be sent via WhatsApp) *' : 'বিজ্ঞপ্তির বিস্তারিত বিবরণ (হোয়াটসঅ্যাপে পাঠানো হবে) *'}
                 </label>
                 <textarea
                   className="input-field"
@@ -1107,7 +1119,7 @@ export default function AutomationHubPage() {
               {/* Preview */}
               <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '0.3rem' }}>
-                  বার্তা প্রিভিউ (হোয়াটসঅ্যাপে যেমন দেখাবে):
+                  {isEn ? 'Message Preview (as it appears on WhatsApp):' : 'বার্তা প্রিভিউ (হোয়াটসঅ্যাপে যেমন দেখাবে):'}
                 </span>
                 <div style={{ fontSize: '0.85rem', color: '#0f172a', lineHeight: '1.5' }}>
                   <strong>[{institutionName}]</strong>
@@ -1116,7 +1128,7 @@ export default function AutomationHubPage() {
                   <br /><br />
                   {customNoticeBody}
                   <br /><br />
-                  <em>প্রয়োজনে যোগাযোগ: {officePhone}</em>
+                  <em>{isEn ? 'Contact if needed:' : 'প্রয়োজনে যোগাযোগ:'} {officePhone}</em>
                 </div>
               </div>
 
@@ -1129,7 +1141,7 @@ export default function AutomationHubPage() {
                   className="btn btn-secondary"
                   style={{ flex: 1, padding: '0.5rem' }}
                 >
-                  {copiedId === 'custom-notice' ? '✓ সম্পূর্ণ নোটিশ কপি হয়েছে' : 'নোটিশ টেক্সট কপি করুন'}
+                  {copiedId === 'custom-notice' ? (isEn ? '✓ Notice Copied' : '✓ সম্পূর্ণ নোটিশ কপি হয়েছে') : (isEn ? 'Copy Notice Text' : 'নোটিশ টেক্সট কপি করুন')}
                 </button>
 
                 <a
@@ -1142,7 +1154,7 @@ export default function AutomationHubPage() {
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                   </svg>
-                  হোয়াটসঅ্যাপে ব্রডকাস্ট করুন
+                  {isEn ? 'Broadcast on WhatsApp' : 'হোয়াটসঅ্যাপে ব্রডকাস্ট করুন'}
                 </a>
               </div>
             </div>
@@ -1186,7 +1198,7 @@ export default function AutomationHubPage() {
                   </svg>
                 </div>
                 <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                  মেসেজ টেমপ্লেট কাস্টমাইজ ও এডিট
+                  {isEn ? 'Customize & Edit Message Template' : 'মেসেজ টেমপ্লেট কাস্টমাইজ ও এডিট'}
                 </h3>
               </div>
               <button
@@ -1198,7 +1210,7 @@ export default function AutomationHubPage() {
             </div>
 
             <p style={{ fontSize: '0.775rem', color: '#64748b', marginBottom: '0.75rem' }}>
-              আপনি আপনার মাদরাসার নিয়ম অনুযায়ী বার্তাটি সম্পূর্ণ পরিবর্তন করতে পারেন। নিচের ট্যাগগুলো ব্যবহার করলে সেগুলো স্বয়ংক্রিয়ভাবে ছাত্রের তথ্যে পরিবর্তিত হবে:
+              {isEn ? 'Customize the message fully. The tags below are auto-replaced with student data:' : 'আপনি আপনার মাদরাসার নিয়ম অনুযায়ী বার্তাটি সম্পূর্ণ পরিবর্তন করতে পারেন। নিচের ট্যাগগুলো ব্যবহার করলে সেগুলো স্বয়ংক্রিয়ভাবে ছাত্রের তথ্যে পরিবর্তিত হবে:'}
             </p>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.85rem' }}>
@@ -1224,7 +1236,7 @@ export default function AutomationHubPage() {
                 className="btn btn-secondary"
                 style={{ flex: 1 }}
               >
-                বাতিল
+                {isEn ? 'Cancel' : 'বাতিল'}
               </button>
               <button
                 type="button"
@@ -1232,7 +1244,7 @@ export default function AutomationHubPage() {
                 className="btn btn-primary"
                 style={{ flex: 1, background: '#16a34a', border: 'none' }}
               >
-                টেমপ্লেট সংরক্ষণ করুন
+                {isEn ? 'Save Template' : 'টেমপ্লেট সংরক্ষণ করুন'}
               </button>
             </div>
           </div>
@@ -1268,7 +1280,7 @@ export default function AutomationHubPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem' }}>
               <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                বট অটো-রিপ্লাই উত্তর এডিট করুন
+                {isEn ? 'Edit Bot Auto-Reply' : 'বট অটো-রিপ্লাই উত্তর এডিট করুন'}
               </h3>
               <button
                 onClick={() => setEditingBot(null)}
@@ -1281,7 +1293,7 @@ export default function AutomationHubPage() {
             <form onSubmit={handleUpdateBotResponse} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  ইনকোয়ারি শিরোনাম *
+                  {isEn ? 'Inquiry Title *' : 'ইনকোয়ারি শিরোনাম *'}
                 </label>
                 <input
                   type="text"
@@ -1295,7 +1307,7 @@ export default function AutomationHubPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  ট্রিগার কি-ওয়ার্ডসমূহ (কমা দিয়ে লিখুন) *
+                  {isEn ? 'Trigger Keywords (comma-separated) *' : 'ট্রিগার কি-ওয়ার্ডসমূহ (কমা দিয়ে লিখুন) *'}
                 </label>
                 <input
                   type="text"
@@ -1309,7 +1321,7 @@ export default function AutomationHubPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                  স্বয়ংক্রিয় ফিরতি বার্তা (Auto-Reply Content) *
+                  {isEn ? 'Auto-Reply Content *' : 'স্বয়ংক্রিয় ফিরতি বার্তা (Auto-Reply Content) *'}
                 </label>
                 <textarea
                   required
@@ -1330,7 +1342,7 @@ export default function AutomationHubPage() {
                   style={{ width: '1.1rem', height: '1.1rem', accentColor: '#7c3aed' }}
                 />
                 <label htmlFor="botActiveCheck" style={{ fontSize: '0.825rem', fontWeight: '700', color: '#334155', cursor: 'pointer' }}>
-                  এই অটো-রিপ্লাই ট্রিগারটি সক্রিয় রাখুন
+                  {isEn ? 'Keep this auto-reply trigger active' : 'এই অটো-রিপ্লাই ট্রিগারটি সক্রিয় রাখুন'}
                 </label>
               </div>
 
@@ -1341,14 +1353,14 @@ export default function AutomationHubPage() {
                   className="btn btn-secondary"
                   style={{ flex: 1 }}
                 >
-                  বাতিল
+                  {isEn ? 'Cancel' : 'বাতিল'}
                 </button>
                 <button
                   type="submit"
                   className="btn btn-primary"
                   style={{ flex: 1, background: '#7c3aed', border: 'none' }}
                 >
-                  সংরক্ষণ করুন
+                  {isEn ? 'Save' : 'সংরক্ষণ করুন'}
                 </button>
               </div>
             </form>

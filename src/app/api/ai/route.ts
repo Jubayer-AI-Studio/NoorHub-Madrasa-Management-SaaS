@@ -1,38 +1,52 @@
 import { NextResponse } from 'next/server';
 
-// System knowledge prompt for Google Gemini AI
+// Comprehensive System knowledge prompt for Noor AI (powered by Groq / Gemini / Local Engine)
 const NOORHUB_SYSTEM_PROMPT = `
-তুমি "নূর এআই" (Noor AI)—নূরহাব (NoorHub) প্ল্যাটফর্মের অফিশিয়াল এবং অত্যন্ত প্রজ্ঞাবান কৃত্রিম বুদ্ধিমত্তা সহকারী।
+তুমি "নূর এআই" (Noor AI)—নূরহাব (NoorHub) ডিজিটাল মাদরাসা ম্যানেজমেন্ট প্ল্যাটফর্মের অফিশিয়াল এবং অত্যন্ত প্রজ্ঞাবান কৃত্রিম বুদ্ধিমত্তা সহকারী।
 নূরহাব হলো কওমি মাদরাসা, আলিয়া মাদরাসা ও হিফজুল কুরআন মাদরাসার জন্য নির্মিত সর্বজনীন ডিজিটাল শিক্ষা ও প্রতিষ্ঠান পরিচালনা প্ল্যাটফর্ম।
 
 তোমার ভূমিকা ও ব্যক্তিত্ব:
 ১. সবসময় পরম শ্রদ্ধা, আন্তরিকতা ও ইসলামিক আদবের সাথে (যেমন: "আস-সালামু আলাইকুম", "মুহতারাম", "মাশাআল্লাহ", "জাযাকাল্লাহ") কথা বলবে।
-২. "হ্যালো", "সালাম" বা কুশলবিনিময়ের উত্তরে অত্যন্ত অমায়িক ও স্বাভাবিক উত্তর দেবে। কখনো অপ্রাসঙ্গিক বা গতানুগতিক কপি-পেস্ট কথা বলবে না।
+২. "হ্যালো", "সালাম" বা কুশলবিনিময়ের উত্তরে অত্যন্ত অমায়িক, জীবন্ত ও স্বাভাবিক উত্তর দেবে। কখনো রোবোটিক বা কপি-পেস্ট কথা বলবে না।
 ৩. নূরহাবের সকল ১৫টি ফিচার, বাটন, পেজ এবং কওমি দরসে নেজামী কারিকুলাম, হিফজের সবক ও আমুখতা পদ্ধতি, মাদরাসা পরিচালনা, রুটিন, দুর্বল ছাত্র যত্ন, হিসাব-নিকাশ, যাকাত ও লিল্লাহ ফান্ড আইন সম্পর্কে তুমি পুঙ্খানুপুঙ্খ জানো।
-৪. উত্তর সবসময় বিশুদ্ধ, সহজ ও প্রাঞ্জল বাংলা ভাষায় পয়েন্ট আকারে উপস্থাপন করবে।
+৪. উত্তর সবসময় বিশুদ্ধ, সহজ ও প্রাঞ্জল বাংলা ভাষায় সুন্দর ফরম্যাটিং এবং বুলেট পয়েন্ট আকারে উপস্থাপন করবে।
+৫. ব্যবহারকারীকে সংশ্লিষ্ট পেজের পাথ বা লিংক (/dashboard/..., /explore, /donor) জানাবে যাতে সে সহজে সেখানে যেতে পারে।
 
 নূরহাবের ১৫টি মূল ফিচার ও ডিরেক্টরি পরিচিতি:
-১. ভৌগোলিক মানচিত্র (GIS Map) [/dashboard/map]: ৮টি বিভাগের সীমারেখা, লাইভ পালসিং GPS রাডার পিন (কওমি, হিফজ, আলিয়া), ভাসমান প্রোফাইল কার্ড, ১-ট্যাপ হোয়াটসঅ্যাপ ইনকোয়ারি, স্যাটেলাইট ও এমারেল্ড মোড।
-২. উন্মুক্ত এক্সপ্লোরার পোর্টাল (/explore): পাসওয়ার্ড ছাড়া ৩য় পক্ষ ও অভিভাবকদের জন্য প্রতিষ্ঠানের জামাত, কিতাবের তালিকা, সারসংক্ষেপ ও প্রতিষ্ঠানের অনন্য ভালো দিক (Highlights) প্রদর্শনী।
-৩. সিলেবাস ও কিতাব ব্যবস্থাপনা [/dashboard/syllabus]: দরসে নেজামী, আলিয়া ও হিফজের পূর্ণাঙ্গ কিতাব, প্রতি কিতাবের তথ্য এডিট এবং নতুন কিতাব সংযোজন।
+১. ভৌগোলিক মানচিত্র (GIS Map) [/dashboard/map]: ৮টি বিভাগের সীমারেখা, লাইভ পালসিং GPS রাডার পিন (কওমি-সবুজ, হিফজ-নীল, আলিয়া-পার্পল), ভাসমান প্রোফাইল কার্ড, ১-ট্যাপ হোয়াটসঅ্যাপ ইনকোয়ারি, স্যাটেলাইট ও এমারেল্ড মোড।
+২. উন্মুক্ত এক্সপ্লোরার পোর্টাল [/explore]: পাসওয়ার্ড ছাড়া ৩য় পক্ষ ও অভিভাবকদের জন্য প্রতিষ্ঠানের জামাত, কিতাবের তালিকা, সারসংক্ষেপ ও প্রতিষ্ঠানের অনন্য ভালো দিক (Highlights) প্রদর্শনী ও এডিট।
+৩. সিলেবাস ও কিতাব ব্যবস্থাপনা [/dashboard/syllabus]: দরসে নেজামী, আলিয়া ও হিফজের পূর্ণাঙ্গ কিতাব, প্রতি কিতাবের তথ্য এডিট এবং নতুন কিতাব সংযোজন সুবিধা।
 ৪. শ্রেণি ও জামাত ব্যবস্থাপনা [/dashboard/classes]: নতুন জামাত এন্ট্রি, শাখা ও দায়িত্বপ্রাপ্ত শিক্ষক নির্ধারণ, এডিট সুবিধা।
 ৫. হোয়াটসঅ্যাপ ও মেসেঞ্জার অভিভাবক হাব [/dashboard/automation]: সকাল ১০:০০ টায় অনুপস্থিত ছাত্রদের স্বয়ংক্রিয় নোটিশ, পরীক্ষার ফলাফল ও বকেয়া ফি তাগাদা, ২৪/৭ এআই বট, এডিটযোগ্য টেমপ্লেট।
 ৬. ১-ক্লিক ডিজিটাল হাজিরা ও ওটিপি-মুক্ত ছুটি [/dashboard/attendance]: ৩০ সেকেন্ডে ক্লাসের হাজিরা এবং ১-ট্যাপে অভিভাবকের ছুটির আবেদন মঞ্জুর।
-৭. পরীক্ষা ও ফলাফল মেধা তালিকা [/dashboard/results]: কওমি (মুমতাজ, জাইয়্যিদ জিদ্দান, জাইয়্যিদ, মাকবুল) ও আলিয়া গ্রেডিং, মার্কশিট প্রিন্ট ও হোয়াটসঅ্যাপ ব্রডকাস্ট।
+৭. পরীক্ষা ও ফলাফল মেধা তালিকা [/dashboard/results]: কওমি (মুমতাজ, জাইয়্যিদ জিদ্দান, জাইয়্যিদ, মাকবুল) ও আলিয়া গ্রেডিং, ১-ক্লিক মার্কশিট প্রিন্ট ও হোয়াটসঅ্যাপ ব্রডকাস্ট।
 ৮. অর্থ ও শিক্ষক বেতন ব্যবস্থাপনা [/dashboard/finance]: ছাত্র ফি আদায়, শিক্ষকদের এক ক্লিকে বেতন পরিশোধ, ব্যাংক জমা ও এক্সেল লেজার।
 ৯. স্বচ্ছ ডোনার ট্র্যাকিং পোর্টাল [/donor]: গোপন ট্র্যাকিং কোড দিয়ে প্রবাসীদের জন্য লিল্লাহ ও যাকাত ফান্ডের বাস্তব ব্যয়ের চিত্র ও ছবি।
 ১০. হিফজুল কুরআন ট্র্যাকার [/dashboard/hifz]: ৩০ পারার অগ্রগতি, দৈনিক ৩ সবক (সবক, সবকি, আমুখতা/দৌর) ট্র্যাকিং ও অভিভাবকের ডায়েরি।
 ১১. অভিভাবক পোর্টাল [/dashboard/parent]: সন্তানের লাইভ হাজিরা, মার্কশিট, অনলাইন ফি পেমেন্ট ও ছুটির আবেদন।
-১২. প্রতিযোগিতা ও ব্লু ভেরিফাইড ব্যাজ [/dashboard/competition]: ৪ স্তম্ভভিত্তিক স্কোরিং (পাস ৪০%, হাজিরা ২৫%, ফিডব্যাক ২০%, অডিট ১৫%) ও ব্লু টিক।
-১৩. নূর এআই সহকারী [/dashboard/ai]: লাইভ ভয়েস ইনপুট ও ভয়েস আউটপুট সহ সার্বক্ষণিক পরামর্শক।
-১৪. রিয়েল-টাইম পরিসংখ্যান ও ড্যাশবোর্ড অ্যানালিটিক্স [/dashboard]: লাইভ ছাত্র-শিক্ষক ডাটা ও সার্বিক রিপোর্ট।
-১৫. অফিশিয়াল প্রেজেন্টেশন ও প্রিন্ট ডেক [/presentation]: কমিটি ও শুভাকাঙ্ক্ষীদের জন্য অফিসিয়াল স্লাইড ও ব্রোশিউর।
+১২. প্রতিযোগিতা ও ব্লু ভেরিফাইড ব্যাজ [/dashboard/competition]: ৪ স্তম্ভভিত্তিক স্কোরিং (পাস ৪০%, হাজিরা ২৫%, ফিডব্যাক ২০%, অডিট ১৫%) ও শীর্ষ মাদরাসায় ব্লু টিক।
+১৩. নূর এআই সহকারী [/dashboard/ai]: ৩ডি রোবট অ্যাসিস্ট্যান্ট ও লাইভ ভয়েস ইনপুট/আউটপুট সহ সার্বক্ষণিক এআই পরামর্শক।
+১৪. রিয়েল-টাইম পরিসংখ্যান ও ড্যাশবোর্ড অ্যানালিটিক্স [/dashboard]: লাইভ ছাত্র-শিক্ষক ডাটা, আর্থিক হিসাব ও সার্বিক রিপোর্ট।
+১৫. মাদরাসা পরিচিতি ও পাঠ্যক্রম [/dashboard/showcase]: পাঠ্যক্রম, তারবিয়াত, অর্জন ও সার্বিক পরিচিতি।
+
+কওমি মাদরাসা দরসে নেজামী কারিকুলাম জ্ঞান:
+- ইবতেদায়ী স্তর: নূরানী, নাজেরা ও তাইসীর।
+- মুতাওয়াসসিতা (মাধ্যমিক): মিজান, নাহবেমীর, হেদায়াতুন্নাহু ও কাফিয়া।
+- সানাবিয়্যাহ উলয়া (উচ্চ মাধ্যমিক): শরহে বেকায়া ও শরহে জামী।
+- ফযীলত (ডিগ্রি সমমান): জালালাইন ও মেশকাত শরীফ।
+- তাকমীল / দাওরায়ে হাদীস (মাস্টার্স সমমান): সহীহ বুখারী, সহীহ মুসলিম, তিরমিযী, আবু দাউদ, নাসাঈ, ইবনে মাজাহ।
+- উচ্চতর গবেষণা: ইফতা (ইসলামি আইন ও ফতোয়া), উলুমুল হাদিস, উলুমুল কুরআন।
+
+হিফজুল কুরআন পদ্ধতি:
+- সবক: আজকের নতুন নির্ধারিত কুরআন অংশ।
+- সবকি: গত কয়েকদিনের সাম্প্রতিক পঠিত অংশ।
+- আমুখতা / দৌর: পেছনের সম্পূর্ণ মুখস্থ পারার নিয়মিত রিভিশন।
 `;
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { message, history = [], apiKey } = body;
+    const { message, history = [], groqApiKey, apiKey } = body;
 
     if (!message || typeof message !== 'string') {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
@@ -40,10 +54,78 @@ export async function POST(req: Request) {
 
     const trimmedMsg = message.trim();
 
-    // Check for Gemini API key
-    const activeApiKey = apiKey?.trim() || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '';
+    // 1. PRIMARY ENGINE: Groq Cloud API
+    const activeGroqKey =
+      groqApiKey?.trim() ||
+      process.env.GROQ_API_KEY ||
+      '';
 
-    if (activeApiKey) {
+    if (activeGroqKey) {
+      try {
+        const groqMessages: Array<{ role: string; content: string }> = [
+          {
+            role: 'system',
+            content: NOORHUB_SYSTEM_PROMPT,
+          },
+        ];
+
+        // Append recent chat history for conversational context
+        const recentHistory = Array.isArray(history) ? history.slice(-6) : [];
+        for (const item of recentHistory) {
+          if (item.sender === 'user') {
+            groqMessages.push({ role: 'user', content: item.text });
+          } else if (item.sender === 'ai') {
+            groqMessages.push({ role: 'assistant', content: item.text });
+          }
+        }
+
+        groqMessages.push({ role: 'user', content: trimmedMsg });
+
+        // Try primary model (openai/gpt-oss-120b), fallback to qwen/qwen3.8-27b
+        const candidateModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b'];
+
+        for (const model of candidateModels) {
+          try {
+            const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${activeGroqKey}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                model,
+                messages: groqMessages,
+                temperature: 0.7,
+                max_tokens: 1024,
+              }),
+            });
+
+            if (groqRes.ok) {
+              const groqData = await groqRes.json();
+              const reply = groqData.choices?.[0]?.message?.content;
+              if (reply && reply.trim()) {
+                return NextResponse.json({
+                  text: reply.trim(),
+                  provider: 'groq',
+                  model,
+                });
+              }
+            }
+          } catch {
+            // Try next model if any network error
+            continue;
+          }
+        }
+      } catch {
+        // Fall back gracefully to Gemini or Local Engine
+      }
+    }
+
+    // 2. SECONDARY ENGINE: Google Gemini API (if user specified or in env)
+    const activeGeminiKey =
+      apiKey?.trim() || process.env.GEMINI_API_KEY || process.env.GOOGLE_AI_API_KEY || '';
+
+    if (activeGeminiKey) {
       try {
         const contents: any[] = [
           {
@@ -67,7 +149,7 @@ export async function POST(req: Request) {
 
         contents.push({ role: 'user', parts: [{ text: trimmedMsg }] });
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeApiKey}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeGeminiKey}`;
         const geminiRes = await fetch(geminiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -91,11 +173,11 @@ export async function POST(req: Request) {
           }
         }
       } catch {
-        // Fall back gracefully to the local engine
+        // Fall back gracefully to local engine
       }
     }
 
-    // Local Comprehensive Knowledge Engine (Zero Generic Fallback)
+    // 3. TERTIARY ENGINE: Comprehensive Local Knowledge Engine
     const localResponse = getIntelligentResponse(trimmedMsg);
     return NextResponse.json({
       text: localResponse.text,
@@ -190,9 +272,9 @@ function getIntelligentResponse(query: string): { text: string; actionLink?: { h
         `১০. 📖 **হিফজুল কুরআন ট্র্যাকার (/dashboard/hifz):** ৩০ পারার প্রগ্রেস বার, দৈনিক ৩ সবক (সবক, সবকি, আমুখতা/দৌর) ট্র্যাকিং ও অভিভাবকের জন্য সবক ডায়েরি।\n` +
         `১১. 👨‍👩‍👦 **অভিভাবক পোর্টাল (/dashboard/parent):** সন্তানের লাইভ হাজিরা, মার্কশিট, অনলাইন ফি পেমেন্ট ও ছুটির আবেদন।\n` +
         `১২. ⭐ **প্রতিযোগিতা ও ব্লু ভেরিফাইড ব্যাজ (/dashboard/competition):** ৪টি মানদণ্ডে স্কোরিং ও শীর্ষ মাদরাসাসমূহের জন্য ব্লু টিক।\n` +
-        `১৩. 🤖 **নূর এআই বুদ্ধিমান সহকারী (/dashboard/ai):** লাইভ বাংলা ভয়েস ইনপুট ও আউটপুট সহ সার্বক্ষণিক পরামর্শক।\n` +
+        `১৩. 🤖 **নূর এআই বুদ্ধিমান সহকারী (/dashboard/ai):** ৩ডি রোবট অ্যাসিস্ট্যান্ট ও লাইভ ভয়েস ইনপুট ও আউটপুট সহ সার্বক্ষণিক পরামর্শক।\n` +
         `১৪. 📊 **পরিসংখ্যান ও ড্যাশবোর্ড অ্যানালিটিক্স (/dashboard):** ছাত্র, শিক্ষক, উপস্থিতি ও তহবিলের রিয়েল-টাইম তথ্য।\n` +
-        `১৫. 📄 **অফিশিয়াল প্রেজেন্টেশন ডেক (/presentation):** পরিচালনা কমিটি ও দাতাদের জন্য প্রফেশনাল ব্রোশিউর ও স্লাইড।\n\n` +
+        `১৫. 📖 **মাদরাসা পরিচিতি ও পাঠ্যক্রম (/dashboard/showcase):** পাঠ্যক্রম, তারবিয়াত, অর্জন ও সার্বিক পরিচিতি।\n\n` +
         `আপনি যেকোনো মডিউল দেখতে চাইলে নিচের বাটনটি চাপুন অথবা আমাকে নাম বলুন, আমি সরাসরি বিস্তারিত গাইড করব।`,
       actionLink: { href: '/dashboard', label: 'মূল ড্যাশবোর্ড এক্সপ্লোর করুন' },
     };
@@ -207,11 +289,11 @@ function getIntelligentResponse(query: string): { text: string; actionLink?: { h
         `• প্রতিষ্ঠান পরিচালনার দৈনন্দিন কাজগুলোকে (হাজিরা, রুটিন, ফলাফল, হিসাব) সহজ করে দেওয়া।\n` +
         `• কওমি দরসে নেজামী ও হিফজুল কুরআনের প্রতিটি ধাপ সঠিকভাবে পরিচালনা করতে দিকনির্দেশনা প্রদান করা।\n` +
         `• অভিভাবক ও শিক্ষকদের মধ্যে সরাসরি হোয়াটসঅ্যাপ নোটিশের মাধ্যমে শক্তিশালী মেলবন্ধন তৈরি করা।`,
-      actionLink: { href: '/presentation', label: 'নূরহাব অফিশিয়াল প্রেজেন্টেশন দেখুন' },
+      actionLink: { href: '/dashboard/showcase', label: 'মাদরাসা পরিচিতি ও পাঠ্যক্রম দেখুন' },
     };
   }
 
-  // 7. HIFZ TRACKER (Must be before general Finance/Accounts)
+  // 7. HIFZ TRACKER
   if (q.includes('হিফজ') || q.includes('কুরআন') || q.includes('পারা') || q.includes('সবক') || q.includes('সবকি') || q.includes('আমুখতা') || q.includes('দৌর') || q.includes('hifz')) {
     return {
       text: `হিফজুল কুরআন বিভাগের জন্য রয়েছে বিশেষায়িত লাইভ ট্র্যাকার:\n\n` +
@@ -223,7 +305,7 @@ function getIntelligentResponse(query: string): { text: string; actionLink?: { h
     };
   }
 
-  // 8. DARS-E-NIZAMI HIERARCHY & JAMATS (Before general class directory)
+  // 8. DARS-E-NIZAMI HIERARCHY & JAMATS
   if (q.includes('দরসে নেজামী') || q.includes('কওমি জামাত') || q.includes('জামাতগুলোর নাম') || q.includes('দাওরা') || q.includes('মিজান') || q.includes('নাহবেমীর') || q.includes('জালালাইন') || q.includes('মেশকাত') || q.includes('ইফতা')) {
     return {
       text: `কওমি মাদরাসার ঐতিহ্যবাহী দরসে নেজামী কারিকুলামের ধাপসমূহ:\n\n` +
@@ -305,7 +387,7 @@ function getIntelligentResponse(query: string): { text: string; actionLink?: { h
     };
   }
 
-  // 15. FINANCE & SALARY (Refined so general word 'hishab' doesn't hijack non-finance questions)
+  // 15. FINANCE & SALARY
   if (
     q.includes('অর্থ') ||
     q.includes('টাকা') ||
@@ -319,7 +401,7 @@ function getIntelligentResponse(query: string): { text: string; actionLink?: { h
     (q.includes('হিসাব') && !q.includes('সবক') && !q.includes('হিফজ') && !q.includes('পড়া') && !q.includes('হাজিরা'))
   ) {
     return {
-      text: `নূরহাবের অর্থ ব্যবস্থাপনায় ৬টি ডেডিকেটেড সেকশন রয়েছে:\n\n` +
+      text: `নূরহাবের অর্থ ব্যবস্থাপনায় রয়েছে:\n\n` +
         `১. **ছাত্র বেতন কালেকশন:** নগদ, বিকাশ বা রকেটে বেতন নিয়ে তাৎক্ষণিক ডিজিটাল রসিদ প্রিন্ট।\n` +
         `২. **শিক্ষকদের মাসিক ভাতা:** এককভাবে বা "বাকি সবার ভাতা একসাথে পরিশোধ" বাটনে ১-ক্লিকে সবার বেতন শিট ক্লিয়ার।\n` +
         `৩. **ব্যাংক জমা:** ইসলামী ব্যাংক, সোনালী ব্যাংক ইত্যাদির ভাউচার এন্ট্রি ও ভেরিফিকেশন।\n` +
@@ -366,9 +448,7 @@ function getIntelligentResponse(query: string): { text: string; actionLink?: { h
   // 19. OPEN CONVERSATIONAL FALLBACK
   const cleanSubject = query.replace(/[?।!]/g, '').trim();
   return {
-    text: `মুহতারাম, আপনার জিজ্ঞাসা "${cleanSubject}"-এর বিষয়ে:\n\n` +
-      `দ্বীনি শিক্ষা প্রতিষ্ঠানের প্রশাসনিক শৃঙ্খলা ও শিক্ষাগত মানোন্নয়নে বিষয়টি অত্যন্ত গুরুত্বপূর্ণ। নূরহাব প্ল্যাটফর্মে আপনি সংশ্লিষ্ট মডিউল (যেমন: শ্রেণি ব্যবস্থাপনা, হাজিরা, হোয়াটসঅ্যাপ নোটিশ বা অর্থ বিভাগ) ব্যবহার করে বাস্তব সমাধান পেতে পারেন।\n\n` +
-      `এই বিষয়ে আপনি কি কোনো নির্দিষ্ট ফিচার দেখতে চান? নাম বলুন, আমি সরাসরি লিঙ্ক সহ বুঝিয়ে দিচ্ছি।`,
+    text: `মুহতারাম, আপনার জিজ্ঞাসা "${cleanSubject}"-এর বিষয়ে:\n\nদ্বীনি শিক্ষা প্রতিষ্ঠানের প্রশাসনিক শৃঙ্খলা ও শিক্ষাগত মানোন্নয়নে বিষয়টি অত্যন্ত গুরুত্বপূর্ণ। নূরহাব প্ল্যাটফর্মে আপনি সংশ্লিষ্ট মডিউল (যেমন: শ্রেণি ব্যবস্থাপনা, হাজিরা, হোয়াটসঅ্যাপ নোটিশ বা অর্থ বিভাগ) ব্যবহার করে বাস্তব সমাধান পেতে পারেন।\n\nএই বিষয়ে আপনি কি কোনো নির্দিষ্ট ফিচার দেখতে চান? নাম বলুন, আমি সরাসরি লিঙ্ক সহ বুঝিয়ে দিচ্ছি।`,
     actionLink: { href: '/dashboard', label: 'মূল ড্যাশবোর্ডে যান' },
   };
 }

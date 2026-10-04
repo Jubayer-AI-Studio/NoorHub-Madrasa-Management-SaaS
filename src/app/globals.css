@@ -1,12 +1,11 @@
 @import "tailwindcss";
+@source "../**/*.{js,ts,jsx,tsx,mdx}";
+@source "../../**/*.{js,ts,jsx,tsx,mdx}";
 
 /* ============================================
    NOORHUB — গ্লোবাল ডিজাইন সিস্টেম
    আন্তর্জাতিক মানের, মোবাইল-ফার্স্ট
    ============================================ */
-
-/* Google Fonts — বাংলা ও ইংরেজি */
-@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 /* ============================================
    CSS Custom Properties (Design Tokens)
@@ -380,6 +379,15 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--shadow-sm);
 }
 
+@media (min-width: 1024px) {
+  .bottom-nav {
+    display: none !important;
+  }
+  .top-bar {
+    display: none !important;
+  }
+}
+
 /* ============================================
    AVATAR / PROFILE IMAGE
    ============================================ */
@@ -557,4 +565,278 @@ h1, h2, h3, h4, h5, h6 {
 .map-division-badge:active, .map-district-badge:active, .map-upazila-badge:active {
   transform: scale(0.96);
 }
+
+/* ============================================
+   RESPONSIVE ENFORCEMENT (MOBILE VS DESKTOP)
+   ============================================ */
+@media (max-width: 1023px) {
+  /* On mobile phones/screens under 1024px: STRICTLY HIDE desktop sidebar & topbar */
+  aside,
+  .hidden.lg\:flex,
+  .hidden.lg\:block {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  /* On desktop screens 1024px and above: STRICTLY HIDE mobile topbar and bottom nav */
+  .lg\:hidden,
+  .bottom-nav,
+  header.top-bar {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   STUDENT ID CARD PRINT STYLES
+   ============================================ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .id-card-printable,
+  .id-card-printable * {
+    visibility: visible;
+  }
+  .id-card-printable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 !important;
+    padding: 8mm !important;
+    background: transparent !important;
+  }
+  .id-card-item {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    margin-bottom: 6mm;
+  }
+}
+
+/* ============================================
+   MAGIC ENTRANCE & ASSEMBLY ANIMATIONS
+   "App khulle ekekta part ese jora lagbe jeno magic"
+   ============================================ */
+@keyframes magicAssemble {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+    filter: blur(3px);
+  }
+  65% {
+    opacity: 0.95;
+    transform: translateY(-2px) scale(1.008);
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes pulseGlowEmerald {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 16px 4px rgba(22, 163, 74, 0.25);
+  }
+}
+
+@keyframes pulseGlowGold {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(202, 138, 4, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 16px 4px rgba(202, 138, 4, 0.3);
+  }
+}
+
+.animate-magic-1 {
+  animation: magicAssemble 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.05s backwards;
+}
+
+.animate-magic-2 {
+  animation: magicAssemble 0.65s cubic-bezier(0.16, 1, 0.3, 1) 0.16s backwards;
+}
+
+.animate-magic-3 {
+  animation: magicAssemble 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.28s backwards;
+}
+
+.animate-magic-4 {
+  animation: magicAssemble 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.42s backwards;
+}
+
+.animate-magic-5 {
+  animation: magicAssemble 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.58s backwards;
+}
+
+.glow-card-hover {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease !important;
+}
+
+.glow-card-hover:hover {
+  transform: translateY(-4px) scale(1.008) !important;
+  box-shadow: 0 16px 32px -6px rgba(0, 0, 0, 0.08), 0 0 20px rgba(16, 185, 129, 0.16) !important;
+}
+
+/* ============================================
+   PREMIUM 100/100 COMMERCIAL MOTION & AMBIENCE
+   ============================================ */
+
+@keyframes ambientDrift {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -25px) scale(1.08);
+  }
+  66% {
+    transform: translate(-25px, 20px) scale(0.95);
+  }
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes shimmerPass {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@keyframes floatSlow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes pulseLiveRing {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+.animate-ambient-1 {
+  animation: ambientDrift 18s ease-in-out infinite alternate;
+}
+
+.animate-ambient-2 {
+  animation: ambientDrift 24s ease-in-out infinite alternate-reverse;
+}
+
+.animate-float-slow {
+  animation: floatSlow 5s ease-in-out infinite;
+}
+
+.animate-live-ring {
+  animation: pulseLiveRing 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Glassmorphism & Depth Cards */
+.glass-card-premium {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(226, 232, 240, 0.85);
+  box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.glass-card-dark {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.94) 0%, rgba(6, 78, 59, 0.88) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 45px -10px rgba(2, 44, 34, 0.35);
+}
+
+/* Buttons with silky micro-interactions */
+.btn-premium-action {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-premium-action:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.4);
+}
+
+.btn-premium-action:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* Device Mockup Shells */
+.device-frame-desktop {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1.5px solid #cbd5e1;
+  box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(0,0,0,0.02);
+  overflow: hidden;
+}
+
+.device-frame-mobile {
+  background: #0f172a;
+  border-radius: 36px;
+  border: 4px solid #1e293b;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+/* Shimmer Highlight Effect */
+.shimmer-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-wrapper::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+  transform: translateX(-100%);
+  animation: shimmerPass 4s infinite;
+  pointer-events: none;
+}
+
+/* Accessibility Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-ambient-1,
+  .animate-ambient-2,
+  .animate-float-slow,
+  .animate-live-ring,
+  .shimmer-wrapper::after {
+    animation: none !important;
+  }
+}
+
+
+
 

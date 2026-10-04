@@ -8,3 +8,8 @@ node_modules
 dist
 build
 .turbo
+
+cloudflared.exe
+start_silent.vbs
+*.exe
+

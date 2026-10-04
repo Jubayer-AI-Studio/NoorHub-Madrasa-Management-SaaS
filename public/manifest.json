@@ -49,27 +49,18 @@
       "purpose": "maskable any"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/mobile-home.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "হোম ড্যাশবোর্ড"
-    }
-  ],
   "shortcuts": [
     {
       "name": "হাজিরা নিন",
       "short_name": "হাজিরা",
       "url": "/dashboard/attendance",
-      "icons": [{ "src": "/icons/shortcut-attendance.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "ফি সংগ্রহ",
-      "short_name": "ফি",
-      "url": "/dashboard/fees",
-      "icons": [{ "src": "/icons/shortcut-fee.png", "sizes": "96x96" }]
+      "name": "ছাত্র তালিকা",
+      "short_name": "ছাত্র",
+      "url": "/dashboard/students",
+      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ]
 }

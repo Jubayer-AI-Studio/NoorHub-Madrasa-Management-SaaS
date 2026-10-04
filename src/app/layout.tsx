@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import PwaInstallPrompt from '@/components/layout/PwaInstallPrompt';
 
 export const metadata: Metadata = {
   title: {
@@ -54,6 +55,14 @@ export default function RootLayout({
         <meta name="msapplication-TileColor" content="#16a34a" />
         <meta name="msapplication-tap-highlight" content="no" />
 
+        {/* Google Fonts — Hind Siliguri & Inter */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        />
+
         {/* Leaflet GIS CSS for Mobile & Desktop */}
         <link
           rel="stylesheet"
@@ -62,17 +71,20 @@ export default function RootLayout({
           crossOrigin=""
         />
 
-        {/* Service Worker Registration */}
+        {/* Register PWA Service Worker */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               if ('serviceWorker' in navigator) {
                 window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js').then(function(reg) {
-                    reg.update();
-                  }).catch(function(err) {
-                    console.log('SW registration failed:', err);
-                  });
+                  navigator.serviceWorker.register('/sw.js').then(
+                    function(reg) {
+                      console.log('[NoorHub PWA] Service worker registered successfully');
+                    },
+                    function(err) {
+                      console.log('[NoorHub PWA] Service worker registration failed: ', err);
+                    }
+                  );
                 });
               }
             `,
@@ -81,6 +93,7 @@ export default function RootLayout({
       </head>
       <body>
         {children}
+        <PwaInstallPrompt />
       </body>
     </html>
   );

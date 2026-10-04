@@ -1,13 +1,31 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useLanguage } from '@/lib/language-store';
 import {
   Division,
   District,
   Upazila,
   OfficialMadrasa,
 } from '@/lib/geo-data';
-import { RotateCcw, MapPin, Award, CheckCircle, ChevronRight, Navigation } from 'lucide-react';
+import {
+  OFFICIAL_DIVISION_PATHS,
+  OFFICIAL_DISTRICT_PATHS,
+} from '@/lib/bd-geo-paths';
+import {
+  RotateCcw,
+  MapPin,
+  Award,
+  CheckCircle,
+  ChevronRight,
+  Navigation,
+  ZoomIn,
+  ZoomOut,
+  Sparkles,
+  Phone,
+  MessageCircle,
+  ExternalLink,
+} from 'lucide-react';
 
 interface BangladeshVectorMapProps {
   currentLevel: 'bangladesh' | 'division' | 'district' | 'upazila';
@@ -23,121 +41,24 @@ interface BangladeshVectorMapProps {
   onResetView: () => void;
 }
 
-// Realistic SVG Polygons for Bangladesh's 8 Divisions (500 x 620 viewBox)
-// Accurately projected to replicate official administrative boundaries
-const DIVISION_PATHS: Record<string, { d: string; labelX: number; labelY: number }> = {
-  // রংপুর বিভাগ (উত্তর)
-  rangpur: {
-    d: `M 115,2 M 115,2 C 140,8 165,15 190,45 C 198,60 195,85 185,110 C 180,125 170,140 160,155 C 145,150 120,152 100,150 C 75,135 60,110 50,85 C 45,55 60,25 90,8 Z`,
-    labelX: 122,
-    labelY: 82,
-  },
-  // রাজশাহী বিভাগ (পশ্চিম-উত্তর)
-  rajshahi: {
-    d: `M 100,150 C 120,152 145,150 160,155 C 168,175 175,200 170,225 C 160,245 135,260 110,270 C 85,272 65,255 55,230 C 45,200 55,175 75,160 Z`,
-    labelX: 110,
-    labelY: 215,
-  },
-  // ময়মনসিংহ বিভাগ (উত্তর-মধ্য)
-  mymensingh: {
-    d: `M 160,155 C 170,140 180,125 185,110 C 205,108 235,112 255,120 C 275,128 290,145 285,170 C 275,188 250,195 230,198 C 200,195 180,185 168,175 Z`,
-    labelX: 232,
-    labelY: 156,
-  },
-  // সিলেট বিভাগ (উত্তর-পূর্ব)
-  sylhet: {
-    d: `M 285,170 C 290,145 310,135 345,130 C 375,128 400,145 420,170 C 428,195 415,225 390,240 C 365,248 340,245 320,230 C 300,210 290,190 285,170 Z`,
-    labelX: 355,
-    labelY: 185,
-  },
-  // ঢাকা বিভাগ (মধ্যাঞ্চল)
-  dhaka: {
-    d: `M 170,225 C 175,200 200,195 230,198 C 250,195 275,188 285,170 C 300,190 310,215 305,245 C 295,275 290,305 280,335 C 265,348 240,345 220,338 C 195,320 185,280 178,255 Z`,
-    labelX: 242,
-    labelY: 275,
-  },
-  // খুলনা বিভাগ (দক্ষিণ-পশ্চিম)
-  khulna: {
-    d: `M 110,270 C 135,260 160,245 170,225 C 178,255 185,280 195,320 C 190,360 180,410 175,460 C 160,505 130,520 105,500 C 85,465 90,410 95,360 C 98,310 102,285 110,270 Z`,
-    labelX: 135,
-    labelY: 380,
-  },
-  // বরিশাল বিভাগ (দক্ষিণ-মধ্যাঞ্চল - ভোলা সহ)
-  barisal: {
-    d: `M 220,338 C 240,345 265,348 280,335 C 290,365 295,410 290,455 C 280,495 255,510 230,505 C 210,480 205,440 200,395 C 205,365 212,348 220,338 Z`,
-    labelX: 250,
-    labelY: 425,
-  },
-  // চট্টগ্রাম বিভাগ (দক্ষিণ-পূর্ব ও পার্বত্য চট্টগ্রাম)
-  chittagong: {
-    d: `M 305,245 C 320,230 340,245 365,248 C 390,240 405,260 415,295 C 428,345 435,405 440,465 C 445,525 430,580 405,605 C 385,580 375,520 370,460 C 355,410 330,365 310,330 C 295,305 300,270 305,245 Z`,
-    labelX: 375,
-    labelY: 395,
-  },
-};
-
-// District relative positions inside Divisions (for Level 2 drill-down)
-const DISTRICT_COORDS: Record<string, { x: number; y: number; nameBn: string }> = {
-  // ঢাকা বিভাগ
-  munshiganj: { x: 260, y: 310, nameBn: 'মুন্সিগঞ্জ' },
-  'dhaka-district': { x: 235, y: 265, nameBn: 'ঢাকা মহানগর' },
-  gazipur: { x: 240, y: 228, nameBn: 'গাজীপুর' },
-  narayanganj: { x: 265, y: 280, nameBn: 'নারায়ণগঞ্জ' },
-  tangail: { x: 195, y: 215, nameBn: 'টাঙ্গাইল' },
-  manikganj: { x: 200, y: 260, nameBn: 'মানিকগঞ্জ' },
-  narsingdi: { x: 280, y: 240, nameBn: 'নরসিংদী' },
-  faridpur: { x: 195, y: 300, nameBn: 'ফরিদপুর' },
-
-  // বরিশাল বিভাগ
-  bhola: { x: 275, y: 430, nameBn: 'ভোলা' },
-  'barisal-district': { x: 240, y: 395, nameBn: 'বরিশাল জেলা' },
-  pirojpur: { x: 215, y: 420, nameBn: 'পিরোজপুর' },
-  patuakhali: { x: 245, y: 465, nameBn: 'পটুয়াখালী' },
-
-  // চট্টগ্রাম বিভাগ
-  'chittagong-district': { x: 375, y: 415, nameBn: 'চট্টগ্রাম জেলা' },
-  coxsbazar: { x: 410, y: 520, nameBn: 'কক্সবাজার' },
-  comilla: { x: 330, y: 300, nameBn: 'কুমিল্লা' },
-  brahmanbaria: { x: 325, y: 255, nameBn: 'ব্রাহ্মণবাড়িয়া' },
-
-  // সিলেট বিভাগ
-  'sylhet-district': { x: 360, y: 175, nameBn: 'সিলেট জেলা' },
-  moulvibazar: { x: 365, y: 215, nameBn: 'মৌলভীবাজার' },
-
-  // রাজশাহী বিভাগ
-  'rajshahi-district': { x: 100, y: 215, nameBn: 'রাজশাহী জেলা' },
-  bogra: { x: 135, y: 180, nameBn: 'বগুড়া' },
-
-  // রংপুর বিভাগ
-  'rangpur-district': { x: 125, y: 80, nameBn: 'রংপুর জেলা' },
-  dinajpur: { x: 85, y: 95, nameBn: 'দিনাজপুর' },
-
-  // খুলনা বিভাগ
-  'khulna-district': { x: 145, y: 385, nameBn: 'খুলনা জেলা' },
-  jessore: { x: 125, y: 340, nameBn: 'যশোর' },
-
-  // ময়মনসিংহ বিভাগ
-  'mymensingh-district': { x: 235, y: 155, nameBn: 'ময়মনসিংহ জেলা' },
-};
-
-// Upazilas of Munshiganj & Bhola (for Level 3 drill-down)
+// Precise upazila coordinates calculated from authentic geographic survey
 const UPAZILA_COORDS: Record<string, { x: number; y: number; nameBn: string; rating: number }> = {
-  // মুন্সিগঞ্জ
-  sirajdikhan: { x: 235, y: 295, nameBn: 'সিরাজদিখান', rating: 4.9 },
-  'munshiganj-sadar': { x: 275, y: 320, nameBn: 'মুন্সিগঞ্জ সদর', rating: 4.8 },
-  sreenagar: { x: 210, y: 315, nameBn: 'শ্রীনগর', rating: 4.8 },
-  tongibari: { x: 255, y: 335, nameBn: 'টংগিবাড়ী', rating: 4.7 },
-  lohajang: { x: 220, y: 350, nameBn: 'লৌহজং', rating: 4.8 },
-  gazaria: { x: 295, y: 300, nameBn: 'গজারিয়া', rating: 4.7 },
+  // মুন্সিগঞ্জ উপজেলাসমূহ
+  sirajdikhan: { x: 252.6, y: 349.3, nameBn: 'সিরাজদিখান', rating: 4.9 },
+  sreenagar: { x: 243.5, y: 355.9, nameBn: 'শ্রীনগর', rating: 4.8 },
+  lohajang: { x: 248.5, y: 363.6, nameBn: 'লৌহজং', rating: 4.8 },
+  tongibari: { x: 261.6, y: 359.2, nameBn: 'টংগিবাড়ী', rating: 4.7 },
+  'munshiganj-sadar': { x: 268.7, y: 353.7, nameBn: 'মুন্সিগঞ্জ সদর', rating: 4.8 },
+  gazaria: { x: 276.7, y: 355.9, nameBn: 'গজারিয়া', rating: 4.7 },
 
-  // ভোলা
-  'char-fasson': { x: 285, y: 475, nameBn: 'চরফ্যাশন', rating: 4.9 },
-  'bhola-sadar': { x: 270, y: 410, nameBn: 'ভোলা সদর', rating: 4.8 },
-  borhanuddin: { x: 275, y: 435, nameBn: 'বোরহানউদ্দিন', rating: 4.8 },
-  lalmohan: { x: 280, y: 455, nameBn: 'লালমোহন', rating: 4.7 },
-  daulatkhan: { x: 290, y: 415, nameBn: 'দৌলতখান', rating: 4.7 },
-  tazumuddin: { x: 295, y: 440, nameBn: 'তজুমদ্দিন', rating: 4.6 },
-  manpura: { x: 310, y: 470, nameBn: 'মনপুরা', rating: 4.7 },
+  // ভোলা উপজেলাসমূহ
+  'bhola-sadar': { x: 280.7, y: 449.2, nameBn: 'ভোলা সদর', rating: 4.8 },
+  daulatkhan: { x: 287.8, y: 458.0, nameBn: 'দৌলতখান', rating: 4.7 },
+  borhanuddin: { x: 287.8, y: 470.1, nameBn: 'বোরহানউদ্দিন', rating: 4.8 },
+  tazumuddin: { x: 299.9, y: 477.8, nameBn: 'তজুমদ্দিন', rating: 4.6 },
+  lalmohan: { x: 288.8, y: 487.6, nameBn: 'লালমোহন', rating: 4.7 },
+  'char-fasson': { x: 286.8, y: 504.1, nameBn: 'চরফ্যাশন', rating: 4.9 },
+  manpura: { x: 313.9, y: 492.0, nameBn: 'মনপুরা', rating: 4.7 },
 };
 
 export default function BangladeshVectorMap({
@@ -153,123 +74,290 @@ export default function BangladeshVectorMap({
   onSelectMadrasa,
   onResetView,
 }: BangladeshVectorMapProps) {
+  const { lang } = useLanguage();
+  const isEn = lang === 'en';
   const [hoveredDivision, setHoveredDivision] = useState<string | null>(null);
+  const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null);
+  const [zoomOffset, setZoomOffset] = useState(0);
 
-  // Compute ViewBox based on drill-down level
-  const viewBox = React.useMemo(() => {
-    if (selectedUpazila) {
-      const up = UPAZILA_COORDS[selectedUpazila.id];
-      if (up) {
-        return `${up.x - 70} ${up.y - 70} 140 140`;
-      }
-    }
+  // Compute ViewBox based on drill-down level with smooth transitions
+  const viewBox = useMemo(() => {
+    // Level 3 & 4: Upazila / Selected District
     if (selectedDistrict) {
-      const dist = DISTRICT_COORDS[selectedDistrict.id];
-      if (dist) {
-        return `${dist.x - 85} ${dist.y - 85} 170 170`;
+      const distPath = OFFICIAL_DISTRICT_PATHS[selectedDistrict.id];
+      if (distPath && distPath.bbox) {
+        const [bx, by, bw, bh] = distPath.bbox;
+        const padX = Math.max(bw * 0.35, 12);
+        const padY = Math.max(bh * 0.35, 12);
+        const z = zoomOffset * 5;
+        return `${bx - padX + z} ${by - padY + z} ${bw + padX * 2 - z * 2} ${bh + padY * 2 - z * 2}`;
+      }
+      // Munshiganj fallback
+      if (selectedDistrict.id === 'munshiganj') {
+        return `225 335 70 45`;
+      }
+      // Bhola fallback
+      if (selectedDistrict.id === 'bhola') {
+        return `255 425 75 125`;
       }
     }
+
+    // Level 2: Division
     if (selectedDivision) {
-      const divPath = DIVISION_PATHS[selectedDivision.id];
-      if (divPath) {
-        return `${divPath.labelX - 110} ${divPath.labelY - 110} 220 220`;
+      const divPath = OFFICIAL_DIVISION_PATHS[selectedDivision.id];
+      if (divPath && divPath.bbox) {
+        const [bx, by, bw, bh] = divPath.bbox;
+        const padX = Math.max(bw * 0.18, 15);
+        const padY = Math.max(bh * 0.18, 15);
+        const z = zoomOffset * 10;
+        return `${bx - padX + z} ${by - padY + z} ${bw + padX * 2 - z * 2} ${bh + padY * 2 - z * 2}`;
       }
     }
-    // Default Whole Bangladesh
-    return '15 0 470 615';
-  }, [selectedDivision, selectedDistrict, selectedUpazila]);
+
+    // Level 1: Whole Bangladesh (Bangladesh bbox is [15, 15, 471, 664])
+    const z = zoomOffset * 15;
+    return `${0 + z} ${0 + z} ${500 - z * 2} ${700 - z * 2}`;
+  }, [selectedDivision, selectedDistrict, zoomOffset]);
+
+  // Districts belonging to the currently selected division
+  const activeDivisionDistricts = useMemo(() => {
+    if (!selectedDivision) return [];
+    return Object.values(OFFICIAL_DISTRICT_PATHS).filter(
+      (d) => d.divisionId === selectedDivision.id
+    );
+  }, [selectedDivision]);
 
   return (
-    <div className="relative w-full overflow-hidden rounded-2xl bg-[#eef7f2] border-2 border-[#006a4e]/20 shadow-md">
-      {/* Background Soft Grid (matching User's uploaded Image 1) */}
+    <div
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+        minHeight: '360px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        background: 'radial-gradient(circle at 50% 50%, #044329 0%, #022c1b 50%, #011a10 100%)',
+        color: 'white',
+      }}
+    >
+      {/* Top Bar Floating Status */}
+      <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none z-20">
+        <div className="flex items-center gap-1.5 rounded-xl bg-slate-950/85 backdrop-blur-md px-3 py-1.5 text-xs font-bold text-emerald-100 shadow-md border border-emerald-500/30 pointer-events-auto">
+          {/* Pulsing Green/Red Badge */}
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75"></span>
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-red-600"></span>
+          </span>
+          <span className="truncate">
+            {currentLevel === 'bangladesh' && '🇧🇩 অফিশিয়াল বাংলাদেশ মানচিত্র (বিভাগে ক্লিক করুন)'}
+            {currentLevel === 'division' && `🏛️ ${selectedDivision?.nameBn} বিভাগ (জেলায় ক্লিক করুন)`}
+            {currentLevel === 'district' && `📍 ${selectedDistrict?.nameBn} জেলা (উপজেলায় ক্লিক করুন)`}
+            {currentLevel === 'upazila' && `🕌 ${selectedUpazila?.nameBn} উপজেলা`}
+          </span>
+        </div>
+
+        {/* Back to Bangladesh Reset Button */}
+        {currentLevel !== 'bangladesh' && (
+          <button
+            type="button"
+            onClick={() => {
+              setZoomOffset(0);
+              onResetView();
+            }}
+            className="pointer-events-auto rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 px-3 py-1.5 text-xs font-black text-white shadow-lg flex items-center gap-1.5 transition-all active:scale-95 border border-red-400/40"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span className="hidden xs:inline">সমগ্র বাংলাদেশ</span>
+          </button>
+        )}
+      </div>
+
+      {/* Floating Zoom & Compass Controls */}
+      <div className="absolute right-2.5 bottom-3 flex flex-col gap-1.5 z-20">
+        <button
+          type="button"
+          onClick={() => setZoomOffset((prev) => Math.min(prev + 1, 4))}
+          title="জুম ইন"
+          className="h-8 w-8 rounded-lg bg-slate-950/80 backdrop-blur-md border border-emerald-500/30 text-emerald-200 hover:bg-emerald-800/60 flex items-center justify-center shadow-md active:scale-90 transition-all"
+        >
+          <ZoomIn className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setZoomOffset((prev) => Math.max(prev - 1, -2))}
+          title="জুম আউট"
+          className="h-8 w-8 rounded-lg bg-slate-950/80 backdrop-blur-md border border-emerald-500/30 text-emerald-200 hover:bg-emerald-800/60 flex items-center justify-center shadow-md active:scale-90 transition-all"
+        >
+          <ZoomOut className="h-4 w-4" />
+        </button>
+      </div>
+
+      {/* Bottom Left: Bangladeshi National Emblem & North Compass */}
+      <div className="absolute bottom-3 left-3 flex items-center gap-2 z-20 pointer-events-none">
+        <div className="flex items-center gap-1.5 rounded-lg bg-slate-950/80 backdrop-blur-md px-2.5 py-1 text-[11px] font-bold text-emerald-300 border border-emerald-500/30 shadow-sm">
+          <Navigation className="h-3.5 w-3.5 text-red-500 rotate-[-45deg]" />
+          <span>উত্তর (North)</span>
+        </div>
+        <div className="hidden sm:flex items-center gap-1 rounded-lg bg-slate-950/80 backdrop-blur-md px-2 py-1 text-[10px] font-semibold text-slate-300 border border-emerald-500/20">
+          <span>বিভাগ: ৮টি</span>
+          <span className="text-emerald-500">•</span>
+          <span>জেলা: ৬৪টি</span>
+        </div>
+      </div>
+
+      {/* SVG Canvas with Bangladesh National (Red & Green) Theme */}
       <svg
-        className="w-full h-full min-h-[380px] max-h-[580px] select-none transition-all duration-700 ease-out"
+        style={{
+          width: '100%',
+          height: '100%',
+          maxHeight: '94vh',
+          userSelect: 'none',
+          transition: 'all 0.7s ease-out',
+        }}
         viewBox={viewBox}
         preserveAspectRatio="xMidYMid meet"
       >
         <defs>
-          {/* Subtle Grid Pattern from User Reference */}
-          <pattern id="mint-grid" width="24" height="24" patternUnits="userSpaceOnUse">
-            <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#d5ede0" strokeWidth="0.8" />
+          {/* Subtle Islamic / Geographic Mesh Pattern */}
+          <pattern id="national-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+            <path d="M 30 0 L 0 0 0 30" fill="none" stroke="#065f46" strokeWidth="0.5" strokeOpacity="0.35" />
           </pattern>
 
-          {/* Glowing pulse animation */}
-          <radialGradient id="pulse-grad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#10b981" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#006a4e" stopOpacity="0" />
+          {/* National Flag Red Sun Radial Glow */}
+          <radialGradient id="national-red-sun" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stopColor="#f43f5e" stopOpacity="0.85" />
+            <stop offset="45%" stopColor="#dc2626" stopOpacity="0.70" />
+            <stop offset="85%" stopColor="#991b1b" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#7f1d1d" stopOpacity="0" />
           </radialGradient>
+
+          {/* Lush Green Division Gradient */}
+          <linearGradient id="division-grad-normal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#065f46" />
+            <stop offset="100%" stopColor="#047857" />
+          </linearGradient>
+
+          <linearGradient id="division-grad-hover" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#059669" />
+            <stop offset="100%" stopColor="#10b981" />
+          </linearGradient>
+
+          <linearGradient id="division-grad-selected" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#047857" />
+            <stop offset="100%" stopColor="#065f46" />
+          </linearGradient>
+
+          {/* District Highlights */}
+          <linearGradient id="district-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#047857" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#065f46" stopOpacity="0.8" />
+          </linearGradient>
+          <linearGradient id="district-grad-selected" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#d97706" />
+            <stop offset="100%" stopColor="#b45309" />
+          </linearGradient>
+
+          {/* Drop Shadow Filter */}
+          <filter id="map-glow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="#000000" floodOpacity="0.6" />
+          </filter>
         </defs>
 
-        {/* Grid Background */}
-        <rect x="-200" y="-200" width="1000" height="1000" fill="url(#mint-grid)" />
+        {/* Mesh Background */}
+        <rect x="-300" y="-300" width="1200" height="1300" fill="url(#national-grid)" />
 
         {/* =========================================================
-            LEVEL 1: 8 DIVISIONS (Pure Official Bangladesh Vector Map)
+            BANGLADESH NATIONAL FLAG RED SUN (ICONIC RED CIRCLE)
+            Positioned artistically behind the geography
+           ========================================================= */}
+        {currentLevel === 'bangladesh' && (
+          <g className="transition-opacity duration-700">
+            {/* Outer Radiant Glow */}
+            <circle cx="230" cy="360" r="140" fill="url(#national-red-sun)" pointerEvents="none" />
+            {/* Central Pure Red Core representing the National Flag */}
+            <circle cx="230" cy="360" r="95" fill="#dc2626" fillOpacity="0.55" pointerEvents="none" />
+          </g>
+        )}
+
+        {/* =========================================================
+            LEVEL 1: 8 DIVISIONS (Authentic Survey Geographic Contours)
            ========================================================= */}
         {divisions.map((div) => {
-          const pathInfo = DIVISION_PATHS[div.id];
+          const pathInfo = OFFICIAL_DIVISION_PATHS[div.id];
           if (!pathInfo) return null;
 
           const isSelected = selectedDivision?.id === div.id;
           const isHovered = hoveredDivision === div.id;
           const isDimmed = selectedDivision && !isSelected;
 
-          // Theme colors from User's uploaded image (teal/mint #c8e6d9 & dark green #006a4e)
-          const fillColor = isSelected
-            ? '#a7f3d0'
+          const fill = isSelected
+            ? 'url(#division-grad-selected)'
             : isHovered
-            ? '#bbf7d0'
+            ? 'url(#division-grad-hover)'
             : isDimmed
-            ? '#e2ece6'
-            : '#c8e6d9';
+            ? '#033320'
+            : 'url(#division-grad-normal)';
 
-          const strokeColor = isSelected ? '#047857' : '#006a4e';
-          const strokeWidth = isSelected ? 3.5 : 2.2;
+          const stroke = isSelected
+            ? '#34d399'
+            : isHovered
+            ? '#fef08a'
+            : isDimmed
+            ? '#05442b'
+            : '#10b981';
+
+          const strokeWidth = isSelected ? 2.5 : isHovered ? 2.0 : 1.2;
 
           return (
             <g
               key={div.id}
-              className="cursor-pointer transition-all duration-300"
+              className="cursor-pointer transition-all duration-300 group"
               onClick={() => onSelectDivision(div.id)}
               onMouseEnter={() => setHoveredDivision(div.id)}
               onMouseLeave={() => setHoveredDivision(null)}
+              opacity={isDimmed ? 0.4 : 1}
             >
-              {/* Division Polygon */}
+              {/* Real Polygon Boundary */}
               <path
                 d={pathInfo.d}
-                fill={fillColor}
-                stroke={strokeColor}
+                fill={fill}
+                stroke={stroke}
                 strokeWidth={strokeWidth}
                 strokeLinejoin="round"
                 strokeLinecap="round"
+                filter="url(#map-glow)"
                 className="transition-colors duration-200"
               />
 
-              {/* Division Label (Matching User's "এলাকা" text style) */}
-              {!selectedDistrict && (
-                <g transform={`translate(${pathInfo.labelX}, ${pathInfo.labelY})`}>
-                  {/* Text Badge */}
+              {/* Division Label Badge (Visible on Level 1 Whole Bangladesh) */}
+              {currentLevel === 'bangladesh' && (
+                <g
+                  transform={`translate(${pathInfo.labelX}, ${pathInfo.labelY})`}
+                  className="pointer-events-none transition-transform duration-200"
+                >
                   <rect
                     x="-42"
-                    y="-15"
+                    y="-14"
                     width="84"
                     height="28"
                     rx="14"
-                    fill={isSelected ? '#065f46' : '#ffffff'}
-                    stroke={strokeColor}
-                    strokeWidth="1.5"
-                    className="shadow-sm"
+                    fill={isHovered ? '#fef08a' : '#022c1b'}
+                    stroke={isHovered ? '#ca8a04' : '#10b981'}
+                    strokeWidth="1.8"
+                    filter="url(#map-glow)"
                   />
                   <text
                     x="0"
-                    y="3"
+                    y="4.5"
                     textAnchor="middle"
-                    fill={isSelected ? '#ffffff' : '#004d38'}
-                    fontSize="11.5"
+                    fill={isHovered ? '#14532d' : '#ecfdf5'}
+                    fontSize="13"
                     fontWeight="800"
-                    fontFamily="Hind Siliguri, sans-serif"
+                    fontFamily="'Hind Siliguri', 'Inter', sans-serif"
                   >
-                    {div.nameBn}
+                    {isEn ? div.name : div.nameBn}
                   </text>
                 </g>
               )}
@@ -278,66 +366,85 @@ export default function BangladeshVectorMap({
         })}
 
         {/* =========================================================
-            LEVEL 2: DISTRICTS (Inside Selected Division e.g. মুন্সিগঞ্জ)
+            LEVEL 2: DISTRICTS (Inside Selected Division e.g. ঢাকা or বরিশাল)
            ========================================================= */}
         {selectedDivision &&
           !selectedUpazila &&
-          selectedDivision.districts.map((dist) => {
-            const coord = DISTRICT_COORDS[dist.id];
-            if (!coord) return null;
-
-            const isSelected = selectedDistrict?.id === dist.id;
+          activeDivisionDistricts.map((distPath) => {
+            const isSelected = selectedDistrict?.id === distPath.id;
+            const isHovered = hoveredDistrict === distPath.id;
+            const distMeta = selectedDivision.districts.find(
+              (d) => d.id === distPath.id || distPath.nameEn.toLowerCase().includes(d.name.toLowerCase())
+            );
 
             return (
               <g
-                key={dist.id}
-                className="cursor-pointer animate-fadeIn"
+                key={distPath.id}
+                className="cursor-pointer transition-all duration-300"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onSelectDistrict(dist.id);
+                  onSelectDistrict(distPath.id);
                 }}
+                onMouseEnter={() => setHoveredDistrict(distPath.id)}
+                onMouseLeave={() => setHoveredDistrict(null)}
               >
-                {/* District Pin Dot */}
-                <circle
-                  cx={coord.x}
-                  cy={coord.y}
-                  r={isSelected ? '9' : '6'}
-                  fill={isSelected ? '#d97706' : '#0284c7'}
-                  stroke="#ffffff"
-                  strokeWidth="2"
-                  className="shadow-sm"
+                {/* District Authentic Geographic Contour */}
+                <path
+                  d={distPath.d}
+                  fill={
+                    isSelected
+                      ? 'url(#district-grad-selected)'
+                      : isHovered
+                      ? '#0d9488'
+                      : '#064e3b'
+                  }
+                  stroke={isSelected ? '#fef08a' : '#34d399'}
+                  strokeWidth={isSelected ? 1.8 : 0.9}
+                  strokeDasharray={isSelected ? 'none' : '2,1'}
+                  strokeLinejoin="round"
+                  className="transition-colors duration-200"
                 />
 
-                {/* District Label Tag */}
-                <g transform={`translate(${coord.x}, ${coord.y - 14})`}>
-                  <rect
-                    x="-34"
-                    y="-11"
-                    width="68"
-                    height="20"
-                    rx="10"
-                    fill={isSelected ? '#d97706' : '#0284c7'}
+                {/* District Interactive Center Marker & Name Badge */}
+                <g transform={`translate(${distPath.labelX}, ${distPath.labelY})`}>
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r={isSelected ? '5' : '3.5'}
+                    fill={isSelected ? '#f59e0b' : '#38bdf8'}
                     stroke="#ffffff"
                     strokeWidth="1.2"
                   />
-                  <text
-                    x="0"
-                    y="3"
-                    textAnchor="middle"
-                    fill="#ffffff"
-                    fontSize="9.5"
-                    fontWeight="800"
-                    fontFamily="Hind Siliguri, sans-serif"
-                  >
-                    {dist.nameBn}
-                  </text>
+                  <g transform="translate(0, -10)">
+                    <rect
+                      x="-32"
+                      y="-9"
+                      width="64"
+                      height="18"
+                      rx="9"
+                      fill={isSelected ? '#b45309' : '#0f172a'}
+                      stroke={isSelected ? '#fef08a' : '#38bdf8'}
+                      strokeWidth="1.2"
+                    />
+                    <text
+                      x="0"
+                      y="3"
+                      textAnchor="middle"
+                      fill="#ffffff"
+                      fontSize="9"
+                      fontWeight="800"
+                      fontFamily="'Hind Siliguri', 'Inter', sans-serif"
+                    >
+                      {isEn ? (distMeta?.name || distPath.nameEn) : (distMeta?.nameBn || distPath.nameEn)}
+                    </text>
+                  </g>
                 </g>
               </g>
             );
           })}
 
         {/* =========================================================
-            LEVEL 3: UPAZILAS (Inside Selected District e.g. সিরাজদিখান)
+            LEVEL 3: UPAZILAS (Inside Selected District e.g. মুন্সিগঞ্জ or ভোলা)
            ========================================================= */}
         {selectedDistrict &&
           selectedDistrict.upazilas.map((up) => {
@@ -349,83 +456,65 @@ export default function BangladeshVectorMap({
             return (
               <g
                 key={up.id}
-                className="cursor-pointer animate-fadeIn"
+                className="cursor-pointer"
                 onClick={(e) => {
                   e.stopPropagation();
                   onSelectUpazila(up.id);
                 }}
               >
-                {/* Upazila Pulsing Pin */}
+                {/* Pulsing Target Radar Circle */}
+                {isSelected && (
+                  <circle
+                    cx={coord.x}
+                    cy={coord.y}
+                    r="12"
+                    fill="none"
+                    stroke="#f43f5e"
+                    strokeWidth="1.2"
+                    strokeOpacity="0.8"
+                    className="animate-ping"
+                  />
+                )}
+
+                {/* Upazila Pin Point */}
                 <circle
                   cx={coord.x}
                   cy={coord.y}
-                  r={isSelected ? '14' : '9'}
+                  r={isSelected ? '6' : '4'}
                   fill={isSelected ? '#dc2626' : '#10b981'}
                   stroke="#ffffff"
-                  strokeWidth="2.5"
+                  strokeWidth="1.5"
                 />
 
-                {/* Label Tag with Rating */}
-                <g transform={`translate(${coord.x}, ${coord.y - 16})`}>
+                {/* Upazila Name and Rating Pill */}
+                <g transform={`translate(${coord.x}, ${coord.y - 9})`}>
                   <rect
-                    x="-42"
-                    y="-12"
-                    width="84"
-                    height="22"
-                    rx="11"
-                    fill={isSelected ? '#dc2626' : '#047857'}
-                    stroke="#ffffff"
-                    strokeWidth="1.5"
+                    x="-34"
+                    y="-10"
+                    width="68"
+                    height="20"
+                    rx="10"
+                    fill={isSelected ? '#dc2626' : '#064e3b'}
+                    stroke={isSelected ? '#fef08a' : '#10b981'}
+                    strokeWidth="1.2"
+                    filter="url(#map-glow)"
                   />
                   <text
                     x="0"
-                    y="3"
+                    y="3.5"
                     textAnchor="middle"
                     fill="#ffffff"
-                    fontSize="9.5"
-                    fontWeight="900"
-                    fontFamily="Hind Siliguri, sans-serif"
+                    fontSize="8.5"
+                    fontWeight="800"
+                    fontFamily="'Hind Siliguri', 'Inter', sans-serif"
                   >
-                    {up.nameBn} ★{up.rating}
+                    {isEn ? up.name : up.nameBn} ★{up.rating}
                   </text>
                 </g>
               </g>
             );
           })}
       </svg>
-
-      {/* Top Floating Indicator */}
-      <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
-        <div className="flex items-center gap-1.5 rounded-xl bg-white/95 px-3 py-1.5 text-xs font-black text-emerald-950 shadow-md border border-emerald-300">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-600"></span>
-          </span>
-          <span>
-            {currentLevel === 'bangladesh' && '🇧🇩 আসল বাংলাদেশ মানচিত্র (বিভাগে ট্যাপ করুন)'}
-            {currentLevel === 'division' && `🏛️ ${selectedDivision?.nameBn} বিভাগ (জেলায় ট্যাপ করুন)`}
-            {currentLevel === 'district' && `📍 ${selectedDistrict?.nameBn} জেলা (উপজেলায় ট্যাপ করুন)`}
-            {currentLevel === 'upazila' && `🕌 ${selectedUpazila?.nameBn} উপজেলা`}
-          </span>
-        </div>
-
-        {currentLevel !== 'bangladesh' && (
-          <button
-            type="button"
-            onClick={onResetView}
-            className="w-fit rounded-lg bg-emerald-700 px-2.5 py-1 text-[11px] font-extrabold text-white shadow-sm hover:bg-emerald-800 flex items-center gap-1 transition-all"
-          >
-            <RotateCcw className="h-3 w-3" />
-            সমগ্র বাংলাদেশে ফিরুন
-          </button>
-        )}
-      </div>
-
-      {/* Compass Badge Bottom Left */}
-      <div className="absolute bottom-2.5 left-3 flex items-center gap-1 rounded-lg bg-white/90 px-2 py-0.5 text-[10px] font-bold text-slate-700 shadow-xs border border-slate-200">
-        <Navigation className="h-3 w-3 text-red-600 rotate-[-45deg]" />
-        <span>উত্তরমুখী (North)</span>
-      </div>
     </div>
   );
 }

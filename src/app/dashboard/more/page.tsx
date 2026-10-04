@@ -1,16 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { useLanguage } from '@/lib/language-store';
 
 export default function MoreMenuPage() {
+  const { lang, t } = useLanguage();
+  const isEn = lang === 'en';
+
   const menuSections = [
     {
-      title: 'প্রশাসন ও অ্যাকাডেমিক',
+      title: isEn ? 'Administration & Academics' : 'প্রশাসন ও অ্যাকাডেমিক',
       items: [
         {
           href: '/dashboard/classes',
-          label: 'শ্রেণি ও জামাত ব্যবস্থাপনা',
-          desc: 'নতুন জামাত ও শ্রেণি এন্ট্রি, শিক্ষক দায়িত্ব ও শ্রেণি তালিকা',
+          label: isEn ? 'Class & Jamat Management' : 'শ্রেণি ও জামাত ব্যবস্থাপনা',
+          desc: isEn ? 'Register new classes, assign teachers, and manage sections' : 'নতুন জামাত ও শ্রেণি এন্ট্রি, শিক্ষক দায়িত্ব ও শ্রেণি তালিকা',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
@@ -23,8 +27,8 @@ export default function MoreMenuPage() {
         },
         {
           href: '/dashboard/teachers',
-          label: 'উস্তাদ ও শিক্ষক ডিরেক্টরি',
-          desc: 'শিক্ষক তালিকা, দায়িত্বপ্রাপ্ত জামাত ও মাসিক ভাতা',
+          label: isEn ? 'Faculty & Teacher Directory' : 'উস্তাদ ও শিক্ষক ডিরেক্টরি',
+          desc: isEn ? 'Teacher roster, assigned departments, and monthly allowances' : 'শিক্ষক তালিকা, দায়িত্বপ্রাপ্ত জামাত ও মাসিক ভাতা',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
@@ -36,8 +40,8 @@ export default function MoreMenuPage() {
         },
         {
           href: '/dashboard/results',
-          label: 'পরীক্ষা ও ফলাফল মেধা তালিকা',
-          desc: 'কওমি ও আলিয়া গ্রেডিং, মার্কশিট প্রিন্ট ও হোয়াটসঅ্যাপে রেজাল্ট',
+          label: isEn ? 'Examinations & Merit List' : 'পরীক্ষা ও ফলাফল মেধা তালিকা',
+          desc: isEn ? 'Dual grading, marksheet printing, and WhatsApp result delivery' : 'কওমি ও আলিয়া গ্রেডিং, মার্কশিট প্রিন্ট ও হোয়াটসঅ্যাপে রেজাল্ট',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <line x1="18" y1="20" x2="18" y2="10" />
@@ -50,8 +54,8 @@ export default function MoreMenuPage() {
         },
         {
           href: '/dashboard/notice',
-          label: 'জরুরি নোটিশ ও ব্রডকাস্ট সেন্টার',
-          desc: 'আকস্মিক ছুটি, পরীক্ষার তারিখ ও ফি তাগাদার ১-ক্লিক ঘোষণা',
+          label: isEn ? 'Notice & Emergency Broadcast' : 'জরুরি নোটিশ ও ব্রডকাস্ট সেন্টার',
+          desc: isEn ? 'Emergency holidays, exams, and tuition reminders via 1-click messaging' : 'আকস্মিক ছুটি, পরীক্ষার তারিখ ও ফি তাগাদার ১-ক্লিক ঘোষণা',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ea580c" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -63,8 +67,8 @@ export default function MoreMenuPage() {
         },
         {
           href: '/dashboard/automation',
-          label: 'হোয়াটসঅ্যাপ ও মেসেঞ্জার অভিভাবক হাব',
-          desc: 'অনুপস্থিতি অ্যালার্ট, পরীক্ষার ফলাফল ও ফি রিমাইন্ডার স্বয়ংক্রিয় নোটিফিকেশন',
+          label: isEn ? 'Parent Notification & Messaging Hub' : 'হোয়াটসঅ্যাপ ও মেসেঞ্জার অভিভাবক হাব',
+          desc: isEn ? 'Automated absence alerts, exam results, and payment reminders' : 'অনুপস্থিতি অ্যালার্ট, পরীক্ষার ফলাফল ও ফি রিমাইন্ডার স্বয়ংক্রিয় নোটিফিকেশন',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
@@ -75,8 +79,8 @@ export default function MoreMenuPage() {
         },
         {
           href: '/dashboard/hifz',
-          label: 'হিফজুল কুরআন দৈনিক ট্র্যাকার',
-          desc: 'সবক, সবকি ও আমুখতা/মনজিল ট্র্যাকিং ও ৩০ পারা অগ্রগতি',
+          label: isEn ? 'Hifzul Quran Daily Tracker' : 'হিফজুল কুরআন দৈনিক ট্র্যাকার',
+          desc: isEn ? 'Sabaq, Sabqi, and Manzil progression for 1-30 Paras' : 'সবক, সবকি ও আমুখতা/মনজিল ট্র্যাকিং ও ৩০ পারা অগ্রগতি',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
@@ -88,8 +92,8 @@ export default function MoreMenuPage() {
         },
         {
           href: '/dashboard/syllabus',
-          label: 'শ্রেণি, সিলেবাস ও কিতাব ব্যবস্থাপনা',
-          desc: 'নতুন জামাত/শ্রেণি এন্ট্রি, কিতাবের তালিকা ও ১-ট্যাপ সামারি',
+          label: isEn ? 'Curriculum & Kitab Management' : 'শ্রেণি, সিলেবাস ও কিতাব ব্যবস্থাপনা',
+          desc: isEn ? 'Comprehensive book syllabus, summaries, and learning outcomes' : 'নতুন জামাত/শ্রেণি এন্ট্রি, কিতাবের তালিকা ও ১-ট্যাপ সামারি',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
@@ -102,12 +106,12 @@ export default function MoreMenuPage() {
       ],
     },
     {
-      title: 'জাতীয় মানচিত্র ও স্বচ্ছ অনুদান',
+      title: isEn ? 'National Maps & Transparency' : 'জাতীয় মানচিত্র ও স্বচ্ছ অনুদান',
       items: [
         {
           href: '/explore',
-          label: 'উন্মুক্ত প্রতিষ্ঠান ও কারিকুলাম পরিদর্শন',
-          desc: 'কোথায় কী পড়ানো হয় ও প্রতিষ্ঠানের ভালো দিকগুলোর ডিরেক্টরি',
+          label: isEn ? 'Open Directory & Curriculum Explorer' : 'উন্মুক্ত প্রতিষ্ঠান ও কারিকুলাম পরিদর্শন',
+          desc: isEn ? 'Discover curricula and distinct qualities of institutions nationwide' : 'কোথায় কী পড়ানো হয় ও প্রতিষ্ঠানের ভালো দিকগুলোর ডিরেক্টরি',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="8" />
@@ -119,8 +123,8 @@ export default function MoreMenuPage() {
         },
         {
           href: '/dashboard/map',
-          label: 'জাতীয় ও আন্তর্জাতিক মানচিত্র',
-          desc: 'বাংলাদেশ, ৮ বিভাগ, ৬৪ জেলা ও উপজেলার মাদরাসা ডিরেক্টরি',
+          label: isEn ? 'National Geo Map & Explorer' : 'জাতীয় ও আন্তর্জাতিক মানচিত্র',
+          desc: isEn ? 'Interactive drill-down of Bangladesh across 8 divisions & 64 districts' : 'বাংলাদেশ, ৮ বিভাগ, ৬৪ জেলা ও উপজেলার মাদরাসা ডিরেক্টরি',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
@@ -133,8 +137,8 @@ export default function MoreMenuPage() {
         },
         {
           href: '/dashboard/competition',
-          label: 'সুস্থ প্রতিযোগিতা, রেটিং ও ব্লু-টিক',
-          desc: 'জাতীয় ও জেলা র‍্যাংকিং, স্টার রেটিং ও অর্জিত ব্যাজ গ্যালারি',
+          label: isEn ? 'Excellence Ranking & Verification' : 'সুস্থ প্রতিযোগিতা, রেটিং ও ব্লু-টিক',
+          desc: isEn ? 'National & district leaderboards, star ratings, and badge gallery' : 'জাতীয় ও জেলা র‍্যাংকিং, স্টার রেটিং ও অর্জিত ব্যাজ গ্যালারি',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#2563eb">
               <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#ffffff" />
@@ -146,8 +150,8 @@ export default function MoreMenuPage() {
         },
         {
           href: '/donor',
-          label: 'পাবলিক ডোনার ইমপ্যাক্ট পোর্টাল',
-          desc: 'দাতার টাকার বাস্তব ব্যবহার, লাইভ ফলাফল ও ডিজিটাল রসিদ',
+          label: isEn ? 'Public Donor Impact Portal' : 'পাবলিক ডোনার ইমপ্যাক্ট পোর্টাল',
+          desc: isEn ? 'Track donation impact, real-time outcomes, and digital receipts' : 'দাতার টাকার বাস্তব ব্যবহার, লাইভ ফলাফল ও ডিজিটাল রসিদ',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
@@ -159,12 +163,12 @@ export default function MoreMenuPage() {
       ],
     },
     {
-      title: 'সেটিংস ও সহায়তা',
+      title: isEn ? 'Settings & Support' : 'সেটিংস ও সহায়তা',
       items: [
         {
           href: '/dashboard/settings',
-          label: 'প্রতিষ্ঠান সেটিংস ও সিলেবাস সুইচ',
-          desc: 'মাদরাসার তথ্য, কওমি/হিফজ/আলিয়া কনফিগ ও ১-ক্লিক ব্যাকআপ',
+          label: isEn ? 'Institution Settings & Curricula' : 'প্রতিষ্ঠান সেটিংস ও সিলেবাস সুইচ',
+          desc: isEn ? 'Institution profile, Qawmi/Hifz/Alia toggles, and 1-click backup' : 'মাদরাসার তথ্য, কওমি/হিফজ/আলিয়া কনফিগ ও ১-ক্লিক ব্যাকআপ',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#475569" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3" />
@@ -176,8 +180,8 @@ export default function MoreMenuPage() {
         },
         {
           href: '/dashboard/guide',
-          label: 'প্রেজেন্টেশন ও ইউজার গাইড শিট',
-          desc: 'সম্পূর্ণ বাংলা ব্যবহারের ম্যানুয়াল ও প্রিন্টযোগ্য গাইড',
+          label: isEn ? 'Presentation & User Guide' : 'প্রেজেন্টেশন ও ইউজার গাইড শিট',
+          desc: isEn ? 'Detailed operational guide and printable manual' : 'সম্পূর্ণ বাংলা ব্যবহারের ম্যানুয়াল ও প্রিন্টযোগ্য গাইড',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0891b2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -191,8 +195,8 @@ export default function MoreMenuPage() {
         },
         {
           href: '/dashboard/ai',
-          label: 'নূর এআই সহকারী (২৪/৭)',
-          desc: 'অ্যাপের যেকোনো বিষয়ে কথা বলে সাহায্য নেওয়ার এআই',
+          label: isEn ? 'Noor AI Assistant (24/7)' : 'নূর এআই সহকারী (২৪/৭)',
+          desc: isEn ? 'Intelligent voice & text assistant for madrasa operations' : 'অ্যাপের যেকোনো বিষয়ে কথা বলে সাহায্য নেওয়ার এআই',
           icon: (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
@@ -210,10 +214,10 @@ export default function MoreMenuPage() {
       {/* Header */}
       <div style={{ marginBottom: '1.25rem' }}>
         <h1 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.375rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.2rem' }}>
-          সকল মডিউল ও অপশন
+          {isEn ? 'All Modules & Navigation' : 'সকল মডিউল ও অপশন'}
         </h1>
         <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.85rem', color: '#64748b' }}>
-          নূরহাব প্ল্যাটফর্মের সকল অতিরিক্ত ফিচার ও ব্যবস্থাপনা মেনু
+          {isEn ? 'Directory of all auxiliary features and administrative services' : 'নূরহাব প্ল্যাটফর্মের সকল অতিরিক্ত ফিচার ও ব্যবস্থাপনা মেনু'}
         </p>
       </div>
 
@@ -299,7 +303,7 @@ export default function MoreMenuPage() {
               <polyline points="16 17 21 12 16 7" />
               <line x1="21" y1="12" x2="9" y2="12" />
             </svg>
-            লগআউট করুন
+            {isEn ? 'Log Out' : 'লগআউট করুন'}
           </Link>
         </div>
       </div>

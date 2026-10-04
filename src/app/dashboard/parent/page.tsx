@@ -2,8 +2,13 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/language-store';
+import { formatNumberByLang } from '@/lib/useCountUp';
 
 export default function ParentPortalPage() {
+  const { lang, t } = useLanguage();
+  const isEn = lang === 'en';
+
   const [paySuccess, setPaySuccess] = useState(false);
   const [showLeaveReqModal, setShowLeaveReqModal] = useState(false);
   const [leaveDays, setLeaveDays] = useState('1');
@@ -13,22 +18,32 @@ export default function ParentPortalPage() {
   // Student Child Profile for Parent
   const child = {
     name: 'মুহাম্মদ আব্দুর রহমান',
+    nameEn: 'Muhammad Abdur Rahman',
     roll: '০১',
+    rollEn: '01',
     admissionNo: 'NH-2026-001',
-    className: 'মিзан (কওমি বিভাগ)',
+    className: 'মিজান (কওমি বিভাগ)',
+    classNameEn: 'Mizan (Qawmi Dept)',
     isBoarding: true,
     attendanceRate: 98,
     todayAttendance: 'উপস্থিত',
+    todayAttendanceEn: 'Present',
     dueFee: 850,
     examResult: {
       exam: 'বার্ষিক পরীক্ষা ২০২৬',
+      examEn: 'Annual Examination 2026',
       grade: 'মুমতাজ (A+)',
+      gradeEn: 'Mumtaz (A+)',
       position: '১ম স্থান',
+      positionEn: '1st Place',
       totalMarks: '৫৬৮ / ৬০০',
+      totalMarksEn: '568 / 600',
     },
     teacherName: 'মাওলানা ইব্রাহিম খলিল (শ্রেণি উস্তাদ)',
+    teacherNameEn: 'Mawlana Ibrahim Khalil (Class Ustad)',
     teacherPhone: '01819876543',
     madrasaName: 'আল-জামিয়া আল-ইসলামিয়া নূরহাব',
+    madrasaNameEn: 'Al-Jamia Al-Islamia NoorHub',
   };
 
   const handlePayFee = () => {
@@ -44,18 +59,18 @@ export default function ParentPortalPage() {
   };
 
   return (
-    <div style={{ padding: '1rem', maxWidth: '44rem', margin: '0 auto' }}>
+    <div style={{ padding: '24px 32px', maxWidth: '1440px', margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#ea580c', background: '#fff7ed', padding: '0.2rem 0.6rem', borderRadius: '999px', border: '1px solid #fed7aa' }}>
-            অভিভাবক পোর্টাল
+          <span style={{ fontSize: '13px', fontWeight: '800', color: '#ea580c', background: '#fff7ed', padding: '4px 12px', borderRadius: '999px', border: '1px solid #fed7aa' }}>
+            {isEn ? 'Parent Portal' : 'অভিভাবক পোর্টাল'}
           </span>
-          <h1 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.375rem', fontWeight: '800', color: '#0f172a', marginTop: '0.35rem' }}>
-            আস-সালামু আলাইকুম, সম্মানিত অভিভাবক
+          <h1 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '26px', fontWeight: '900', color: '#0f172a', margin: '8px 0 4px 0' }}>
+            {isEn ? 'Assalamu Alaikum, Respected Guardian' : 'আস-সালামু আলাইকুম, সম্মানিত অভিভাবক'}
           </h1>
           <p style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.85rem', color: '#64748b' }}>
-            {child.madrasaName}
+            {isEn ? child.madrasaNameEn : child.madrasaName}
           </p>
         </div>
 
@@ -76,7 +91,7 @@ export default function ParentPortalPage() {
             textDecoration: 'none',
           }}
         >
-          মূল ড্যাশবোর্ড
+          {isEn ? '← Main Dashboard' : 'মূল ড্যাশবোর্ড'}
         </Link>
       </div>
 
@@ -84,14 +99,18 @@ export default function ParentPortalPage() {
       {paySuccess && (
         <div className="card fade-in" style={{ padding: '0.875rem 1rem', background: '#f0fdf4', border: '1.5px solid #bbf7d0', color: '#16a34a', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.85rem' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-          বেতন সফলভাবে পরিশোধ করা হয়েছে! ডিজিটাল রসিদ আপনার হোয়াটসঅ্যাপে পাঠানো হয়েছে।
+          {isEn
+            ? 'Tuition fee paid successfully! Digital receipt sent to your WhatsApp.'
+            : 'বেতন সফলভাবে পরিশোধ করা হয়েছে! ডিজিটাল রসিদ আপনার হোয়াটসঅ্যাপে পাঠানো হয়েছে।'}
         </div>
       )}
 
       {leaveSuccess && (
         <div className="card fade-in" style={{ padding: '0.875rem 1rem', background: '#ecfeff', border: '1.5px solid #cffafe', color: '#0891b2', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '600', fontSize: '0.85rem' }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
-          ছুটির আবেদনটি উস্তাদের কাছে পৌঁছেছে এবং তা মঞ্জুর করা হয়েছে।
+          {isEn
+            ? 'Leave application received by Ustad and approved.'
+            : 'ছুটির আবেদনটি উস্তাদের কাছে পৌঁছেছে এবং তা মঞ্জুর করা হয়েছে।'}
         </div>
       )}
 
@@ -114,18 +133,20 @@ export default function ParentPortalPage() {
               flexShrink: 0,
             }}
           >
-            {child.name.split(' ')[1] ? child.name.split(' ')[1][0] : child.name[0]}
+            {(isEn ? child.nameEn[0] : child.name[0])}
           </div>
 
           <div style={{ flex: 1 }}>
             <h2 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.2rem' }}>
-              {child.name}
+              {isEn ? child.nameEn : child.name}
             </h2>
             <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-              রোল: {child.roll} · আইডি: {child.admissionNo}
+              {isEn ? `Roll: ${child.rollEn} · ID: ${child.admissionNo}` : `রোল: ${child.roll} · আইডি: ${child.admissionNo}`}
             </div>
             <div style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: '600', marginTop: '0.15rem' }}>
-              জামাত: {child.className} ({child.isBoarding ? 'আবাসিক' : 'অনাবাসিক'})
+              {isEn
+                ? `Class: ${child.classNameEn} (${child.isBoarding ? 'Residential' : 'Day Scholar'})`
+                : `জামাত: ${child.className} (${child.isBoarding ? 'আবাসিক' : 'অনাবাসিক'})`}
             </div>
           </div>
         </div>
@@ -135,11 +156,12 @@ export default function ParentPortalPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <span style={{ width: '0.625rem', height: '0.625rem', borderRadius: '50%', background: '#16a34a' }} />
             <span style={{ fontSize: '0.825rem', fontWeight: '700', color: '#0f172a' }}>
-              আজকের হাজিরা: <span style={{ color: '#16a34a' }}>{child.todayAttendance}</span>
+              {isEn ? 'Today\'s Attendance: ' : 'আজকের হাজিরা: '}
+              <span style={{ color: '#16a34a' }}>{isEn ? child.todayAttendanceEn : child.todayAttendance}</span>
             </span>
           </div>
           <span style={{ fontSize: '0.775rem', color: '#64748b' }}>
-            মাসিক গড়: {child.attendanceRate}%
+            {isEn ? `Monthly Average: ${formatNumberByLang(child.attendanceRate, lang)}%` : `মাসিক গড়: ${formatNumberByLang(child.attendanceRate, lang)}%`}
           </span>
         </div>
       </div>
@@ -149,10 +171,10 @@ export default function ParentPortalPage() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
           <div>
             <span style={{ fontSize: '0.725rem', fontWeight: '700', color: '#dc2626', textTransform: 'uppercase' }}>
-              চলতি মাসের বেতন
+              {isEn ? 'Current Month Tuition Fee' : 'চলতি মাসের বেতন'}
             </span>
             <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.6rem', fontWeight: '800', color: '#dc2626' }}>
-              ৳{child.dueFee}
+              ৳{formatNumberByLang(child.dueFee, lang)}
             </div>
           </div>
 
@@ -161,11 +183,13 @@ export default function ParentPortalPage() {
             className="btn btn-primary"
             style={{ background: '#16a34a', boxShadow: '0 4px 12px rgba(22, 163, 74, 0.25)' }}
           >
-            বিকাশ / নগদে বেতন দিন →
+            {isEn ? 'Pay via bKash / Nagad →' : 'বিকাশ / নগদে বেতন দিন →'}
           </button>
         </div>
         <p style={{ fontSize: '0.75rem', color: '#64748b' }}>
-          * কোনো ওটিপি ছাড়াই সরাসরি বিকাশ, নগদ বা ব্যাংক স্লিপে ফি পরিশোধ করে তাৎক্ষণিক ডিজিটাল রসিদ সংগ্রহ করতে পারেন।
+          {isEn
+            ? '* Pay instantly via bKash, Nagad or bank slip without any OTP and download an official digital receipt.'
+            : '* কোনো ওটিপি ছাড়াই সরাসরি বিকাশ, নগদ বা ব্যাংক স্লিপে ফি পরিশোধ করে তাৎক্ষণিক ডিজিটাল রসিদ সংগ্রহ করতে পারেন।'}
         </p>
       </div>
 
@@ -173,35 +197,37 @@ export default function ParentPortalPage() {
       <div className="card" style={{ padding: '1.25rem', marginBottom: '1rem', border: '1.5px solid #f1f5f9' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
           <h3 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1rem', fontWeight: '700', color: '#0f172a' }}>
-            সর্বশেষ পরীক্ষার ফলাফল
+            {isEn ? 'Latest Examination Result' : 'সর্বশেষ পরীক্ষার ফলাফল'}
           </h3>
-          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>{child.examResult.exam}</span>
+          <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+            {isEn ? child.examResult.examEn : child.examResult.exam}
+          </span>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.625rem', textAlign: 'center', background: '#f8fafc', padding: '0.875rem', borderRadius: '0.75rem' }}>
           <div>
             <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.15rem', fontWeight: '800', color: '#16a34a' }}>
-              {child.examResult.grade}
+              {isEn ? child.examResult.gradeEn : child.examResult.grade}
             </div>
-            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>প্রাপ্ত ফলাফল</div>
+            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{isEn ? 'Obtained Grade' : 'প্রাপ্ত ফলাফল'}</div>
           </div>
           <div>
             <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.15rem', fontWeight: '800', color: '#2563eb' }}>
-              {child.examResult.position}
+              {isEn ? child.examResult.positionEn : child.examResult.position}
             </div>
-            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>মেধাক্রম</div>
+            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{isEn ? 'Merit Rank' : 'মেধাক্রম'}</div>
           </div>
           <div>
             <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.15rem', fontWeight: '800', color: '#7c3aed' }}>
-              {child.examResult.totalMarks}
+              {isEn ? child.examResult.totalMarksEn : child.examResult.totalMarks}
             </div>
-            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>মোট নম্বর</div>
+            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{isEn ? 'Total Marks' : 'মোট নম্বর'}</div>
           </div>
         </div>
 
         <div style={{ marginTop: '0.875rem', textAlign: 'center' }}>
           <Link href="/dashboard/results" style={{ fontSize: '0.8rem', color: '#16a34a', fontWeight: '700', textDecoration: 'none' }}>
-            সম্পূর্ণ মার্কশিট ও বিষয়ভিত্তিক নম্বর দেখুন →
+            {isEn ? 'View Complete Marksheet & Subject Breakdown →' : 'সম্পূর্ণ মার্কশিট ও বিষয়ভিত্তিক নম্বর দেখুন →'}
           </Link>
         </div>
       </div>
@@ -220,9 +246,9 @@ export default function ParentPortalPage() {
           </div>
           <div>
             <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.85rem', fontWeight: '700', color: '#2563eb' }}>
-              শ্রেণি উস্তাদকে সরাসরি কল
+              {isEn ? 'Direct Call Class Teacher' : 'শ্রেণি উস্তাদকে সরাসরি কল'}
             </div>
-            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{child.teacherName}</div>
+            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{isEn ? child.teacherNameEn : child.teacherName}</div>
           </div>
         </a>
 
@@ -241,9 +267,11 @@ export default function ParentPortalPage() {
           </div>
           <div>
             <div style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '0.85rem', fontWeight: '700', color: '#ea580c' }}>
-              সহজ ছুটির আবেদন
+              {isEn ? 'Easy Leave Application' : 'সহজ ছুটির আবেদন'}
             </div>
-            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>জরুরি ছুটির বার্তা পাঠান</div>
+            <div style={{ fontSize: '0.7rem', color: '#64748b' }}>
+              {isEn ? 'Send emergency leave request' : 'জরুরি ছুটির বার্তা পাঠান'}
+            </div>
           </div>
         </button>
       </div>
@@ -266,7 +294,7 @@ export default function ParentPortalPage() {
           <div className="card fade-in" style={{ width: '100%', maxWidth: '24rem', padding: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
               <h2 style={{ fontFamily: 'Hind Siliguri, sans-serif', fontSize: '1.1rem', fontWeight: '700', color: '#0f172a' }}>
-                ছুটির আবেদন করুন
+                {isEn ? 'Apply for Student Leave' : 'ছুটির আবেদন করুন'}
               </h2>
               <button onClick={() => setShowLeaveReqModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -277,29 +305,29 @@ export default function ParentPortalPage() {
 
             <form onSubmit={handleApplyLeave} style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
               <div>
-                <label className="label">ছুটির মেয়াদ</label>
+                <label className="label">{isEn ? 'Leave Duration' : 'ছুটির মেয়াদ'}</label>
                 <select className="input" value={leaveDays} onChange={(e) => setLeaveDays(e.target.value)}>
-                  <option value="1">১ দিন</option>
-                  <option value="2">২ দিন</option>
-                  <option value="3">৩ দিন</option>
+                  <option value="1">{isEn ? '1 Day' : '১ দিন'}</option>
+                  <option value="2">{isEn ? '2 Days' : '২ দিন'}</option>
+                  <option value="3">{isEn ? '3 Days' : '৩ দিন'}</option>
                 </select>
               </div>
 
               <div>
-                <label className="label">ছুটির কারণ</label>
+                <label className="label">{isEn ? 'Reason for Leave' : 'ছুটির কারণ'}</label>
                 <select className="input" value={leaveReason} onChange={(e) => setLeaveReason(e.target.value)}>
-                  <option value="অসুস্থতা">অসুস্থতা</option>
-                  <option value="পারিবারিক কারণ">পারিবারিক কারণ</option>
-                  <option value="জরুরি প্রয়োজন">জরুরি প্রয়োজন</option>
+                  <option value="অসুস্থতা">{isEn ? 'Illness / Sickness' : 'অসুস্থতা'}</option>
+                  <option value="পারিবারিক কারণ">{isEn ? 'Family Reason' : 'পারিবারিক কারণ'}</option>
+                  <option value="জরুরি প্রয়োজন">{isEn ? 'Urgent Need' : 'জরুরি প্রয়োজন'}</option>
                 </select>
               </div>
 
               <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                 <button type="button" onClick={() => setShowLeaveReqModal(false)} className="btn btn-secondary" style={{ flex: 1 }}>
-                  বাতিল
+                  {isEn ? 'Cancel' : 'বাতিল'}
                 </button>
                 <button type="submit" className="btn btn-primary" style={{ flex: 1, background: '#ea580c' }}>
-                  আবেদন পাঠান
+                  {isEn ? 'Send Application' : 'আবেদন পাঠান'}
                 </button>
               </div>
             </form>

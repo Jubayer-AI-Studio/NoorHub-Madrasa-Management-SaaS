@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useLanguage } from '@/lib/language-store';
+import { formatNumberByLang } from '@/lib/useCountUp';
+import LanguageToggle from '@/components/layout/LanguageToggle';
 
 interface InstitutionProfile {
   id: string;
@@ -285,6 +288,8 @@ const INSTITUTIONS_DATA: InstitutionProfile[] = [
 ];
 
 export default function PublicExplorerPage() {
+  const { lang, t } = useLanguage();
+  const isEn = lang === 'en';
   const [institutions, setInstitutions] = useState<InstitutionProfile[]>(INSTITUTIONS_DATA);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
@@ -426,12 +431,17 @@ export default function PublicExplorerPage() {
               </svg>
             </div>
             <div>
-              <span style={{ fontWeight: '800', fontSize: '1.15rem', color: '#0f172a' }}>নূরহাব</span>
-              <span style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: '700', marginLeft: '0.4rem' }}>উন্মুক্ত পোর্টাল</span>
+              <span style={{ fontWeight: '800', fontSize: '1.15rem', color: '#0f172a' }}>
+                {isEn ? 'NOORHUB' : 'নূরহাব'}
+              </span>
+              <span style={{ fontSize: '0.75rem', color: '#16a34a', fontWeight: '700', marginLeft: '0.4rem' }}>
+                {isEn ? 'Public Explorer' : 'উন্মুক্ত পোর্টাল'}
+              </span>
             </div>
           </Link>
 
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+            <LanguageToggle variant="compact" />
             <Link
               href="/login"
               style={{
@@ -445,7 +455,7 @@ export default function PublicExplorerPage() {
                 background: '#f0fdf4',
               }}
             >
-              ড্যাশবোর্ড প্রবেশ
+              {isEn ? 'Dashboard Access' : 'ড্যাশবোর্ড প্রবেশ'}
             </Link>
           </div>
         </div>
@@ -474,13 +484,19 @@ export default function PublicExplorerPage() {
               marginBottom: '0.75rem',
             }}
           >
-            সারাদেশের শিক্ষা প্রতিষ্ঠান, সিলেবাস ও বৈশিষ্ট্যের উন্মুক্ত ডিরেক্টরি
+            {isEn
+              ? 'Nationwide Open Directory of Institutions, Syllabi & Features'
+              : 'সারাদেশের শিক্ষা প্রতিষ্ঠান, সিলেবাস ও বৈশিষ্ট্যের উন্মুক্ত ডিরেক্টরি'}
           </span>
           <h1 style={{ fontSize: '1.85rem', fontWeight: '800', marginBottom: '0.5rem', lineHeight: '1.3' }}>
-            কোথায় কী পড়ানো হচ্ছে ও তাদের ভালো দিকগুলো জানুন
+            {isEn
+              ? 'Discover Institutional Syllabi, Kitabs & Key Strengths'
+              : 'কোথায় কী পড়ানো হচ্ছে ও তাদের ভালো দিকগুলো জানুন'}
           </h1>
           <p style={{ fontSize: '0.925rem', color: '#94a3b8', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-            কোনো পাসওয়ার্ড বা রেজিস্ট্রেশন ছাড়াই কওমি, আলিয়া ও হিফজ মাদরাসার পাঠ্যক্রম, কিতাবের সারসংক্ষেপ এবং প্রতিষ্ঠানের অনন্য অর্জন ও সুযোগ-সুবিধা সরাসরি পরখ করুন।
+            {isEn
+              ? 'Explore Qawmi, Alia & Hifz curricula, kitab summaries, institutional achievements and facilities directly without login.'
+              : 'কোনো পাসওয়ার্ড বা রেজিস্ট্রেশন ছাড়াই কওমি, আলিয়া ও হিফজ মাদরাসার পাঠ্যক্রম, কিতাবের সারসংক্ষেপ এবং প্রতিষ্ঠানের অনন্য অর্জন ও সুযোগ-সুবিধা সরাসরি পরখ করুন।'}
           </p>
 
           {/* Search Box */}
@@ -502,7 +518,11 @@ export default function PublicExplorerPage() {
             </div>
             <input
               type="text"
-              placeholder="মাদরাসার নাম, জেলা বা এলাকা দিয়ে খুঁজুন (যেমন: ঢাকা, পটিয়া, হিফজ...)"
+              placeholder={
+                isEn
+                  ? 'Search by madrasa name, district or area (e.g. Dhaka, Patiya, Hifz...)'
+                  : 'মাদরাসার নাম, জেলা বা এলাকা দিয়ে খুঁজুন (যেমন: ঢাকা, পটিয়া, হিফজ...)'
+              }
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -545,12 +565,14 @@ export default function PublicExplorerPage() {
         >
           {/* Curriculum type filter */}
           <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>ধরন:</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>
+              {isEn ? 'Type:' : 'ধরন:'}
+            </span>
             {[
-              { id: 'all', label: 'সকল' },
-              { id: 'qawmi', label: 'কওমি' },
-              { id: 'hifz', label: 'হিফজুল কুরআন' },
-              { id: 'alia', label: 'আলিয়া' },
+              { id: 'all', label: isEn ? 'All' : 'সকল' },
+              { id: 'qawmi', label: isEn ? 'Qawmi' : 'কওমি' },
+              { id: 'hifz', label: isEn ? 'Hifzul Quran' : 'হিফজুল কুরআন' },
+              { id: 'alia', label: isEn ? 'Alia' : 'আলিয়া' },
             ].map((t) => (
               <button
                 key={t.id}
@@ -574,7 +596,9 @@ export default function PublicExplorerPage() {
 
           {/* Division Filter */}
           <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
-            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>বিভাগ:</span>
+            <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>
+              {isEn ? 'Division:' : 'বিভাগ:'}
+            </span>
             <select
               value={selectedDivision}
               onChange={(e) => setSelectedDivision(e.target.value)}
@@ -587,12 +611,12 @@ export default function PublicExplorerPage() {
                 outline: 'none',
               }}
             >
-              <option value="all">সমগ্র বাংলাদেশ</option>
-              <option value="ঢাকা">ঢাকা বিভাগ</option>
-              <option value="চট্টগ্রাম">চট্টগ্রাম বিভাগ</option>
-              <option value="সিলেট">সিলেট বিভাগ</option>
-              <option value="রাজশাহী">রাজশাহী বিভাগ</option>
-              <option value="খুলনা">খুলনা বিভাগ</option>
+              <option value="all">{isEn ? 'All Bangladesh' : 'সমগ্র বাংলাদেশ'}</option>
+              <option value="ঢাকা">{isEn ? 'Dhaka Division' : 'ঢাকা বিভাগ'}</option>
+              <option value="চট্টগ্রাম">{isEn ? 'Chittagong Division' : 'চট্টগ্রাম বিভাগ'}</option>
+              <option value="সিলেট">{isEn ? 'Sylhet Division' : 'সিলেট বিভাগ'}</option>
+              <option value="রাজশাহী">{isEn ? 'Rajshahi Division' : 'রাজশাহী বিভাগ'}</option>
+              <option value="খুলনা">{isEn ? 'Khulna Division' : 'খুলনা বিভাগ'}</option>
             </select>
           </div>
         </div>
@@ -608,7 +632,7 @@ export default function PublicExplorerPage() {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            📋 প্রতিষ্ঠানের তালিকা ({filteredInstitutions.length})
+            📋 {isEn ? `Institutions (${formatNumberByLang(filteredInstitutions.length, lang)})` : `প্রতিষ্ঠানের তালিকা (${formatNumberByLang(filteredInstitutions.length, lang)})`}
           </button>
           <button
             type="button"
@@ -619,7 +643,7 @@ export default function PublicExplorerPage() {
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            🔍 বিস্তারিত প্রোফাইল
+            🔍 {isEn ? 'Detailed Profile' : 'বিস্তারিত প্রোফাইল'}
           </button>
         </div>
 
@@ -628,7 +652,9 @@ export default function PublicExplorerPage() {
           {/* Left Column: Institutions List */}
           <div className={`${mobileExploreTab === 'list' ? 'flex' : 'hidden'} lg:flex flex-col gap-3`}>
             <div style={{ fontSize: '0.8rem', fontWeight: '700', color: '#64748b', marginBottom: '0.2rem' }}>
-              প্রতিষ্ঠান নির্বাচন করুন ({filteredInstitutions.length}টি পাওয়া গেছে):
+              {isEn
+                ? `Select Institution (${formatNumberByLang(filteredInstitutions.length, lang)} found):`
+                : `প্রতিষ্ঠান নির্বাচন করুন (${formatNumberByLang(filteredInstitutions.length, lang)}টি পাওয়া গেছে):`}
             </div>
 
             {filteredInstitutions.map((inst) => {
@@ -682,7 +708,7 @@ export default function PublicExplorerPage() {
                           <circle cx="12" cy="12" r="10" />
                           <polyline points="9 12 11 14 15 10" stroke="white" strokeWidth="2.5" fill="none" />
                         </svg>
-                        ভেরিফাইড
+                        {isEn ? 'Verified' : 'ভেরিফাইড'}
                       </span>
                     )}
                   </div>
@@ -692,12 +718,14 @@ export default function PublicExplorerPage() {
                   </h3>
 
                   <p style={{ fontSize: '0.775rem', color: '#64748b', marginBottom: '0.5rem' }}>
-                    {inst.district}, {inst.division} | স্থাপিত: {inst.established} খ্রি.
+                    {inst.district}, {inst.division} | {isEn ? `Est: ${formatNumberByLang(inst.established, lang)}` : `স্থাপিত: ${formatNumberByLang(inst.established, lang)} খ্রি.`}
                   </p>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#475569', borderTop: '1px solid #e2e8f0', paddingTop: '0.4rem' }}>
-                    <span>শিক্ষার্থী: <strong>{inst.students} জন</strong></span>
-                    <span style={{ color: '#ca8a04', fontWeight: '700' }}>রেটিং: {inst.rating} / ৫.০</span>
+                    <span>{isEn ? 'Students: ' : 'শিক্ষার্থী: '}<strong>{formatNumberByLang(inst.students, lang)} {isEn ? '' : 'জন'}</strong></span>
+                    <span style={{ color: '#ca8a04', fontWeight: '700' }}>
+                      {isEn ? 'Rating: ' : 'রেটিং: '}{formatNumberByLang(inst.rating, lang)} / {formatNumberByLang(5.0, lang)}
+                    </span>
                   </div>
                 </div>
               );
@@ -713,7 +741,7 @@ export default function PublicExplorerPage() {
                   onClick={() => setMobileExploreTab('list')}
                   className="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-lg border border-emerald-200 flex items-center gap-1 hover:bg-emerald-100 mb-1"
                 >
-                  ← অন্য প্রতিষ্ঠান বেছে নিন (তালিকায় ফিরুন)
+                  {isEn ? '← Choose another institution (Return to list)' : '← অন্য প্রতিষ্ঠান বেছে নিন (তালিকায় ফিরুন)'}
                 </button>
               </div>
               {/* Institution Profile Header Card */}
@@ -737,7 +765,7 @@ export default function PublicExplorerPage() {
                             <circle cx="12" cy="12" r="10" />
                             <polyline points="9 12 11 14 15 10" stroke="white" strokeWidth="2.5" fill="none" />
                           </svg>
-                          অফিশিয়াল ব্লু ভেরিফাইড প্রতিষ্ঠান
+                          {isEn ? 'Official Blue Verified Institution' : 'অফিশিয়াল ব্লু ভেরিফাইড প্রতিষ্ঠান'}
                         </span>
                       )}
                     </div>
@@ -749,14 +777,18 @@ export default function PublicExplorerPage() {
                       {activeInstitution.address}
                     </p>
                     <p style={{ fontSize: '0.825rem', color: '#334155' }}>
-                      মুহতামিম / প্রধান: <strong>{activeInstitution.principal}</strong>
+                      {isEn ? 'Principal / Head: ' : 'মুহতামিম / প্রধান: '}<strong>{activeInstitution.principal}</strong>
                     </p>
                   </div>
 
                   {/* 1-Tap WhatsApp & Call Contact */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                     <a
-                      href={`https://wa.me/${activeInstitution.whatsapp}?text=${encodeURIComponent(`আসসালামু আলাইকুম, আমি নূরহাব ডিরেক্টরি থেকে ${activeInstitution.name} সম্পর্কে তথ্য ও ভর্তির বিষয়ে জানতে চাই।`)}`}
+                      href={`https://wa.me/${activeInstitution.whatsapp}?text=${encodeURIComponent(
+                        isEn
+                          ? `Assalamu Alaikum, I am contacting from NoorHub Directory to learn more about ${activeInstitution.name}.`
+                          : `আসসালামু আলাইকুম, আমি নূরহাব ডিরেক্টরি থেকে ${activeInstitution.name} সম্পর্কে তথ্য ও ভর্তির বিষয়ে জানতে চাই।`
+                      )}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       style={{
@@ -776,7 +808,7 @@ export default function PublicExplorerPage() {
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                       </svg>
-                      হোয়াটসঅ্যাপে তথ্য জানুন
+                      {isEn ? 'Inquire on WhatsApp' : 'হোয়াটসঅ্যাপে তথ্য জানুন'}
                     </a>
 
                     <a
@@ -798,7 +830,7 @@ export default function PublicExplorerPage() {
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                         <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
                       </svg>
-                      সরাসরি ফোন কল
+                      {isEn ? 'Direct Call' : 'সরাসরি ফোন কল'}
                     </a>
 
                     <button
@@ -823,7 +855,7 @@ export default function PublicExplorerPage() {
                         <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                         <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                       </svg>
-                      প্রতিষ্ঠানের তথ্য ও বৈশিষ্ট্য এডিট
+                      {isEn ? 'Edit Info & Highlights' : 'প্রতিষ্ঠানের তথ্য ও বৈশিষ্ট্য এডিট'}
                     </button>
                   </div>
                 </div>
@@ -831,20 +863,28 @@ export default function PublicExplorerPage() {
                 {/* Key Metrics Bar */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', background: '#f8fafc', padding: '0.85rem', borderRadius: '10px', marginTop: '1.25rem', textAlign: 'center' }}>
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>মোট শিক্ষার্থী</div>
-                    <div style={{ fontSize: '1rem', fontWeight: '800', color: '#16a34a' }}>{activeInstitution.students} জন</div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{isEn ? 'Total Students' : 'মোট শিক্ষার্থী'}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: '800', color: '#16a34a' }}>
+                      {formatNumberByLang(activeInstitution.students, lang)} {isEn ? '' : 'জন'}
+                    </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>শিক্ষক ও উস্তাদ</div>
-                    <div style={{ fontSize: '1rem', fontWeight: '800', color: '#2563eb' }}>{activeInstitution.teachers} জন</div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{isEn ? 'Faculty Teachers' : 'শিক্ষক ও উস্তাদ'}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: '800', color: '#2563eb' }}>
+                      {formatNumberByLang(activeInstitution.teachers, lang)} {isEn ? '' : 'জন'}
+                    </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>গড় পাসের হার</div>
-                    <div style={{ fontSize: '1rem', fontWeight: '800', color: '#7c3aed' }}>{activeInstitution.passRate}%</div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{isEn ? 'Avg Pass Rate' : 'গড় পাসের হার'}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: '800', color: '#7c3aed' }}>
+                      {formatNumberByLang(activeInstitution.passRate, lang)}%
+                    </div>
                   </div>
                   <div>
-                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>অভিভাবক রেটিং</div>
-                    <div style={{ fontSize: '1rem', fontWeight: '800', color: '#ca8a04' }}>{activeInstitution.rating} / ৫</div>
+                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{isEn ? 'Guardian Rating' : 'অভিভাবক রেটিং'}</div>
+                    <div style={{ fontSize: '1rem', fontWeight: '800', color: '#ca8a04' }}>
+                      {formatNumberByLang(activeInstitution.rating, lang)} / {formatNumberByLang(5, lang)}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -857,7 +897,7 @@ export default function PublicExplorerPage() {
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                     </svg>
                     <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                      আমাদের অনন্য বৈশিষ্ট্য ও ভালো দিকগুলো
+                      {isEn ? 'Key Institutional Strengths & Unique Features' : 'আমাদের অনন্য বৈশিষ্ট্য ও ভালো দিকগুলো'}
                     </h3>
                   </div>
                   <button
@@ -880,7 +920,7 @@ export default function PublicExplorerPage() {
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                     </svg>
-                    বৈশিষ্ট্য ও সুবিধা পরিবর্তন
+                    {isEn ? 'Edit Strengths & Facilities' : 'বৈশিষ্ট্য ও সুবিধা পরিবর্তন'}
                   </button>
                 </div>
 
@@ -910,7 +950,7 @@ export default function PublicExplorerPage() {
 
                 {/* Facilities List */}
                 <h4 style={{ fontSize: '0.9rem', fontWeight: '700', color: '#334155', marginBottom: '0.5rem' }}>
-                  ক্যাম্পাস সুযোগ-সুবিধা:
+                  {isEn ? 'Campus Facilities:' : 'ক্যাম্পাস সুযোগ-সুবিধা:'}
                 </h4>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
                   {activeInstitution.facilities.map((fac, idx) => (
@@ -940,11 +980,11 @@ export default function PublicExplorerPage() {
                       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
                     </svg>
                     <h3 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                      এখানে কী কী পড়ানো হচ্ছে (সিলেবাস ও কিতাব তালিকা)
+                      {isEn ? 'Curriculum & Syllabi (Kitab Directory)' : 'এখানে কী কী পড়ানো হচ্ছে (সিলেবাস ও কিতাব তালিকা)'}
                     </h3>
                   </div>
                   <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-                    (কিতাবে ট্যাপ করে পূর্ণাঙ্গ সারসংক্ষেপ পড়ুন)
+                    {isEn ? '(Tap on any kitab to read detailed summary)' : '(কিতাবে ট্যাপ করে পূর্ণাঙ্গ সারসংক্ষেপ পড়ুন)'}
                   </span>
                 </div>
 
@@ -964,7 +1004,7 @@ export default function PublicExplorerPage() {
                           {cls.className}
                         </h4>
                         <span style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: '700' }}>
-                          {cls.kitabs.length}টি কিতাব
+                          {formatNumberByLang(cls.kitabs.length, lang)} {isEn ? 'Kitabs' : 'টি কিতাব'}
                         </span>
                       </div>
                       <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.75rem' }}>
@@ -991,7 +1031,7 @@ export default function PublicExplorerPage() {
                                 {kitab.category}
                               </span>
                               <span style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: '700' }}>
-                                সামারি পড়ুন →
+                                {isEn ? 'Read Summary →' : 'সামারি পড়ুন →'}
                               </span>
                             </div>
                             <div style={{ fontSize: '0.875rem', fontWeight: '700', color: '#0f172a' }}>
@@ -1064,7 +1104,7 @@ export default function PublicExplorerPage() {
 
             <div style={{ marginBottom: '1.25rem' }}>
               <h4 style={{ fontSize: '0.875rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.35rem' }}>
-                বইটির সহজ সারসংক্ষেপ ও উদ্দেশ্য:
+                {isEn ? 'Kitab Summary & Learning Objective:' : 'বইটির সহজ সারসংক্ষেপ ও উদ্দেশ্য:'}
               </h4>
               <p style={{ fontSize: '0.85rem', color: '#334155', lineHeight: '1.6', background: '#f8fafc', padding: '0.85rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
                 {selectedKitabSummary.summary}
@@ -1077,7 +1117,7 @@ export default function PublicExplorerPage() {
                 className="btn btn-secondary"
                 style={{ fontSize: '0.825rem', padding: '0.45rem 1rem' }}
               >
-                বন্ধ করুন
+                {isEn ? 'Close' : 'বন্ধ করুন'}
               </button>
             </div>
           </div>
@@ -1121,10 +1161,12 @@ export default function PublicExplorerPage() {
                 </div>
                 <div>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
-                    প্রতিষ্ঠানের প্রোফাইল ও ভালো দিক এডিট
+                    {isEn ? 'Edit Institution Profile & Strengths' : 'প্রতিষ্ঠানের প্রোফাইল ও ভালো দিক এডিট'}
                   </h3>
                   <p style={{ fontSize: '0.775rem', color: '#64748b', margin: 0 }}>
-                    তৃতীয় পক্ষের দর্শকদের জন্য আপনার প্রতিষ্ঠানের যাবতীয় তথ্য ও অনন্য অর্জন পরিবর্তন করুন
+                    {isEn
+                      ? 'Update institution profile, statistics and achievements visible to visitors'
+                      : 'তৃতীয় পক্ষের দর্শকদের জন্য আপনার প্রতিষ্ঠানের যাবতীয় তথ্য ও অনন্য অর্জন পরিবর্তন করুন'}
                   </p>
                 </div>
               </div>
@@ -1140,7 +1182,7 @@ export default function PublicExplorerPage() {
             <form onSubmit={handleSaveEditInst} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                  প্রতিষ্ঠানের নাম *
+                  {isEn ? 'Institution Name *' : 'প্রতিষ্ঠানের নাম *'}
                 </label>
                 <input
                   type="text"
@@ -1155,7 +1197,7 @@ export default function PublicExplorerPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                    মুহতামিম / অধ্যক্ষের নাম
+                    {isEn ? 'Principal / Head Name' : 'মুহতামিম / অধ্যক্ষের নাম'}
                   </label>
                   <input
                     type="text"
@@ -1168,22 +1210,22 @@ export default function PublicExplorerPage() {
 
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                    প্রতিষ্ঠানের ধরন
+                    {isEn ? 'Institution Type' : 'প্রতিষ্ঠানের ধরন'}
                   </label>
                   <select
                     className="input-field"
                     value={editFormData.type}
                     onChange={(e) => {
                       const t = e.target.value as any;
-                      const label = t === 'qawmi' ? 'কওমি কিতাব ও হিফজ' : t === 'alia' ? 'আলিয়া মাদরাসা' : t === 'hifz' ? 'হিফজুল কুরআন' : 'জেনারেল';
+                      const label = t === 'qawmi' ? (isEn ? 'Qawmi Kitab & Hifz' : 'কওমি কিতাব ও হিফজ') : t === 'alia' ? (isEn ? 'Alia Madrasa' : 'আলিয়া মাদরাসা') : t === 'hifz' ? (isEn ? 'Hifzul Quran' : 'হিফজুল কুরআন') : (isEn ? 'General' : 'জেনারেল');
                       setEditFormData({ ...editFormData, type: t, typeLabel: label });
                     }}
                     style={{ width: '100%', padding: '0.5rem' }}
                   >
-                    <option value="qawmi">কওমি মাদরাসা</option>
-                    <option value="alia">আলিয়া মাদরাসা</option>
-                    <option value="hifz">হিফজুল কুরআন</option>
-                    <option value="general">জেনারেল একাডেমি</option>
+                    <option value="qawmi">{isEn ? 'Qawmi Madrasa' : 'কওমি মাদরাসা'}</option>
+                    <option value="alia">{isEn ? 'Alia Madrasa' : 'আলিয়া মাদরাসা'}</option>
+                    <option value="hifz">{isEn ? 'Hifzul Quran' : 'হিফজুল কুরআন'}</option>
+                    <option value="general">{isEn ? 'General Academy' : 'জেনারেল একাডেমি'}</option>
                   </select>
                 </div>
               </div>
@@ -1191,7 +1233,7 @@ export default function PublicExplorerPage() {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                    সরাসরি ফোন নম্বর
+                    {isEn ? 'Direct Phone Number' : 'সরাসরি ফোন নম্বর'}
                   </label>
                   <input
                     type="text"
@@ -1204,7 +1246,7 @@ export default function PublicExplorerPage() {
 
                 <div>
                   <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                    হোয়াটসঅ্যাপ নম্বর (যেমন: 88018...)
+                    {isEn ? 'WhatsApp Number (e.g. 88018...)' : 'হোয়াটসঅ্যাপ নম্বর (যেমন: 88018...)'}
                   </label>
                   <input
                     type="text"
@@ -1218,7 +1260,7 @@ export default function PublicExplorerPage() {
 
               <div>
                 <label style={{ fontSize: '0.8rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.25rem' }}>
-                  ঠিকানা
+                  {isEn ? 'Address' : 'ঠিকানা'}
                 </label>
                 <input
                   type="text"
@@ -1232,7 +1274,7 @@ export default function PublicExplorerPage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    শিক্ষার্থী
+                    {isEn ? 'Students' : 'শিক্ষার্থী'}
                   </label>
                   <input
                     type="number"
@@ -1245,7 +1287,7 @@ export default function PublicExplorerPage() {
 
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    শিক্ষক
+                    {isEn ? 'Teachers' : 'শিক্ষক'}
                   </label>
                   <input
                     type="number"
@@ -1258,7 +1300,7 @@ export default function PublicExplorerPage() {
 
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    পাসের হার %
+                    {isEn ? 'Pass Rate %' : 'পাসের হার %'}
                   </label>
                   <input
                     type="number"
@@ -1272,7 +1314,7 @@ export default function PublicExplorerPage() {
 
                 <div>
                   <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#334155', display: 'block', marginBottom: '0.2rem' }}>
-                    রেটিং (৫-এ)
+                    {isEn ? 'Rating (/5)' : 'রেটিং (৫-এ)'}
                   </label>
                   <input
                     type="number"
@@ -1288,7 +1330,7 @@ export default function PublicExplorerPage() {
               {/* HIGHLIGHTS SECTION */}
               <div style={{ background: '#fefce8', padding: '0.85rem', borderRadius: '10px', border: '1px solid #fef08a' }}>
                 <label style={{ fontSize: '0.85rem', fontWeight: '800', color: '#854d0e', display: 'block', marginBottom: '0.5rem' }}>
-                  আমাদের ভালো দিক ও অনন্য বৈশিষ্ট্যসমূহ (যা দর্শকরা দেখবে)
+                  {isEn ? 'Key Strengths & Highlights (Visible to visitors)' : 'আমাদের ভালো দিক ও অনন্য বৈশিষ্ট্যসমূহ (যা দর্শকরা দেখবে)'}
                 </label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '0.65rem' }}>
                   {editFormData.highlights.map((h, i) => (
@@ -1315,7 +1357,7 @@ export default function PublicExplorerPage() {
                           padding: '0.4rem 0.6rem',
                           cursor: 'pointer',
                         }}
-                        title="মুছে ফেলুন"
+                        title={isEn ? 'Remove' : 'মুছে ফেলুন'}
                       >
                         ×
                       </button>
@@ -1326,7 +1368,7 @@ export default function PublicExplorerPage() {
                 <div style={{ display: 'flex', gap: '0.4rem' }}>
                   <input
                     type="text"
-                    placeholder="নতুন একটি ভালো দিক বা বৈশিষ্ট্য লিখুন..."
+                    placeholder={isEn ? 'Write a new strength or highlight...' : 'নতুন একটি ভালো দিক বা বৈশিষ্ট্য লিখুন...'}
                     value={newHighlight}
                     onChange={(e) => setNewHighlight(e.target.value)}
                     style={{ flex: 1, padding: '0.4rem 0.6rem', fontSize: '0.825rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
@@ -1345,7 +1387,7 @@ export default function PublicExplorerPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    + যোগ করুন
+                    {isEn ? '+ Add' : '+ যোগ করুন'}
                   </button>
                 </div>
               </div>
@@ -1353,7 +1395,7 @@ export default function PublicExplorerPage() {
               {/* FACILITIES SECTION */}
               <div style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
                 <label style={{ fontSize: '0.85rem', fontWeight: '800', color: '#334155', display: 'block', marginBottom: '0.5rem' }}>
-                  ক্যাম্পাস সুযোগ-সুবিধা
+                  {isEn ? 'Campus Facilities' : 'ক্যাম্পাস সুযোগ-সুবিধা'}
                 </label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.65rem' }}>
                   {editFormData.facilities.map((fac, idx) => (
@@ -1385,7 +1427,7 @@ export default function PublicExplorerPage() {
                 <div style={{ display: 'flex', gap: '0.4rem' }}>
                   <input
                     type="text"
-                    placeholder="নতুন সুযোগ-সুবিধা লিখুন (যেমন: নিজস্ব জেনারেটর সুবিধা)..."
+                    placeholder={isEn ? 'Add facility (e.g. 24/7 Generator, Solar Power)...' : 'নতুন সুযোগ-সুবিধা লিখুন (যেমন: নিজস্ব জেনারেটর সুবিধা)...'}
                     value={newFacility}
                     onChange={(e) => setNewFacility(e.target.value)}
                     style={{ flex: 1, padding: '0.4rem 0.6rem', fontSize: '0.825rem', borderRadius: '6px', border: '1px solid #cbd5e1' }}
@@ -1404,7 +1446,7 @@ export default function PublicExplorerPage() {
                       cursor: 'pointer',
                     }}
                   >
-                    + যোগ করুন
+                    {isEn ? '+ Add' : '+ যোগ করুন'}
                   </button>
                 </div>
               </div>
@@ -1416,14 +1458,14 @@ export default function PublicExplorerPage() {
                   className="btn btn-secondary"
                   style={{ flex: 1 }}
                 >
-                  বাতিল
+                  {isEn ? 'Cancel' : 'বাতিল'}
                 </button>
                 <button
                   type="submit"
                   className="btn btn-primary"
                   style={{ flex: 1, background: '#16a34a', border: 'none' }}
                 >
-                  পরিবর্তন সংরক্ষণ করুন
+                  {isEn ? 'Save Changes' : 'পরিবর্তন সংরক্ষণ করুন'}
                 </button>
               </div>
             </form>
