@@ -100,7 +100,7 @@ NOORHUB/
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/monisharani333022-eng/NoorHub-Madrasa-Management-SaaS.git
+   git clone https://github.com/Jubayer-AI-Studio/NoorHub-Madrasa-Management-SaaS.git
    cd NoorHub-Madrasa-Management-SaaS
    ```
 
@@ -134,8 +134,8 @@ NOORHUB/
 
 ## 👤 Author
 
-* **Developer:** [Jubayer Ahmad](https://github.com/monisharani333022-eng)
-* **Email:** [monisharani333022@gmail.com](mailto:monisharani333022@gmail.com)
+* **Developer:** [Jubayer Ahmad](https://github.com/Jubayer-AI-Studio)
+* **Email:** [jubayerahmadaistudio@gmail.com](mailto:jubayerahmadaistudio@gmail.com)
 * **Location:** Dhaka, Bangladesh 🇧🇩
 
 ---
